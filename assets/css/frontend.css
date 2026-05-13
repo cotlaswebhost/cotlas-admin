@@ -1,0 +1,801 @@
+/* ==========================================================================
+   Facebook-style Comments [cotlas_comments] shortcode
+   ========================================================================== */
+.cotlas-comments {
+    font-family: inherit;
+    width: 100%;
+    max-width: 100%;
+    padding: 4px 0 16px;
+    box-sizing: border-box;
+}
+
+/* Heading */
+.ctc-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+.ctc-heading__icon { font-size: 1.2rem; }
+.ctc-heading__title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111;
+}
+.ctc-heading__count {
+    background: #e8edf5;
+    color: #444;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 8px;
+}
+
+/* Comment form */
+.ctc-form {
+    margin-bottom: 24px;
+}
+.ctc-form__row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.ctc-form__inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ctc-form__guest-fields {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.ctc-input {
+    flex: 1;
+    min-width: 120px;
+    border: 1px solid #dde3ee;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    background: #f7f8fc;
+    color: #111;
+}
+.ctc-input:focus { border-color: #3b82f6; background: #fff; }
+
+.ctc-form__textarea-wrap {
+    background: #f7f8fc;
+    border: 1px solid #dde3ee;
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: border-color 0.15s;
+    width: 100%;
+    box-sizing: border-box;
+}
+.ctc-form__textarea-wrap:focus-within {
+    border-color: #3b82f6;
+    background: #fff;
+}
+.ctc-textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    line-height: 1.5;
+    color: #111;
+    min-height: 60px;
+    max-height: 200px;
+    display: block;
+    box-sizing: border-box;
+}
+.ctc-form__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+.ctc-submit {
+    background: #1877f2;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 22px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s;
+    letter-spacing: 0.01em;
+}
+.ctc-submit:hover { background: #1464d8; }
+.ctc-cancel-reply {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px 0 0 46px;
+    font-family: inherit;
+}
+.ctc-cancel-reply:hover { color: #333; }
+
+/* Avatar circle */
+.ctc-comment__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ctc-comment__avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.ctc-comment__initial {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    z-index: 1;
+    pointer-events: none;
+}
+.ctc-form__avatar { margin-top: 2px; }
+
+/* Single comment */
+.ctc-comment {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+.ctc-comment--reply {
+    margin-left: 46px;
+    margin-top: 10px;
+}
+.ctc-comment__body { flex: 1; }
+
+.ctc-comment__bubble {
+    background: #f0f2f5;
+    border-radius: 0 16px 16px 16px;
+    padding: 9px 13px;
+    display: inline-block;
+    max-width: 100%;
+    word-break: break-word;
+}
+.ctc-comment__author {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 3px;
+}
+.ctc-comment__pending {
+    font-size: 0.72rem;
+    color: #f59e0b;
+    margin-left: 6px;
+}
+.ctc-comment__text {
+    font-size: 1.2rem;
+    color: #333;
+    line-height: 1.55;
+}
+
+/* Meta row below bubble */
+.ctc-comment__meta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+    padding-left: 4px;
+}
+.ctc-comment__time {
+    font-size: 0.72rem;
+    color: #888;
+}
+.ctc-reply-btn,
+.ctc-edit-btn {
+    background: none;
+    border: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    transition: color 0.15s;
+}
+.ctc-reply-btn:hover { color: #1877f2; background-color: #ffffff; }
+.ctc-edit-btn:hover  { color: #f59e0b; background-color: #ffffff; }
+
+/* Inline edit UI */
+.ctc-edit-wrap {
+    margin-top: 8px;
+}
+.ctc-edit-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    background: #fff;
+    color: #111;
+    line-height: 1.5;
+    display: block;
+}
+.ctc-edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+/* Nested replies block */
+.ctc-replies {
+    border-left: 2px solid #e8edf5;
+    margin-left: 18px;
+    padding-left: 4px;
+}
+
+/* Inline reply form */
+.ctc-form--reply {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+.ctc-form--reply .ctc-form__row { gap: 8px; }
+
+/* Empty state */
+.ctc-empty {
+    color: #aaa;
+    font-size: 0.88rem;
+    text-align: center;
+    padding: 24px 0 8px;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .ctc-comment--reply { margin-left: 30px; }
+    .ctc-form__guest-fields { flex-direction: column; }
+}
+
+
+/* ==========================================================================
+   Local Date/Time — [local_datetime] shortcode
+   ========================================================================== */
+/* Local Date/Time - [local_datetime] shortcode */
+.cotlas-local-datetime {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25em;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: inherit;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Social Share — [social_share] + [author_social_links] shortcodes
+   ========================================================================== */
+.cotlas-social-share {
+    display: flex;
+    align-items: center;
+    padding-left: 15px;
+    gap: 10px;
+}
+.cotlas-social-share-top {
+    justify-content: flex-start;
+}
+.cotlas-social-share a {
+    text-decoration: none;
+    transition: .3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cotlas-social-share-top a {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    position: relative;
+}
+.cotlas-social-share svg {
+    transition: .3s;
+}
+.cotlas-social-share-top svg {
+    width: 25px;
+    height: 25px;
+}
+.cotlas-author-social-links a.facebook svg, .cotlas-social-share a.facebook svg, .cotlas-social-share-aside a.facebook svg, .cotlas-social-share-aside-mobile a.facebook svg {
+    fill: #1877F2;
+}
+.cotlas-social-share a.threads svg, .cotlas-social-share a.twitter svg, .cotlas-social-share-aside a.threads svg, .cotlas-social-share-aside a.twitter svg, .cotlas-social-share-aside-mobile a.threads svg, .cotlas-social-share-aside-mobile a.twitter svg {
+    fill: #000000;
+}
+.cotlas-social-share a.whatsapp svg, .cotlas-social-share-aside a.whatsapp svg, .cotlas-social-share-aside-mobile a.whatsapp svg {
+    fill: #25D366;
+}
+.cotlas-author-social-links a.linkedin svg, .cotlas-social-share a.linkedin svg, .cotlas-social-share-aside a.linkedin svg, .cotlas-social-share-aside-mobile a.linkedin svg {
+    fill: #0A66C2;
+}
+.cotlas-social-share a.telegram svg, .cotlas-social-share-aside a.telegram svg, .cotlas-social-share-aside-mobile a.telegram svg {
+    fill: #0088cc;
+}
+.cotlas-social-share a.pinterest svg, .cotlas-social-share-aside a.pinterest svg, .cotlas-social-share-aside-mobile a.pinterest svg {
+    fill: #E60023;
+}
+.cotlas-social-share a.reddit svg, .cotlas-social-share-aside a.reddit svg, .cotlas-social-share-aside-mobile a.reddit svg {
+    fill: #FF4500;
+}
+.cotlas-social-share a.print svg {
+    fill: #555555
+}
+.cotlas-social-share-aside a:hover svg, .cotlas-social-share-aside-mobile a:hover svg, .cotlas-social-share-top a:hover svg {
+    fill: #000000 !important;
+    transform: scale(1.1);
+}
+.cotlas-social-share-footer {
+    justify-content: center;
+    padding: 0 10px
+}
+.cotlas-social-share-footer a {
+    padding: 2px 5px;
+    border-radius: 50px;
+    background: #fff;
+    color: #333;
+    min-width: 45px;
+    border: 1px solid;
+    font-weight: 600
+}
+.cotlas-social-share-footer svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 0
+}
+.cotlas-social-share-footer span {
+    display: inline;
+    margin-left: 5px
+}
+.cotlas-social-share-footer a.facebook {
+    border-color: #1877f2;
+    color: #1877f2
+}
+.cotlas-social-share-footer a.threads,.cotlas-social-share-footer a.twitter {
+    border-color: #000;
+    color: #000
+}
+.cotlas-social-share-footer a.linkedin {
+    border-color: #0a66c2;
+    color: #0a66c2
+}
+.cotlas-social-share-footer a.whatsapp {
+    border-color: #25d366;
+    color: #25d366
+}
+.cotlas-social-share-footer a.telegram {
+    border-color: #08c;
+    color: #08c
+}
+.cotlas-social-share-footer a.pinterest {
+    border-color: #e60023;
+    color: #e60023
+}
+.cotlas-social-share-footer a.reddit {
+    border-color: #ff4500;
+    color: #ff4500
+}
+.cotlas-social-share-footer a.print {
+    border-color: #555;
+    color: #555
+}
+.cotlas-social-share-footer a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15)
+}
+.cotlas-social-share-footer a.facebook:hover {
+    background: #1877f2;
+    color: #fff
+}
+.cotlas-social-share-footer a.threads:hover,.cotlas-social-share-footer a.twitter:hover {
+    background: #000;
+    color: #fff
+}
+.cotlas-social-share-footer a.linkedin:hover {
+    background: #0a66c2;
+    color: #fff
+}
+.cotlas-social-share-footer a.whatsapp:hover {
+    background: #25d366;
+    color: #fff
+}
+.cotlas-social-share-footer a.telegram:hover {
+    background: #08c;
+    color: #fff
+}
+.cotlas-social-share-footer a.pinterest:hover {
+    background: #e60023;
+    color: #fff
+}
+.cotlas-social-share-footer a.reddit:hover {
+    background: #ff4500;
+    color: #fff
+}
+.cotlas-social-share-footer a.print:hover {
+    background: #555;
+    color: #fff
+}
+.cotlas-social-share-footer a:hover svg {
+    fill: white!important
+}
+.cotlas-social-share-footer .social-platform-name {
+    font-size:14px;
+    line-height:20px;
+}
+@media (max-width: 768px) {
+    .cotlas-share-sidebar,
+    .cotlas-social-share-footer .social-platform-name,
+    .hide-on-mobile {
+        display: none;
+    }
+    .cotlas-social-share-footer a {
+        min-width: 45px !important;
+    }
+}
+
+/* ==========================================================================
+   Search — [cotlas_search] shortcode
+   ========================================================================== */
+.cotlas-search {
+    width:100%;
+    border-radius: 12px;
+}
+.cotlas-search .wp-block-search__inside-wrapper {
+    border: 1px solid #423d3d00 !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.cotlas-search input[type=search] {
+    background-color: #ffffff00;
+    border-color: #ffffff00;
+    color: #292929;
+    background-color: #ffffff00;
+    border-color: #ffffff;
+    border: 0;
+    border-top-left-radius: 12px;
+    padding: 10px 10px;
+    max-width: 100%;
+    flex: 1;
+}
+.cotlas-search .wp-block-search__button.has-icon {
+    background-color: #55555e00;
+    line-height: 0;
+    color: #292929;
+    background-color: #55555e00;
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+}
+.cotlas-search .wp-block-search__button.has-icon svg {
+    width: 2.5em;
+    height: 2.5em;
+}
+.cotlas-search input[type=search]:focus {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+.cotlas-search .wp-block-search__inside-wrapper:focus-within {
+    border-color: rgb(0 0 0 / 0%) !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Line-clamp utility classes
+   Usage: add class "clamp-1" / "clamp-2" / "clamp-3" / "clamp-4" to any element
+   ========================================================================== */
+.clamp-1, .clamp-2, .clamp-3, .clamp-4 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.clamp-1 { -webkit-line-clamp: 1; line-clamp: 1; }
+.clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+.clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+.clamp-4 { -webkit-line-clamp: 4; line-clamp: 4; }
+
+.gb-text.clamp-1,
+.gb-text.clamp-2,
+.gb-text.clamp-3,
+.gb-text.clamp-4,
+.post-title.clamp-1,
+.post-title.clamp-2,
+.post-title.clamp-3,
+.post-title.clamp-4 {
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gb-text.clamp-1,
+.post-title.clamp-1 { -webkit-line-clamp: 1; line-clamp: 1; }
+
+.gb-text.clamp-2,
+.post-title.clamp-2 { -webkit-line-clamp: 2; line-clamp: 2; }
+
+.gb-text.clamp-3,
+.post-title.clamp-3 { -webkit-line-clamp: 3; line-clamp: 3; }
+
+.gb-text.clamp-4,
+.post-title.clamp-4 { -webkit-line-clamp: 4; line-clamp: 4; }
+
+/* ── Trending Categories [trending_categories] shortcode ─────────────────── */
+.cotlas-trending-wrap {
+    width: 100%;
+}
+.cotlas-trending-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.55;
+    margin: 0 0 10px;
+}
+.cotlas-trending-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.cotlas-trending-item {
+    margin: 0;
+    padding: 0;
+}
+.cotlas-trending-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.04);
+    font-size: 13px;
+    font-weight: 500;
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+}
+.cotlas-trending-link:hover {
+    background: rgba(0, 0, 0, 0.09);
+    border-color: rgba(0, 0, 0, 0.22);
+    text-decoration: none;
+}
+.cotlas-trending-icon {
+    display: inline-flex;
+    align-items: center;
+    color: #e05c1a;
+    flex-shrink: 0;
+}
+/* ── Most Read Articles [most_read] shortcode ────────────────────────────── */
+.cotlas-most-read-wrap {
+    width: 100%;
+}
+.cotlas-most-read-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-direction: column;
+    gap: 20px;
+}
+.cotlas-most-read-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.cotlas-most-read-item:last-child {
+    border-bottom: none;
+}
+.cotlas-most-read-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 5px 0;
+    text-decoration: none;
+    color: inherit;
+}
+.cotlas-most-read-link:hover {
+    text-decoration: none;
+    color: inherit;
+}
+.cotlas-most-read-link:hover .cotlas-most-read-title {
+    text-decoration: underline;
+}
+.cotlas-most-read-thumb {
+    flex-shrink: 0;
+    width: 75px;
+    height: 75px;
+    border-radius: 0px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.06);
+}
+.cotlas-most-read-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.cotlas-most-read-thumb--no-img {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cotlas-most-read-num {
+    font-size: 20px;
+    font-weight: 700;
+    opacity: 0.2;
+}
+.cotlas-most-read-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+.cotlas-most-read-cat {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #e05c1a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cotlas-most-read-title {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Focus Bar — [focused_categories] shortcode
+   ========================================================================== */
+.cotlas-focus-bar {
+    display: flex;
+    align-items: stretch;
+    background: #fff;
+    overflow: hidden;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* Left label */
+.cotlas-focus-bar__label {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    flex-shrink: 0;
+    background: #11111100;
+    color: #161515;
+    padding-top: 0.55em;
+    padding-right: 0.85em;
+    padding-bottom: 0.55em;
+    padding-left: 0;
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: 0.9rem;
+    z-index: 1;
+}
+
+.cotlas-focus-bar__arrow {
+    font-size: 0.7em;
+    opacity: 0.85;
+}
+
+/* Scrollable track */
+.cotlas-focus-bar__track {
+    flex: 1;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    display: flex;
+    align-items: center;
+}
+.cotlas-focus-bar__track::-webkit-scrollbar {
+    display: none;
+}
+
+/* List */
+.cotlas-focus-bar__list {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 1em;
+    margin: 0;
+    padding: 0 0.5em;
+    list-style: none;
+    white-space: nowrap;
+}
+
+/* Each item */
+.cotlas-focus-bar__item {
+    display: inline-flex;
+    align-items: center;
+}
+.cotlas-focus-bar__item a {
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s;
+    background: #f5f6f8;
+    color: #1b1818;
+    border-radius: 2em;
+    padding: 0.5em 1em;
+}
+.cotlas-focus-bar__item a:hover {
+    background: #151516;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+/* Separator between items */
+.cotlas-focus-bar__item + .cotlas-focus-bar__item::before {
+    content: '';
+    display: inline-block;
+    width: 1px;
+    height: 1em;
+    background: #ddd;
+    flex-shrink: 0;
+}
+
+/* Highlighted pill (first / specified item) */
+.cotlas-focus-bar__item--highlight a {
+    background: #035eff;
+    color: #fff !important;
+    border-radius: 2em;
+    padding: 0.5em 1em;
+    font-weight: 700;
+}
+.cotlas-focus-bar__item--highlight a:hover {
+    background: #c94c00;
+    color: #fff !important;
+}
+
+/* No separator before or after the highlight pill */
+.cotlas-focus-bar__item--highlight::before {
+    display: none !important;
+}
+.cotlas-focus-bar__item--highlight + .cotlas-focus-bar__item::before {
+    display: none !important;
+}
