@@ -1,0 +1,234 @@
+/**
+ * Cotlas Auth Forms – Base Styles
+ *
+ * Scoped entirely to .cotlas-auth-wrap so these styles never bleed into
+ * page layout. All values use custom properties with sensible defaults so
+ * theme authors can override them with a single block in their CSS:
+ *
+ *   .cotlas-auth-wrap {
+ *     --cotlas-accent:      #your-brand-color;
+ *     --cotlas-radius:      12px;
+ *     --cotlas-font-size:   16px;
+ *   }
+ *
+ * Works with any page builder (Elementor, GeneratePress blocks, etc.)
+ * because it makes no assumptions about the surrounding DOM.
+ */
+
+/* ── Custom properties ─────────────────────────────────────────────────── */
+.cotlas-auth-wrap {
+    --cotlas-accent:       #2563eb;
+    --cotlas-accent-dark:  #1d4ed8;
+    --cotlas-accent-ring:  rgba(37, 99, 235, 0.18);
+    --cotlas-text:         #0f172a;
+    --cotlas-text-muted:   #475569;
+    --cotlas-label:        #334155;
+    --cotlas-border:       #d1d5db;
+    --cotlas-bg-input:     #ffffff;
+    --cotlas-bg-form:      transparent;
+    --cotlas-radius:       8px;
+    --cotlas-radius-btn:   8px;
+    --cotlas-font-size:    15px;
+    --cotlas-line-height:  1.55;
+
+    position: relative;
+    font-size: var(--cotlas-font-size);
+    line-height: var(--cotlas-line-height);
+    color: var(--cotlas-text);
+    background: var(--cotlas-bg-form);
+    box-sizing: border-box;
+}
+
+.cotlas-auth-wrap *,
+.cotlas-auth-wrap *::before,
+.cotlas-auth-wrap *::after {
+    box-sizing: inherit;
+}
+
+/* ── Messages ──────────────────────────────────────────────────────────── */
+.cotlas-auth-messages {
+    margin-bottom: 18px;
+    padding: 12px 16px;
+    border-radius: var(--cotlas-radius);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.cotlas-msg-error {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+}
+
+.cotlas-msg-success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #15803d;
+}
+
+/* ── Form fields ───────────────────────────────────────────────────────── */
+.cotlas-auth-form .cotlas-field {
+    margin-bottom: 18px;
+}
+
+.cotlas-auth-form label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cotlas-label);
+    letter-spacing: 0.01em;
+}
+
+.cotlas-auth-form input[type="text"],
+.cotlas-auth-form input[type="email"],
+.cotlas-auth-form input[type="password"] {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--cotlas-border);
+    border-radius: var(--cotlas-radius);
+    background: var(--cotlas-bg-input);
+    color: var(--cotlas-text);
+    font-size: var(--cotlas-font-size);
+    line-height: var(--cotlas-line-height);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    outline: none;
+    appearance: none;
+}
+
+.cotlas-auth-form input[type="text"]:focus,
+.cotlas-auth-form input[type="email"]:focus,
+.cotlas-auth-form input[type="password"]:focus {
+    border-color: var(--cotlas-accent);
+    box-shadow: 0 0 0 3px var(--cotlas-accent-ring);
+}
+
+.cotlas-auth-form input[type="text"]::placeholder,
+.cotlas-auth-form input[type="email"]::placeholder,
+.cotlas-auth-form input[type="password"]::placeholder {
+    color: #9ca3af;
+}
+
+/* ── Remember me checkbox row ──────────────────────────────────────────── */
+.cotlas-auth-form .cotlas-remember label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cotlas-text-muted);
+    cursor: pointer;
+}
+
+.cotlas-auth-form .cotlas-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cotlas-accent);
+    cursor: pointer;
+}
+
+/* ── Submit button ─────────────────────────────────────────────────────── */
+.cotlas-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 24px;
+    border: none;
+    border-radius: var(--cotlas-radius-btn);
+    cursor: pointer;
+    font-size: var(--cotlas-font-size);
+    font-weight: 600;
+    transition: background-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+    text-decoration: none;
+}
+
+.cotlas-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.cotlas-btn-primary {
+    background: var(--cotlas-accent);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.22);
+}
+
+.cotlas-btn-primary:hover:not(:disabled),
+.cotlas-btn-primary:focus:not(:disabled) {
+    background: var(--cotlas-accent-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.32);
+}
+
+/* ── Button spinner ────────────────────────────────────────────────────── */
+.cotlas-btn-spinner[hidden] {
+    display: none;
+}
+
+.cotlas-btn-spinner {
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: cotlas-spin 0.65s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes cotlas-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Footer links ──────────────────────────────────────────────────────── */
+.cotlas-auth-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 16px;
+    font-size: 13px;
+}
+
+.cotlas-auth-links a {
+    color: var(--cotlas-accent);
+    text-decoration: none;
+    transition: opacity 0.18s ease;
+}
+
+.cotlas-auth-links a:hover,
+.cotlas-auth-links a:focus {
+    opacity: 0.75;
+    text-decoration: underline;
+}
+
+/* ── Honeypot – absolutely hidden, inaccessible to screen readers too ──── */
+.cotlas-hp {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+}
+
+/* ── Notice (e.g. registration disabled) ──────────────────────────────── */
+.cotlas-auth-notice {
+    padding: 12px 16px;
+    border: 1px solid #fde68a;
+    border-radius: var(--cotlas-radius);
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 14px;
+}
+
+/* ── Cloudflare Turnstile alignment ────────────────────────────────────── */
+.cotlas-auth-form .cf-turnstile {
+    margin-top: 4px;
+}

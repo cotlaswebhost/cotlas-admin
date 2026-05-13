@@ -1,0 +1,1269 @@
+/*
+ * Cotlas Admin Theme Styles
+ * SaaS-inspired light admin skin for WordPress dashboard.
+ */
+
+body.cotlas-admin-light {
+	--cotlas-bg: #f5f7fb;
+	--cotlas-surface: #ffffff;
+	--cotlas-surface-soft: #fafbff;
+	--cotlas-border: #e5e9f2;
+	--cotlas-border-strong: #d6ddea;
+	--cotlas-text: #192434;
+	--cotlas-text-soft: #6c7a90;
+	--cotlas-heading: #0f1726;
+	--cotlas-accent: #377dff;
+	--cotlas-accent-soft: #eef4ff;
+	--cotlas-shadow: 0 18px 45px rgba(15, 23, 38, 0.06);
+	--cotlas-shadow-soft: 0 8px 24px rgba(15, 23, 38, 0.05);
+	background: linear-gradient(180deg, #f7f8fc 0%, #f3f6fb 100%);
+	color: var(--cotlas-text);
+	font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+body.cotlas-admin-light #wpwrap,
+body.cotlas-admin-light #wpcontent,
+body.cotlas-admin-light #wpbody,
+body.cotlas-admin-light #wpbody-content {
+	background: transparent;
+}
+
+body.cotlas-admin-light #adminmenumain {
+	position: fixed;
+	top: 36px;
+	left: 5px;
+	bottom: 5px;
+	width: 200px;
+	z-index: 100;
+}
+
+body.cotlas-admin-light #adminmenuback,
+body.cotlas-admin-light #adminmenuwrap,
+body.cotlas-admin-light #adminmenu {
+	width: 200px;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+body.cotlas-admin-light #adminmenuwrap {
+	position: relative;
+	height: 100%;
+	padding-top: 10px;
+    padding-bottom: 30px;
+	border-right: 1px solid var(--cotlas-border);
+	background: rgba(255, 255, 255, 0.72);
+	backdrop-filter: blur(10px);
+	box-shadow: 8px 0 30px rgba(15, 23, 38, 0.03);
+}
+
+body.cotlas-admin-light #adminmenuwrap:before {
+    content: "";
+    display: flex;
+    width: 122px;
+    height: 35px;
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    margin: 0 28px 0px;
+    background: url(../img/cotlas-logo-light.webp) center / contain no-repeat;
+    justify-content: center;
+}
+
+body.cotlas-admin-light #adminmenu {
+	margin: 0;
+	padding: 0 8px 18px;
+	overflow-y: auto;
+	max-height: 100%;
+	background: transparent;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(108, 122, 144, 0.28) transparent;
+}
+
+body.cotlas-admin-light #adminmenu::-webkit-scrollbar {
+	width: 6px;
+}
+
+body.cotlas-admin-light #adminmenu::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+body.cotlas-admin-light #adminmenu::-webkit-scrollbar-thumb {
+	background: rgba(108, 122, 144, 0.18);
+	border-radius: 999px;
+}
+
+body.cotlas-admin-light #adminmenu:hover::-webkit-scrollbar-thumb {
+	background: rgba(108, 122, 144, 0.3);
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout {
+	position: fixed;
+	width: 180px;
+	min-width: 180px;
+	padding: 10px;
+	background: rgba(255, 255, 255, 0.98);
+	border: 1px solid var(--cotlas-border);
+	border-radius: 6px;
+	box-shadow: var(--cotlas-shadow-soft);
+	z-index: 9999;
+	backdrop-filter: blur(12px);
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout[hidden] {
+	display: none;
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout .wp-submenu-head {
+	display: none;
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout ul,
+body.cotlas-admin-light .cotlas-folded-flyout li {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout a {
+	display: block;
+	padding: 9px 12px;
+	border-radius: 8px;
+	color: #5e5e5e;
+	text-decoration: none;
+}
+
+body.cotlas-admin-light .cotlas-folded-flyout a:hover,
+body.cotlas-admin-light .cotlas-folded-flyout a:focus,
+body.cotlas-admin-light .cotlas-folded-flyout li.current a {
+	color: var(--cotlas-heading);
+	background: #e5eeff;
+}
+
+body.cotlas-admin-light #adminmenu a {
+	color: #626262;
+	transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top {
+	margin: 5px 0;
+	width: 100%;
+	background: transparent;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top {
+	position: relative;
+	padding-right: 34px;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top:after {
+	content: "";
+	position: absolute;
+	right: 14px;
+	top: 50%;
+	width: 17px;
+	height: 17px;
+	background-color: #8a94a6;
+	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	-webkit-mask-repeat: no-repeat;
+	-webkit-mask-position: center;
+	-webkit-mask-size: 17px 17px;
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23000' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	mask-repeat: no-repeat;
+	mask-position: center;
+	mask-size: 17px 17px;
+	transform: translateY(-50%);
+	opacity: 0.55;
+	transition: transform 0.18s ease, opacity 0.18s ease, background-color 0.18s ease;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top.cotlas-menu-open > a.menu-top:after,
+body.cotlas-admin-light #adminmenu li.menu-top.current.wp-has-submenu > a.menu-top:after,
+body.cotlas-admin-light #adminmenu li.menu-top.wp-has-current-submenu > a.menu-top:after,
+body.cotlas-admin-light #adminmenu li.menu-top.opensub > a.menu-top:after {
+	display: block;
+	background-color: var(--cotlas-accent);
+	transform: translateY(-50%) rotate(180deg);
+	opacity: 0.9;
+}
+body.cotlas-admin-light #adminmenu .menu-top > a.menu-top {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 42px;
+	padding: 0 14px;
+	border: 1px solid transparent;
+	border-radius: 5px;
+	box-sizing: border-box;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.25;
+	background: transparent;
+}
+
+body.cotlas-admin-light ul#adminmenu a.wp-has-current-submenu:after,
+body.cotlas-admin-light ul#adminmenu > li.current > a.current:after {
+	display: none;
+}
+
+body.cotlas-admin-light #adminmenu .wp-menu-arrow,
+body.cotlas-admin-light #adminmenu .wp-menu-arrow div,
+body.cotlas-admin-light #adminmenu .wp-menu-arrow:before,
+body.cotlas-admin-light #adminmenu .wp-menu-arrow div:before,
+body.cotlas-admin-light #adminmenu .wp-menu-arrow:after,
+body.cotlas-admin-light #adminmenu .wp-menu-arrow div:after {
+	display: none !important;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top:hover > a.menu-top,
+body.cotlas-admin-light #adminmenu li.opensub > a.menu-top,
+body.cotlas-admin-light #adminmenu li > a.menu-top:focus {
+	color: var(--cotlas-heading);
+	background: #e7eefb;
+	border-color: #d3e3f9;
+	box-shadow: none;
+}
+
+body.cotlas-admin-light #adminmenu li.current > a.menu-top,
+body.cotlas-admin-light #adminmenu li.wp-has-current-submenu > a.wp-has-current-submenu,
+body.cotlas-admin-light #adminmenu li.current a.menu-top,
+body.cotlas-admin-light #adminmenu li.wp-has-current-submenu a.wp-has-current-submenu {
+	color: var(--cotlas-heading);
+	background: #dde8ff;
+	border-color: #ececec;
+	box-shadow: inset 3px 0 0 var(--cotlas-accent);
+}
+
+body.cotlas-admin-light #adminmenu div.wp-menu-image {
+	float: none;
+	width: 20px;
+	height: 20px;
+	min-width: 20px;
+	margin: 0;
+}
+
+body.cotlas-admin-light #adminmenu div.wp-menu-image:before {
+	width: 20px;
+	height: 20px;
+	font-size: 18px;
+	line-height: 20px;
+	color: #666666;
+    padding: 2px 0;
+}
+
+body.cotlas-admin-light #adminmenu li.menu-top:hover div.wp-menu-image:before,
+body.cotlas-admin-light #adminmenu li.menu-top.opensub div.wp-menu-image:before,
+body.cotlas-admin-light #adminmenu li.menu-top.current div.wp-menu-image:before,
+body.cotlas-admin-light #adminmenu li.menu-top.wp-has-current-submenu div.wp-menu-image:before,
+body.cotlas-admin-light #adminmenu li.menu-top > a.menu-top:focus div.wp-menu-image:before {
+	color: var(--cotlas-accent);
+}
+
+body.cotlas-admin-light #adminmenu div.wp-menu-name {
+	padding: 0;
+	color: inherit;
+	font-size: 14px;
+	line-height: 1.25;
+	font-weight: 500;
+	white-space: normal;
+	word-break: normal;
+	overflow: visible;
+}
+
+body.cotlas-admin-light #adminmenu li.wp-menu-separator,
+body.cotlas-admin-light #adminmenu li.wp-menu-separator .separator {
+	display: none;
+}
+
+body.cotlas-admin-light #adminmenu .wp-submenu {
+	position: relative;
+	left: auto;
+	top: auto;
+	margin: 4px 0 10px;
+	padding: 4px 0 4px 20px;
+	width: auto;
+	min-width: 0;
+	display: none;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+}
+
+body.cotlas-admin-light #adminmenu li.current .wp-submenu,
+body.cotlas-admin-light #adminmenu li.wp-has-current-submenu .wp-submenu,
+body.cotlas-admin-light #adminmenu li.cotlas-menu-open .wp-submenu {
+	display: block;
+}
+
+body.cotlas-admin-light #adminmenu .wp-submenu .wp-submenu-head {
+	display: none;
+}
+
+body.cotlas-admin-light #adminmenu .wp-submenu a {
+	display: block;
+	margin: 0;
+	padding: 8px 12px;
+	border-radius: 5px;
+	color: #5e5e5e;
+	font-size: 13px;
+	line-height: 1.35;
+}
+
+body.cotlas-admin-light #adminmenu .wp-submenu a:hover,
+body.cotlas-admin-light #adminmenu .wp-submenu a:focus,
+body.cotlas-admin-light #adminmenu .wp-submenu li.current a {
+	color: var(--cotlas-heading);
+	background: #e5eeff;
+}
+
+body.cotlas-admin-light #adminmenu .awaiting-mod,
+body.cotlas-admin-light #adminmenu .update-plugins,
+body.cotlas-admin-light #adminmenu .menu-counter {
+	min-width: 20px;
+	height: 20px;
+	margin-left: auto;
+	padding: 0 6px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--cotlas-accent-soft);
+	color: var(--cotlas-accent);
+	font-size: 11px;
+	line-height: 20px;
+	box-shadow: none;
+}
+
+body.cotlas-admin-light #collapse-menu, body.cotlas-admin-light #adminmenu li#collapse-menu {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-top: 1px solid var(--cotlas-border);
+    background: transparent;
+}
+
+body.cotlas-admin-light #collapse-button,
+body.cotlas-admin-light #collapse-button:hover {
+	color: var(--cotlas-text-soft);
+}
+
+body.cotlas-admin-light #wpcontent,
+body.cotlas-admin-light #wpfooter,
+body.cotlas-admin-light.folded #wpcontent,
+body.cotlas-admin-light.folded #wpfooter {
+	margin-left: 200px;
+}
+
+body.cotlas-admin-light #wpadminbar {
+	background: rgba(255, 255, 255, 0.92);
+	height: 42px;
+	border-bottom: 1px solid var(--cotlas-border);
+	box-shadow: 0 4px 18px rgba(15, 23, 38, 0.04);
+	backdrop-filter: blur(14px);
+}
+
+body.cotlas-admin-light #wpadminbar #wp-admin-bar-wp-logo {
+	display: none;
+}
+
+body.cotlas-admin-light #wpadminbar .quicklinks > ul > li > a,
+body.cotlas-admin-light #wpadminbar .quicklinks > ul > li > .ab-empty-item,
+body.cotlas-admin-light #wpadminbar .ab-item,
+body.cotlas-admin-light #wpadminbar a.ab-item {
+	display: flex;
+	align-items: center;
+	height: 42px;
+	line-height: 42px;
+}
+
+body.cotlas-admin-light #wpadminbar .ab-item,
+body.cotlas-admin-light #wpadminbar a.ab-item,
+body.cotlas-admin-light #wpadminbar > #wp-toolbar span.ab-label,
+body.cotlas-admin-light #wpadminbar > #wp-toolbar span.noticon,
+body.cotlas-admin-light #wpadminbar .quicklinks .menupop ul li a,
+body.cotlas-admin-light #wpadminbar .quicklinks .menupop.hover ul li a,
+body.cotlas-admin-light #wpadminbar .shortlink-input {
+	color: var(--cotlas-text);
+}
+
+body.cotlas-admin-light #wpadminbar .ab-icon:before,
+body.cotlas-admin-light #wpadminbar .ab-item:before,
+body.cotlas-admin-light #wpadminbar .ab-label:before,
+body.cotlas-admin-light #wpadminbar #adminbarsearch:before,
+body.cotlas-admin-light #wpadminbar .menupop .ab-item:after {
+	color: #878b93;
+    vertical-align: middle;
+    top: 0px !important;
+    padding: 0px 0 !important;
+}
+
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li > .ab-item .ab-icon,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li > .ab-item .ab-label {
+	display: inline-flex;
+	align-items: center;
+}
+
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li:hover > .ab-item,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li.hover > .ab-item,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li > .ab-item:focus,
+body.cotlas-admin-light #wpadminbar.nojq .quicklinks .ab-top-menu > li > .ab-item:focus {
+	background: #f7f9fd;
+	color: var(--cotlas-heading);
+}
+
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li:hover > .ab-item .ab-icon:before,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li.hover > .ab-item .ab-icon:before,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li > .ab-item:focus .ab-icon:before,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li:hover > .ab-item:before,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li.hover > .ab-item:before,
+body.cotlas-admin-light #wpadminbar .ab-top-menu > li > .ab-item:focus:before {
+	color: var(--cotlas-accent);
+}
+
+body.cotlas-admin-light #wpadminbar .menupop .ab-sub-wrapper,
+body.cotlas-admin-light #wpadminbar .shortlink-input {
+	background: #ffffff;
+	border: 1px solid var(--cotlas-border);
+	box-shadow: var(--cotlas-shadow-soft);
+}
+
+body.cotlas-admin-light #wpbody-content {
+	padding-bottom: 42px;
+	padding-top: 10px;
+}
+
+body.cotlas-admin-light .wrap {
+	margin: 24px 28px 0;
+	max-width: 1440px;
+}
+
+body.cotlas-admin-light .wrap > h1,
+body.cotlas-admin-light .wrap .wp-heading-inline,
+body.cotlas-admin-light .wrap > h2 {
+	color: var(--cotlas-heading);
+	font-size: 31px;
+	font-weight: 700;
+	letter-spacing: -0.03em;
+}
+
+body.cotlas-admin-light .page-title-action {
+	padding: 3px 12px;
+	border: 1px solid var(--cotlas-border);
+	border-radius: 6px;
+	background: #068fec;
+	color: var(--cotlas-heading);
+	box-shadow: none;
+}
+
+body.cotlas-admin-light .notice,
+body.cotlas-admin-light div.updated,
+body.cotlas-admin-light div.error,
+body.cotlas-admin-light .update-nag,
+body.cotlas-admin-light .card,
+body.cotlas-admin-light .postbox,
+body.cotlas-admin-light .stuffbox,
+body.cotlas-admin-light .widget,
+body.cotlas-admin-light .welcome-panel,
+body.cotlas-admin-light #dashboard-widgets .postbox-container .empty-container,
+body.cotlas-admin-light .wp-list-table,
+body.cotlas-admin-light .widefat {
+	border: 1px solid var(--cotlas-border);
+	border-radius: 6px;
+	background: var(--cotlas-surface);
+	box-shadow: var(--cotlas-shadow-soft);
+}
+
+body.cotlas-admin-light .postbox,
+body.cotlas-admin-light .stuffbox,
+body.cotlas-admin-light .widget,
+body.cotlas-admin-light .card,
+body.cotlas-admin-light .welcome-panel {
+	overflow: hidden;
+}
+
+body.cotlas-admin-light .postbox-header,
+body.cotlas-admin-light .stuffbox > h3,
+body.cotlas-admin-light .widget-top {
+	padding: 18px 20px;
+	border-bottom: 1px solid #edf1f6;
+	background: transparent;
+}
+
+body.cotlas-admin-light .postbox .hndle,
+body.cotlas-admin-light .widget-title h3,
+body.cotlas-admin-light .stuffbox > h3 {
+	color: var(--cotlas-heading);
+	font-size: 17px;
+	font-weight: 600;
+}
+
+body.cotlas-admin-light .postbox .inside,
+body.cotlas-admin-light .stuffbox .inside,
+body.cotlas-admin-light .widget .inside,
+body.cotlas-admin-light .card,
+body.cotlas-admin-light .welcome-panel-content {
+	color: var(--cotlas-text-soft);
+}
+
+body.cotlas-admin-light .card,
+body.cotlas-admin-light .welcome-panel {
+	padding: 22px;
+}
+
+body.cotlas-admin-light #dashboard-widgets-wrap {
+	margin-top: 16px;
+}
+
+body.cotlas-admin-light #dashboard-widgets .meta-box-sortables {
+	min-height: 140px;
+}
+
+body.cotlas-admin-light #dashboard-widgets .postbox-container .empty-container {
+	border-style: dashed;
+	border-width: 2px;
+	background: rgba(255, 255, 255, 0.4);
+	box-shadow: none;
+}
+
+body.cotlas-admin-light .wp-list-table,
+body.cotlas-admin-light .widefat {
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+body.cotlas-admin-light .wp-list-table thead th,
+body.cotlas-admin-light .wp-list-table tfoot th,
+body.cotlas-admin-light .widefat thead th,
+body.cotlas-admin-light .widefat tfoot th {
+	background: #fbfcfe;
+	color: var(--cotlas-heading);
+	border-bottom: 1px solid #edf1f6;
+	font-weight: 600;
+}
+
+body.cotlas-admin-light .wp-list-table tbody tr:hover,
+body.cotlas-admin-light .widefat tbody tr:hover {
+	background: #fafcff;
+}
+
+body.cotlas-admin-light .plugins .active td,
+body.cotlas-admin-light .plugins .active th {
+	background: #f7fbff;
+}
+
+body.cotlas-admin-light input[type="text"],
+body.cotlas-admin-light input[type="search"],
+body.cotlas-admin-light input[type="password"],
+body.cotlas-admin-light input[type="email"],
+body.cotlas-admin-light input[type="number"],
+body.cotlas-admin-light input[type="url"],
+body.cotlas-admin-light textarea,
+body.cotlas-admin-light select {
+	min-height: 42px;
+	padding: 0 14px;
+	border: 1px solid var(--cotlas-border-strong);
+	border-radius: 6px;
+	background: #ffffff;
+	color: var(--cotlas-text);
+	box-shadow: inset 0 1px 2px rgba(15, 23, 38, 0.02);
+}
+
+body.cotlas-admin-light textarea {
+	min-height: 120px;
+	padding: 12px 14px;
+}
+
+body.cotlas-admin-light input[type="text"]:focus,
+body.cotlas-admin-light input[type="search"]:focus,
+body.cotlas-admin-light input[type="password"]:focus,
+body.cotlas-admin-light input[type="email"]:focus,
+body.cotlas-admin-light input[type="number"]:focus,
+body.cotlas-admin-light input[type="url"]:focus,
+body.cotlas-admin-light textarea:focus,
+body.cotlas-admin-light select:focus {
+	border-color: #c8d8ff;
+	box-shadow: 0 0 0 4px rgba(55, 125, 255, 0.12);
+	outline: 0;
+}
+
+body.cotlas-admin-light .button,
+body.cotlas-admin-light .button-secondary {
+	min-height: 40px;
+	padding: 0 14px;
+	border: 1px solid var(--cotlas-border);
+	border-radius: 6px;
+	background: #ffffff;
+	color: var(--cotlas-heading);
+	box-shadow: none;
+}
+
+body.cotlas-admin-light .button:hover,
+body.cotlas-admin-light .button-secondary:hover,
+body.cotlas-admin-light .button:focus,
+body.cotlas-admin-light .button-secondary:focus {
+	border-color: #cfdaec;
+	background: #fbfcff;
+	color: var(--cotlas-heading);
+}
+
+body.cotlas-admin-light .button-primary {
+	border-color: var(--cotlas-accent);
+	background: var(--cotlas-accent);
+	color: #ffffff;
+	box-shadow: 0 10px 20px rgba(55, 125, 255, 0.16);
+}
+
+body.cotlas-admin-light .button-primary:hover,
+body.cotlas-admin-light .button-primary:focus {
+	border-color: #2c6be0;
+	background: #2c6be0;
+	color: #ffffff;
+}
+
+body.cotlas-admin-light .subsubsub,
+body.cotlas-admin-light .tablenav,
+body.cotlas-admin-light .view-switch a,
+body.cotlas-admin-light .page-title-action,
+body.cotlas-admin-light .row-title {
+	color: #ffffff;
+	font-weight: 500;
+}
+
+body.cotlas-admin-light .subsubsub a.current,
+body.cotlas-admin-light .tablenav .displaying-num,
+body.cotlas-admin-light .row-title,
+body.cotlas-admin-light a {
+	color: #122549;
+}
+
+body.cotlas-admin-light .subsubsub a:hover,
+body.cotlas-admin-light .row-title:hover,
+body.cotlas-admin-light a:hover {
+	color: #2c6be0;
+}
+
+body.cotlas-admin-light #wpfooter {
+	color: var(--cotlas-text-soft);
+	background: transparent;
+}
+
+body.cotlas-admin-light #wpfooter p {
+	color: inherit;
+}
+
+@media screen and (min-width: 961px) {
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu:hover .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu:focus-within .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu.opensub .wp-submenu {
+		position: relative !important;
+		left: auto !important;
+		top: auto !important;
+		width: auto !important;
+		min-width: 0 !important;
+		margin: 4px 0 10px !important;
+		padding: 4px 0 4px 20px !important;
+		border: 0 !important;
+		background: transparent !important;
+		box-shadow: none !important;
+	}
+
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu:hover:not(.current):not(.wp-has-current-submenu):not(.cotlas-menu-open) .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu:focus-within:not(.current):not(.wp-has-current-submenu):not(.cotlas-menu-open) .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-submenu.opensub:not(.current):not(.wp-has-current-submenu):not(.cotlas-menu-open) .wp-submenu {
+		display: none !important;
+	}
+
+	body.cotlas-admin-light:not(.folded) #adminmenu li.current .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.wp-has-current-submenu .wp-submenu,
+	body.cotlas-admin-light:not(.folded) #adminmenu li.cotlas-menu-open .wp-submenu {
+		display: block !important;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenumain,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenuback,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenuwrap,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu {
+		width: 200px;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #wpcontent,
+	body.cotlas-admin-light.auto-fold:not(.folded) #wpfooter {
+		margin-left: 220px;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu div.wp-menu-image {
+		position: relative;
+		left: auto;
+		margin: 0;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu div.wp-menu-name {
+		position: static;
+		width: auto;
+		height: auto;
+		overflow: visible;
+		clip: auto;
+		clip-path: none;
+		white-space: normal;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu .menu-top > a.menu-top {
+		justify-content: flex-start;
+		padding: 0 14px;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu li.menu-top.wp-has-submenu > a.menu-top {
+		padding-right: 34px;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu li.menu-top.wp-has-submenu > a.menu-top:after {
+		display: block;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu .wp-submenu {
+		position: relative !important;
+		left: auto !important;
+		top: auto !important;
+		width: auto !important;
+		min-width: 0 !important;
+		margin: 4px 0 10px;
+		padding: 4px 0 4px 44px;
+		box-shadow: none;
+		border: 0;
+		background: transparent;
+	}
+
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu li.current .wp-submenu,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu li.wp-has-current-submenu .wp-submenu,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu li.cotlas-menu-open .wp-submenu {
+		display: block !important;
+	}
+
+	body.cotlas-admin-light.folded #adminmenumain,
+	body.cotlas-admin-light.folded #adminmenu,
+	body.cotlas-admin-light.folded #adminmenuback,
+	body.cotlas-admin-light.folded #adminmenuwrap {
+		width: 64px;
+	}
+
+	body.cotlas-admin-light.folded #wpcontent,
+	body.cotlas-admin-light.folded #wpfooter {
+		margin-left: 80px;
+	}
+
+	body.cotlas-admin-light.folded #adminmenuwrap {
+		padding-top: 12px;
+		overflow: visible;
+		z-index: 9990;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu {
+		overflow-y: auto;
+		overflow-x: hidden;
+		max-height: 100%;
+	}
+
+	body.cotlas-admin-light.folded #adminmenuwrap:before {
+		content: "";
+		width: 30px;
+        height: 30px;
+        padding: 5px;
+        margin: 0 auto 0px;
+		background: url("../img/cotlas-logo.png") center / contain no-repeat;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu div.wp-menu-image {
+		position: relative;
+		left: auto;
+		margin: 0 auto;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu div.wp-menu-name {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		clip: rect(1px, 1px, 1px, 1px);
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.menu-top {
+		position: relative;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu .menu-top > a.menu-top {
+		justify-content: center;
+		min-height: 44px;
+		padding: 0;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.menu-top.wp-has-submenu > a.menu-top {
+		padding-right: 0;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.menu-top.wp-has-submenu > a.menu-top:after {
+		display: none;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu .wp-submenu {
+		display: none;
+		position: absolute;
+		left: calc(100% + 12px);
+		top: -2px;
+		width: 160px;
+		min-width: 160px;
+		margin: 0;
+		padding: 10px;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.cotlas-menu-open {
+		z-index: 9992;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.current .wp-submenu,
+	body.cotlas-admin-light.folded #adminmenu li.wp-has-current-submenu .wp-submenu,
+	body.cotlas-admin-light.folded #adminmenu li.opensub .wp-submenu {
+		display: none;
+	}
+
+	body.cotlas-admin-light.folded #adminmenu li.cotlas-menu-open .wp-submenu {
+		display: none;
+	}
+
+	body.cotlas-admin-light.folded #collapse-menu,
+	body.cotlas-admin-light.folded #adminmenu li#collapse-menu,
+	body.cotlas-admin-light.folded #adminmenu li#collapse-menu {
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
+@media screen and (max-width: 1180px) and (min-width: 961px) {
+	body.cotlas-admin-light #adminmenumain,
+	body.cotlas-admin-light #adminmenuback,
+	body.cotlas-admin-light #adminmenuwrap,
+	body.cotlas-admin-light #adminmenu,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenumain,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenuback,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenuwrap,
+	body.cotlas-admin-light.auto-fold:not(.folded) #adminmenu {
+		width: 198px;
+	}
+
+	body.cotlas-admin-light #wpcontent,
+	body.cotlas-admin-light #wpfooter,
+	body.cotlas-admin-light.auto-fold:not(.folded) #wpcontent,
+	body.cotlas-admin-light.auto-fold:not(.folded) #wpfooter {
+		margin-left: 214px;
+	}
+
+	body.cotlas-admin-light #adminmenuwrap:before {
+		width: 150px;
+		height: 44px;
+		margin: 0 16px 12px;
+	}
+
+	body.cotlas-admin-light .wrap {
+		margin-right: 18px;
+	}
+}
+
+@media screen and (max-width: 960px) and (min-width: 783px) {
+	body.cotlas-admin-light #adminmenumain,
+	body.cotlas-admin-light #adminmenuback,
+	body.cotlas-admin-light #adminmenuwrap,
+	body.cotlas-admin-light #adminmenu {
+		width: 72px;
+	}
+
+	body.cotlas-admin-light #adminmenumain {
+		position: fixed;
+		top: 42px;
+		left: 0px;
+        bottom: 0px;
+		margin: 0;
+		z-index: 9990;
+	}
+
+	body.cotlas-admin-light #adminmenuwrap {
+		padding-top: 12px;
+		overflow: visible;
+		border: 1px solid var(--cotlas-border);
+		border-radius: 6px;
+		box-shadow: var(--cotlas-shadow-soft);
+	}
+
+	body.cotlas-admin-light #adminmenu {
+		padding: 0 8px 18px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		max-height: 100%;
+	}
+
+	body.cotlas-admin-light #adminmenuwrap:before {
+		width: 32px;
+		height: 32px;
+		margin: 0 auto 8px;
+		padding: 4px;
+		background-image: url("../img/cotlas-logo.png");
+	}
+
+	body.cotlas-admin-light #adminmenu div.wp-menu-image {
+		position: relative;
+		left: auto;
+		margin: 0 auto;
+	}
+
+	body.cotlas-admin-light #adminmenu div.wp-menu-name {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		clip: rect(1px, 1px, 1px, 1px);
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top {
+		position: relative;
+	}
+
+	body.cotlas-admin-light #adminmenu .menu-top > a.menu-top {
+		justify-content: center;
+		min-height: 44px;
+		padding: 0;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top {
+		padding-right: 0;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top:after {
+		display: none;
+	}
+
+	body.cotlas-admin-light #adminmenu .wp-submenu,
+	body.cotlas-admin-light #adminmenu li.current .wp-submenu,
+	body.cotlas-admin-light #adminmenu li.wp-has-current-submenu .wp-submenu,
+	body.cotlas-admin-light #adminmenu li.cotlas-menu-open .wp-submenu {
+		display: none !important;
+	}
+
+	body.cotlas-admin-light #wpcontent,
+	body.cotlas-admin-light #wpfooter {
+		margin-left: 96px;
+	}
+
+	body.cotlas-admin-light .wrap {
+		margin: 24px 16px 0;
+	}
+
+	body.cotlas-admin-light #collapse-menu,
+	body.cotlas-admin-light #adminmenu li#collapse-menu {
+		display: none;
+	}
+}
+
+@media screen and (max-width: 782px) {
+	body.cotlas-admin-light #adminmenumain {
+		position: fixed;
+		top: 42px;
+		left: 0;
+		bottom: 0;
+		width: 0;
+		margin: 0;
+		z-index: 10020;
+		pointer-events: none;
+	}
+
+	body.cotlas-admin-light #adminmenuback {
+		position: fixed;
+		inset: 42px 0 0 0;
+		width: 100vw;
+		background: rgba(15, 23, 38, 0.3);
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.2s ease;
+	}
+
+	body.cotlas-admin-light #adminmenuwrap {
+		position: fixed;
+		top: 42px;
+		left: 0;
+		bottom: 0;
+		width: min(235px, calc(100vw - 100px));
+		height: auto;
+		padding: 10px 0 20px;
+		border: 0;
+		border-radius: 0 5px 5px 0;
+		background: rgba(255, 255, 255, 0.98);
+		box-shadow: 18px 0 48px rgba(15, 23, 38, 0.18);
+		transform: translateX(-104%);
+		transition: transform 0.22s ease;
+		backdrop-filter: blur(14px);
+		overflow-y: auto;
+		overflow-x: hidden;
+	}
+
+	body.cotlas-admin-light #wpwrap.wp-responsive-open #adminmenumain,
+	#wpwrap.wp-responsive-open #adminmenumain {
+		width: 100%;
+		pointer-events: auto;
+	}
+
+	body.cotlas-admin-light #wpwrap.wp-responsive-open #adminmenuback,
+	#wpwrap.wp-responsive-open #adminmenuback {
+		opacity: 1;
+		visibility: visible;
+	}
+
+	body.cotlas-admin-light #wpwrap.wp-responsive-open #adminmenuwrap,
+	#wpwrap.wp-responsive-open #adminmenuwrap {
+		transform: translateX(0);
+	}
+
+	body.cotlas-admin-light #adminmenu,
+	body.cotlas-admin-light.folded #adminmenu,
+	body.cotlas-admin-light.auto-fold #adminmenu {
+		width: 100%;
+		max-height: 100%;
+		padding: 0 10px 20px;
+		overflow-y: auto;
+		overflow-x: hidden;
+		margin: 10px 0px 0px 0px;
+	}
+
+	body.cotlas-admin-light #adminmenuwrap:before {
+		width: 120px;
+		height: 15px;
+		margin: 0 20px 12px;
+		background-image: url("../img/2.png");
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top {
+		width: 100%;
+		margin: 4px 0;
+	}
+
+	body.cotlas-admin-light #adminmenu div.wp-menu-image {
+		position: relative;
+		left: auto;
+		width: 22px;
+		height: 22px;
+		min-width: 22px;
+		margin: 0;
+		flex: 0 0 22px;
+	}
+
+	body.cotlas-admin-light #adminmenu div.wp-menu-image:before {
+		width: 22px;
+		height: 22px;
+		line-height: 22px;
+		font-size: 18px;
+		padding: 0;
+	}
+
+	body.cotlas-admin-light #adminmenu div.wp-menu-name {
+		position: static;
+		width: auto;
+		height: auto;
+		margin: 0;
+		padding: 0;
+		overflow: visible;
+		clip: auto;
+		clip-path: none;
+		white-space: normal;
+		flex: 1 1 auto;
+		font-size: 15px;
+		line-height: 1.35;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top {
+		position: static;
+	}
+
+	body.cotlas-admin-light #adminmenu .menu-top > a.menu-top {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		justify-content: flex-start;
+		padding: 0 14px;
+		min-height: 50px;
+		border-radius: 6px;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top {
+		padding-right: 40px;
+	}
+
+	body.cotlas-admin-light #adminmenu li.menu-top.wp-has-submenu > a.menu-top:after {
+		display: block;
+		right: 16px;
+		/* width: 0px; */
+		/* height: 0px; */
+	}
+
+	body.cotlas-admin-light #adminmenu .wp-submenu {
+		position: relative !important;
+		left: auto !important;
+		top: auto !important;
+		width: auto !important;
+		min-width: 0 !important;
+		margin: 4px 0 10px;
+		padding: 4px 0 6px 36px;
+		box-shadow: none;
+		border: 0;
+		background: transparent;
+	}
+
+	body.cotlas-admin-light #adminmenu .wp-submenu a {
+		padding: 10px 12px;
+		font-size: 14px;
+		line-height: 1.35;
+	}
+
+	body.cotlas-admin-light #wpcontent,
+	body.cotlas-admin-light #wpfooter,
+	body.cotlas-admin-light.folded #wpcontent,
+	body.cotlas-admin-light.folded #wpfooter,
+	body.cotlas-admin-light.auto-fold #wpcontent,
+	body.cotlas-admin-light.auto-fold #wpfooter {
+		margin-left: 0;
+	}
+
+	body.cotlas-admin-light .wrap {
+		margin: 20px 12px 0;
+	}
+
+	body.cotlas-admin-light #wpadminbar {
+		backdrop-filter: none;
+	}
+
+	body.cotlas-admin-light .wrap > h1,
+	body.cotlas-admin-light .wrap .wp-heading-inline,
+	body.cotlas-admin-light .wrap > h2 {
+		font-size: 26px;
+	}
+}
+body.cotlas-admin-light ul#adminmenu a.wp-has-current-submenu:after,
+body.cotlas-admin-light ul#adminmenu > li.current > a.current:after {
+	display: none !important;
+	border-right-color: transparent;
+}
+body.cotlas-admin-light #wpadminbar li.wp-has-submenu.wp-not-current-submenu.opensub:hover:after, body.cotlas-admin-light #adminmenu li.wp-has-submenu.wp-not-current-submenu:focus-within:after {
+    border-right-color: #2c333800;
+}
+body.cotlas-admin-light #wpadminbar .yoast-logo.svg {
+    background-position: 0 0px!important;
+    height: 20px !important;
+    line-height: 20px !important;
+}
+body.cotlas-admin-light #wpadminbar .yoast-issue-counter {
+    background-color: #d63638;
+    border-radius: 25px;
+    color: #fff;
+    height: 16px!important;
+    display: inline;
+    padding: 1px 6px 1px 6px !important;
+}
+body.cotlas-admin-light #wpadminbar * {
+    line-height: 1.2rem !important;
+    font-size: 15px !important;
+}
+body.cotlas-admin-light #wpadminbar .ab-label {
+    height: 20px!important;
+}
+body.cotlas-admin-light #adminmenu .wp-submenu li {
+    padding-top: 3px!important;
+}
+body.cotlas-admin-light #adminmenu a:focus, body.cotlas-admin-light #adminmenu a:hover, body.cotlas-admin-light .folded #adminmenu .wp-submenu-head:hover {
+    box-shadow: inset 4px 0 0 0 rgb(99 152 251);
+}
+@media screen and (max-width: 782px) {
+    #wpadminbar #wp-admin-bar-new-content .ab-icon:before {
+        line-height: 53px;
+        font-size: 30px !important;
+    }
+    #wpadminbar #wp-admin-bar-comments .ab-icon:before {
+        font-size: 30px;
+        height: 33px;
+    }
+    #wpadminbar .ab-icon, #wpadminbar .ab-item:before, #wpadminbar>#wp-toolbar>#wp-admin-bar-root-default .ab-icon {
+        margin-right: 5px;
+        margin-left: 5px;
+        padding-left: 0px;
+        padding-right: 0px;
+    }
+    #wpadminbar #wp-admin-bar-customize>.ab-item:before, #wpadminbar #wp-admin-bar-edit>.ab-item:before, #wpadminbar #wp-admin-bar-my-account>.ab-item:before, #wpadminbar #wp-admin-bar-my-sites>.ab-item:before, #wpadminbar #wp-admin-bar-site-editor>.ab-item:before, #wpadminbar #wp-admin-bar-site-name>.ab-item:before {
+        width: 25px;
+        font: normal 26px / 1 dashicons;
+    }
+    body.cotlas-admin-light #wpadminbar .quicklinks > ul > li > a, body.cotlas-admin-light #wpadminbar .quicklinks > ul > li > .ab-empty-item, body.cotlas-admin-light #wpadminbar .ab-item, body.cotlas-admin-light #wpadminbar a.ab-item {
+        height: 40px;
+        line-height: 40px!important;
+    }
+    #wpadminbar #wp-admin-bar-menu-toggle .ab-icon:before {
+        font: normal 38px / 38px dashicons;
+        height: 44px;
+        width: 50px;
+    }
+    #wpadminbar #wp-admin-bar-user-info .display-name {
+        color: #070707;
+    }
+    #wp-admin-bar-user-info .ab-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-direction: column;
+        align-content: flex-start;
+        flex-wrap: wrap;
+    }
+}
+@media screen and (max-width: 782px) {
+	.auto-fold ul#adminmenu a.wp-has-current-submenu:after,
+	.auto-fold ul#adminmenu > li.current > a.current:after {
+		display: none !important;
+		border-width: 0;
+		margin-top: 0;
+	}
+}
+@media screen and (max-width: 782px) {
+    .wp-responsive-open #wpadminbar #wp-admin-bar-menu-toggle a {
+        background: #dde7ff;
+    }
+}
+@media screen and (max-width: 782px) {
+    .wp-responsive-open #wpadminbar #wp-admin-bar-menu-toggle .ab-icon:before {
+        color: #121213;
+    }
+}
+#adminmenu .opensub .wp-submenu li.current a,
+#adminmenu .wp-submenu li.current,
+#adminmenu .wp-submenu li.current a,
+#adminmenu .wp-submenu li.current a:focus,
+#adminmenu .wp-submenu li.current a:hover,
+#adminmenu a.wp-has-current-submenu:focus + .wp-submenu li.current a {
+    color: #444b4f;
+}
+#wpadminbar .quicklinks #wp-admin-bar-wpseo-menu #wp-admin-bar-wpseo-menu-default li#wp-admin-bar-wpseo-get-premium .ab-empty-item {
+    margin-top: 1rem;
+    height: .7rem;
+    padding: .8rem .625rem;
+}
+#wpadminbar .quicklinks #wp-admin-bar-wpseo-menu #wp-admin-bar-wpseo-menu-default li#wp-admin-bar-wpseo-get-premium .ab-empty-item a {
+    --tw-text-opacity: 1;
+    color: rgb(120 53 15 / var(--tw-text-opacity, 1));
+    padding-top: 15px;
+}
+#wpadminbar .yoast-brand-insights-content {
+    background: #f1f8fc!important;
+}
+#wpadminbar .yoast-brand-insights-gradient-border {
+    background: none!important;
+}
