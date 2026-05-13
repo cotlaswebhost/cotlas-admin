@@ -558,7 +558,13 @@ function ctap_save( $page_slug, $nonce_action, array $map ) {
 		$raw = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
 		switch ( $type ) {
 			case 'checkbox':
-				update_option( $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+				$val = isset( $_POST[ $key ] ) ? 1 : 0;
+				// update_option() skips writing when the new value equals the registered
+				// default and no row exists yet in the DB. add_option() ensures the row
+				// is created so subsequent saves work correctly.
+				if ( ! update_option( $key, $val ) ) {
+					add_option( $key, $val );
+				}
 				break;
 			case 'textarea':
 				update_option( $key, wp_kses_post( $raw ) );
