@@ -44,6 +44,7 @@ if ( get_option( 'cotlas_user_avatar_enabled' ) ) {
     add_action( 'personal_options_update',  'gp_save_custom_avatar' );
     add_action( 'edit_user_profile_update', 'gp_save_custom_avatar' );
     add_filter( 'get_avatar',               'gp_custom_avatar', 10, 5 );
+    add_filter( 'get_avatar_url',           'gp_custom_avatar_url', 10, 3 );
 }
 
 function gp_add_custom_avatar_field($user) {
@@ -132,6 +133,34 @@ function gp_custom_avatar($avatar, $id_or_email, $size, $default, $alt) {
     }
     
     return $avatar;
+}
+
+// Override get_avatar_url() so GenerateBlocks {{author_avatar_url}} returns the custom avatar.
+function gp_custom_avatar_url( $url, $id_or_email, $args ) {
+    $user = false;
+
+    if ( is_numeric( $id_or_email ) ) {
+        $user = get_user_by( 'id', (int) $id_or_email );
+    } elseif ( is_object( $id_or_email ) && ! empty( $id_or_email->user_id ) ) {
+        $user = get_user_by( 'id', (int) $id_or_email->user_id );
+    } elseif ( is_object( $id_or_email ) && isset( $id_or_email->comment_author_email ) ) {
+        $user = get_user_by( 'email', $id_or_email->comment_author_email );
+    } elseif ( is_string( $id_or_email ) && is_email( $id_or_email ) ) {
+        $user = get_user_by( 'email', $id_or_email );
+    }
+
+    if ( $user ) {
+        $custom_avatar = get_user_meta( $user->ID, 'custom_avatar', true );
+        if ( $custom_avatar ) {
+            $size = isset( $args['size'] ) ? (int) $args['size'] : 96;
+            $src  = wp_get_attachment_image_src( $custom_avatar, array( $size, $size ) );
+            if ( $src ) {
+                return $src[0];
+            }
+        }
+    }
+
+    return $url;
 }
 
 // Author Social Links Shortcode - FIXED VERSION

@@ -17,8 +17,19 @@ defined( 'ABSPATH' ) || exit;
 
 add_shortcode( 'gp_nav', 'tct_gp_nav' );
 function tct_gp_nav( $atts ) {
+    $atts = shortcode_atts( array(
+        'class' => '',
+    ), $atts, 'gp_nav' );
+
+    $wrapper_class = 'gp-nav-shortcode';
+    if ( ! empty( $atts['class'] ) ) {
+        $wrapper_class .= ' ' . esc_attr( $atts['class'] );
+    }
+
     ob_start();
+    echo '<div class="' . $wrapper_class . '">';
     generate_navigation_position();
+    echo '</div>';
     return ob_get_clean();
 }
 

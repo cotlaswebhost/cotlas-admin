@@ -760,7 +760,7 @@ add_action( 'enqueue_block_editor_assets', 'gpc_enqueue_featured_editor_assets' 
 function gpc_enqueue_featured_editor_assets() {
 	wp_enqueue_script(
 		'gpc-featured-post',
-		plugin_dir_url( __FILE__ ) . 'assets/js/featured-post.js',
+		plugin_dir_url( dirname( __FILE__ ) ) . 'assets/js/featured-post.js',
 		array(
 			'generateblocks',
 			'wp-hooks',
@@ -845,4 +845,558 @@ function gpc_apply_popular_query( $query_args, $attributes ) {
 	$query_args['suppress_filters']  = false;
 
 	return $query_args;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Dynamic Tag — {{bookmark_button}}
+ *
+ * Renders the same bookmark toggle button as [cotlas_bookmark].
+ * Only registered when the reading-list module is active.
+ *
+ * Options:
+ *   size  — button width/height in px (default 34)
+ *   class — extra CSS class on the <button>
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Dynamic Tag — {{logout_url}} / {{login_url}}
+ *
+ * Return a plain URL (or label text) for use in the GB Text/Button block's
+ * Link field or Content field. No HTML is returned — just a string.
+ *
+ * {{logout_url}}            → wp_logout_url( home_url() )  (only when logged in)
+ * {{logout_url output:text}} → "Logout"  (localised label)
+ * {{login_url}}             → wp_login_url( current URL )   (only when logged out)
+ * {{login_url output:text}} → "Sign in"
+ *
+ * Because these are server-rendered, the block will simply output an empty
+ * string when the condition is not met — use GB's visibility conditions or
+ * a logged-in/logged-out wrapper to control visibility.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_action( 'init', 'gpc_register_auth_url_tags', 20 );
+function gpc_register_auth_url_tags() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	/* -- Logout URL -------------------------------------------------------- */
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'logout_url',
+			'title'       => __( 'Logout URL', 'cotlas-admin' ),
+			'description' => __( 'Returns the logout URL (or the label text). Only outputs a value when the visitor is logged in.', 'cotlas-admin' ),
+			'type'        => 'option',
+			'supports'    => array(),
+			'options'     => array(
+				'output' => array(
+					'type'    => 'select',
+					'label'   => __( 'Output', 'cotlas-admin' ),
+					'default' => 'url',
+					'options' => array(
+						array( 'value' => 'url',  'label' => __( 'URL',        'cotlas-admin' ) ),
+						array( 'value' => 'text', 'label' => __( 'Label text', 'cotlas-admin' ) ),
+					),
+				),
+				'label' => array(
+					'type'    => 'text',
+					'label'   => __( 'Custom label text', 'cotlas-admin' ),
+					'default' => '',
+				),
+			),
+			'return'      => 'gpc_logout_url_callback',
+		)
+	);
+
+	/* -- Login URL --------------------------------------------------------- */
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'login_url',
+			'title'       => __( 'Login URL', 'cotlas-admin' ),
+			'description' => __( 'Returns the login URL (or the label text). Only outputs a value when the visitor is logged out.', 'cotlas-admin' ),
+			'type'        => 'option',
+			'supports'    => array(),
+			'options'     => array(
+				'output' => array(
+					'type'    => 'select',
+					'label'   => __( 'Output', 'cotlas-admin' ),
+					'default' => 'url',
+					'options' => array(
+						array( 'value' => 'url',  'label' => __( 'URL',        'cotlas-admin' ) ),
+						array( 'value' => 'text', 'label' => __( 'Label text', 'cotlas-admin' ) ),
+					),
+				),
+				'label' => array(
+					'type'    => 'text',
+					'label'   => __( 'Custom label text', 'cotlas-admin' ),
+					'default' => '',
+				),
+				'redirect' => array(
+					'type'    => 'select',
+					'label'   => __( 'After login, redirect to', 'cotlas-admin' ),
+					'default' => 'current',
+					'options' => array(
+						array( 'value' => 'current', 'label' => __( 'Current page', 'cotlas-admin' ) ),
+						array( 'value' => 'home',    'label' => __( 'Homepage',     'cotlas-admin' ) ),
+					),
+				),
+			),
+			'return'      => 'gpc_login_url_callback',
+		)
+	);
+}
+
+/**
+ * Callback for {{logout_url}}.
+ */
+function gpc_logout_url_callback( $options, $block, $instance ) {
+	if ( ! is_user_logged_in() ) {
+		return '';
+	}
+
+	$output = isset( $options['output'] ) ? $options['output'] : 'url';
+
+	if ( 'text' === $output ) {
+		$label = isset( $options['label'] ) && '' !== trim( $options['label'] )
+			? $options['label']
+			: __( 'Logout', 'cotlas-admin' );
+		return esc_html( $label );
+	}
+
+	return esc_url( wp_logout_url( home_url() ) );
+}
+
+/**
+ * Callback for {{login_url}}.
+ */
+function gpc_login_url_callback( $options, $block, $instance ) {
+	if ( is_user_logged_in() ) {
+		return '';
+	}
+
+	$output = isset( $options['output'] ) ? $options['output'] : 'url';
+
+	if ( 'text' === $output ) {
+		$label = isset( $options['label'] ) && '' !== trim( $options['label'] )
+			? $options['label']
+			: __( 'Sign in', 'cotlas-admin' );
+		return esc_html( $label );
+	}
+
+	$redirect  = isset( $options['redirect'] ) ? $options['redirect'] : 'current';
+	$redirect_url = ( 'home' === $redirect )
+		? home_url()
+		: ( ( isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : home_url() ) );
+
+	return esc_url( wp_login_url( $redirect_url ) );
+}
+
+add_action( 'init', 'gpc_register_bookmark_button_tag', 20 );
+function gpc_register_bookmark_button_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+	if ( ! get_option( 'cotlas_reading_list_enabled' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'bookmark_button',
+			'title'       => __( 'Bookmark Button', 'cotlas-admin' ),
+			'description' => __( 'Renders the bookmark (reading list) toggle button for the current post. Works inside Query Loop or on single post pages.', 'cotlas-admin' ),
+			'type'        => 'post',
+			'supports'    => array( 'source' ),
+			'options'     => array(
+				'size'  => array(
+					'type'    => 'text',
+					'label'   => __( 'Button size (px)', 'cotlas-admin' ),
+					'default' => '34',
+				),
+				'class' => array(
+					'type'    => 'text',
+					'label'   => __( 'Extra CSS class', 'cotlas-admin' ),
+					'default' => '',
+				),
+			),
+			'return'      => 'gpc_bookmark_button_callback',
+		)
+	);
+}
+
+/**
+ * Dynamic tag callback — returns the bookmark button HTML.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function gpc_bookmark_button_callback( $options, $block, $instance ) {
+	if ( ! function_exists( 'cotlas_bookmark_shortcode' ) ) {
+		return '';
+	}
+
+	// Resolve the post ID the same way other post-type tags do.
+	$post_id = 0;
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+		$post_id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+	}
+	if ( ! $post_id ) {
+		$post_id = get_the_ID();
+	}
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	// Render via the shortcode function (reuse all its logic).
+	// We temporarily set up the post so get_the_ID() works inside the function.
+	// Pass post_id explicitly so the shortcode never needs to call get_the_ID().
+	// This is the fix for dynamic tags in Query Loops where get_the_ID() may
+	// return the page/template ID rather than the current loop post's ID.
+	$atts = array(
+		'size'    => isset( $options['size'] ) && '' !== $options['size'] ? $options['size'] : '34',
+		'class'   => isset( $options['class'] ) ? $options['class'] : '',
+		'post_id' => $post_id,
+	);
+
+	return cotlas_bookmark_shortcode( $atts );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Dynamic Tag — {{wishlist_button}}
+ *
+ * Renders the same wishlist heart toggle button as [cotlas_wishlist].
+ * Only registered when the wishlist module is active.
+ *
+ * Options:
+ *   size        — button width/height in px (default 34)
+ *   show_count  — "true" (default) | "false"
+ *   class       — extra CSS class on the <button>
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_action( 'init', 'gpc_register_wishlist_button_tag', 20 );
+function gpc_register_wishlist_button_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+	if ( ! get_option( 'cotlas_wishlist_enabled' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'wishlist_button',
+			'title'       => __( 'Wishlist Button', 'cotlas-admin' ),
+			'description' => __( 'Renders the wishlist (heart) toggle button with wish count for the current post. Works inside Query Loop or on single post pages.', 'cotlas-admin' ),
+			'type'        => 'post',
+			'supports'    => array( 'source' ),
+			'options'     => array(
+				'size'       => array(
+					'type'    => 'text',
+					'label'   => __( 'Button size (px)', 'cotlas-admin' ),
+					'default' => '34',
+				),
+				'show_count' => array(
+					'type'    => 'select',
+					'label'   => __( 'Show wish count', 'cotlas-admin' ),
+					'default' => 'true',
+					'options' => array(
+						array( 'value' => 'true',  'label' => __( 'Yes', 'cotlas-admin' ) ),
+						array( 'value' => 'false', 'label' => __( 'No',  'cotlas-admin' ) ),
+					),
+				),
+				'class'      => array(
+					'type'    => 'text',
+					'label'   => __( 'Extra CSS class', 'cotlas-admin' ),
+					'default' => '',
+				),
+			),
+			'return'      => 'gpc_wishlist_button_callback',
+		)
+	);
+}
+
+/**
+ * Dynamic tag callback — returns the wishlist button HTML.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function gpc_wishlist_button_callback( $options, $block, $instance ) {
+	if ( ! function_exists( 'cotlas_wishlist_shortcode' ) ) {
+		return '';
+	}
+
+	$post_id = 0;
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+		$post_id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+	}
+	if ( ! $post_id ) {
+		$post_id = get_the_ID();
+	}
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	// Pass post_id explicitly so the shortcode never needs to call get_the_ID().
+	$atts = array(
+		'size'       => isset( $options['size'] ) && '' !== $options['size'] ? $options['size'] : '34',
+		'show_count' => isset( $options['show_count'] ) ? $options['show_count'] : 'true',
+		'class'      => isset( $options['class'] ) ? $options['class'] : '',
+		'post_id'    => $post_id,
+	);
+
+	return cotlas_wishlist_shortcode( $atts );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * GB QUERY LOOP FILTER — myPosts parameter
+ *
+ * Filters a Query Loop to show only the currently logged-in user's own
+ * published posts.  Logged-out visitors see zero results.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_filter( 'generateblocks_query_loop_args', 'gpc_apply_my_posts_query', 10, 2 );
+/**
+ * Filter GB Query Loop args when the myPosts parameter is set.
+ *
+ * @param array $query_args  Current WP_Query args.
+ * @param array $attributes  GB block attributes.
+ * @return array
+ */
+function gpc_apply_my_posts_query( $query_args, $attributes ) {
+	if ( empty( $query_args['myPosts'] ) ) {
+		return $query_args;
+	}
+
+	unset( $query_args['myPosts'] );
+
+	if ( ! is_user_logged_in() ) {
+		// Return empty result set for logged-out visitors.
+		$query_args['post__in'] = array( 0 );
+		return $query_args;
+	}
+
+	$query_args['author']      = get_current_user_id();
+	$query_args['post_status'] = 'publish';
+
+	return $query_args;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Dynamic Tag — {{edit_post_link}}
+ *
+ * Returns the URL of your front-end edit page with the current post's ID
+ * appended as a query-string parameter, e.g.:
+ *   /edit-post?post=21
+ *
+ * Use this tag in the Link field of a GB Text block inside a Query Loop so
+ * each loop item links to that post's edit page.
+ *
+ * Options:
+ *   page   — slug of the edit page (default: edit-post)
+ *   param  — query-string key       (default: post)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_action( 'init', 'gpc_register_edit_post_link_tag', 20 );
+function gpc_register_edit_post_link_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'edit_post_link',
+			'title'       => __( 'Edit Post Link', 'cotlas-admin' ),
+			'description' => __( 'Returns the front-end edit page URL with the current post ID as a query parameter, e.g. /edit-post?post=21. Use in the Link field of a Text block inside a Query Loop.', 'cotlas-admin' ),
+			'type'        => 'post',
+			'supports'    => array( 'source' ),
+			'options'     => array(
+				'page'  => array(
+					'type'    => 'text',
+					'label'   => __( 'Edit page slug', 'cotlas-admin' ),
+					'default' => 'edit-post',
+				),
+				'param' => array(
+					'type'    => 'text',
+					'label'   => __( 'Query param name', 'cotlas-admin' ),
+					'default' => 'post',
+				),
+			),
+			'return'      => 'gpc_edit_post_link_callback',
+		)
+	);
+}
+
+/**
+ * Dynamic tag callback — builds the front-end edit URL.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function gpc_edit_post_link_callback( $options, $block, $instance ) {
+	// Resolve post ID from the loop context.
+	$post_id = 0;
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+		$post_id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+	}
+	if ( ! $post_id ) {
+		$post_id = get_the_ID();
+	}
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$page  = isset( $options['page'] ) && '' !== trim( $options['page'] )
+		? sanitize_text_field( $options['page'] )
+		: 'edit-post';
+
+	$param = isset( $options['param'] ) && '' !== trim( $options['param'] )
+		? sanitize_key( $options['param'] )
+		: 'post';
+
+	// Build the URL from the page slug so it works with any permalink structure.
+	$page_obj = get_page_by_path( $page );
+	$base_url = $page_obj ? get_permalink( $page_obj->ID ) : home_url( '/' . $page . '/' );
+
+	return esc_url( add_query_arg( $param, $post_id, $base_url ) );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * AJAX handler — trash a post from the frontend
+ *
+ * Triggered by visiting the URL produced by {{delete_post_link}}.
+ * Security: per-post nonce + ownership check (author or edit_others_posts).
+ * Result: post moved to trash, visitor redirected back to the specified page.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_action( 'wp_ajax_cotlas_trash_post', 'gpc_ajax_trash_post' );
+function gpc_ajax_trash_post() {
+	$post_id  = absint( isset( $_GET['post_id'] ) ? $_GET['post_id'] : 0 );
+	$nonce    = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';
+	$redirect = isset( $_GET['redirect'] )
+		? esc_url_raw( wp_unslash( urldecode( $_GET['redirect'] ) ) )
+		: home_url( '/my-posts/' );
+
+	if ( ! $post_id || ! wp_verify_nonce( $nonce, 'cotlas_trash_post_' . $post_id ) ) {
+		wp_die( esc_html__( 'Invalid or expired request.', 'cotlas-admin' ), 403 );
+	}
+
+	$post = get_post( $post_id );
+	if ( ! $post ) {
+		wp_die( esc_html__( 'Post not found.', 'cotlas-admin' ), 404 );
+	}
+
+	// Only the post author or a user with edit_others_posts can trash it.
+	if ( (int) $post->post_author !== get_current_user_id()
+		&& ! current_user_can( 'edit_others_posts' )
+	) {
+		wp_die( esc_html__( 'You do not have permission to delete this post.', 'cotlas-admin' ), 403 );
+	}
+
+	wp_trash_post( $post_id );
+
+	wp_safe_redirect( $redirect );
+	exit;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Dynamic Tag — {{delete_post_link}}
+ *
+ * Returns a nonce-protected AJAX URL that moves the current post to trash
+ * when visited. Use in the Link field of a GB Text block inside a Query Loop.
+ *
+ * Only outputs a URL when the logged-in user owns the post (or is admin).
+ * Empty string for logged-out visitors.
+ *
+ * Options:
+ *   redirect — slug of the page to redirect to after trashing (default: my-posts)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+add_action( 'init', 'gpc_register_delete_post_link_tag', 20 );
+function gpc_register_delete_post_link_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'tag'         => 'delete_post_link',
+			'title'       => __( 'Delete Post Link', 'cotlas-admin' ),
+			'description' => __( 'Returns a secure URL that moves the current post to trash when visited. Only shown to the post author. Use in the Link field of a Text block inside a Query Loop.', 'cotlas-admin' ),
+			'type'        => 'post',
+			'supports'    => array( 'source' ),
+			'options'     => array(
+				'redirect' => array(
+					'type'    => 'text',
+					'label'   => __( 'Redirect page slug after delete', 'cotlas-admin' ),
+					'default' => 'my-posts',
+				),
+			),
+			'return'      => 'gpc_delete_post_link_callback',
+		)
+	);
+}
+
+/**
+ * Dynamic tag callback — builds the secure trash URL.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function gpc_delete_post_link_callback( $options, $block, $instance ) {
+	if ( ! is_user_logged_in() ) {
+		return '';
+	}
+
+	$post_id = 0;
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+		$post_id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+	}
+	if ( ! $post_id ) {
+		$post_id = get_the_ID();
+	}
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$post = get_post( $post_id );
+	if ( ! $post ) {
+		return '';
+	}
+
+	// Only render for the post author or admins.
+	if ( (int) $post->post_author !== get_current_user_id()
+		&& ! current_user_can( 'edit_others_posts' )
+	) {
+		return '';
+	}
+
+	$redirect_slug = isset( $options['redirect'] ) && '' !== trim( $options['redirect'] )
+		? sanitize_text_field( $options['redirect'] )
+		: 'my-posts';
+
+	$page_obj     = get_page_by_path( $redirect_slug );
+	$redirect_url = $page_obj
+		? get_permalink( $page_obj->ID )
+		: home_url( '/' . $redirect_slug . '/' );
+
+	return esc_url(
+		add_query_arg(
+			array(
+				'action'   => 'cotlas_trash_post',
+				'post_id'  => $post_id,
+				'nonce'    => wp_create_nonce( 'cotlas_trash_post_' . $post_id ),
+				'redirect' => rawurlencode( $redirect_url ),
+			),
+			admin_url( 'admin-ajax.php' )
+		)
+	);
 }
