@@ -16,8 +16,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! get_option( 'cotlas_reading_list_enabled' ) ) {
-	return;
+if ( ! function_exists( 'cotlas_reading_list_is_enabled' ) ) {
+	function cotlas_reading_list_is_enabled() {
+		return '0' !== (string) get_option( 'cotlas_reading_list_enabled', '1' );
+	}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -29,6 +31,10 @@ add_action( 'wp_ajax_cotlas_toggle_bookmark', 'cotlas_ajax_toggle_bookmark' );
  * Toggle a post ID in/out of the current user's reading list.
  */
 function cotlas_ajax_toggle_bookmark() {
+	if ( ! cotlas_reading_list_is_enabled() ) {
+		wp_send_json_error( 'Reading list is disabled.' );
+	}
+
 	check_ajax_referer( 'cotlas_rl_nonce', 'nonce' );
 
 	$post_id = absint( isset( $_POST['post_id'] ) ? $_POST['post_id'] : 0 );
@@ -68,6 +74,10 @@ add_action( 'wp_ajax_cotlas_get_bookmarks', 'cotlas_ajax_get_bookmarks' );
  * Return the complete reading list for the current user.
  */
 function cotlas_ajax_get_bookmarks() {
+	if ( ! cotlas_reading_list_is_enabled() ) {
+		wp_send_json_error( 'Reading list is disabled.' );
+	}
+
 	check_ajax_referer( 'cotlas_rl_nonce', 'nonce' );
 
 	$list = get_user_meta( get_current_user_id(), 'cotlas_reading_list', true );
@@ -97,6 +107,11 @@ function cotlas_apply_reading_list_query( $query_args, $attributes ) {
 	}
 
 	unset( $query_args['readingListPosts'] );
+
+	if ( ! cotlas_reading_list_is_enabled() ) {
+		$query_args['post__in'] = array( 0 );
+		return $query_args;
+	}
 
 	$post_ids = array();
 
@@ -136,6 +151,10 @@ add_shortcode( 'cotlas_bookmark', 'cotlas_bookmark_shortcode' );
  * @return string HTML button.
  */
 function cotlas_bookmark_shortcode( $atts ) {
+	if ( ! cotlas_reading_list_is_enabled() ) {
+		return '';
+	}
+
 	$atts = shortcode_atts(
 		array(
 			'class'   => '',
@@ -189,6 +208,10 @@ add_action( 'wp_enqueue_scripts', 'cotlas_reading_list_assets' );
  * Enqueue reading list styles and inline JS.
  */
 function cotlas_reading_list_assets() {
+	if ( ! cotlas_reading_list_is_enabled() ) {
+		return;
+	}
+
 	wp_add_inline_style( 'wp-block-library', cotlas_rl_css() );
 
 	wp_register_script( 'cotlas-reading-list', false, array(), false, true );

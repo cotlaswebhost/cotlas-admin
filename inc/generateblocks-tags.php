@@ -996,9 +996,6 @@ function gpc_register_bookmark_button_tag() {
 	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
 		return;
 	}
-	if ( ! get_option( 'cotlas_reading_list_enabled' ) ) {
-		return;
-	}
 
 	new GenerateBlocks_Register_Dynamic_Tag(
 		array(
@@ -1033,6 +1030,10 @@ function gpc_register_bookmark_button_tag() {
  * @return string
  */
 function gpc_bookmark_button_callback( $options, $block, $instance ) {
+	if ( function_exists( 'cotlas_reading_list_is_enabled' ) && ! cotlas_reading_list_is_enabled() ) {
+		return '';
+	}
+
 	if ( ! function_exists( 'cotlas_bookmark_shortcode' ) ) {
 		return '';
 	}
@@ -1080,9 +1081,6 @@ function gpc_register_wishlist_button_tag() {
 	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
 		return;
 	}
-	if ( ! get_option( 'cotlas_wishlist_enabled' ) ) {
-		return;
-	}
 
 	new GenerateBlocks_Register_Dynamic_Tag(
 		array(
@@ -1126,6 +1124,10 @@ function gpc_register_wishlist_button_tag() {
  * @return string
  */
 function gpc_wishlist_button_callback( $options, $block, $instance ) {
+	if ( function_exists( 'cotlas_wishlist_is_enabled' ) && ! cotlas_wishlist_is_enabled() ) {
+		return '';
+	}
+
 	if ( ! function_exists( 'cotlas_wishlist_shortcode' ) ) {
 		return '';
 	}

@@ -17,8 +17,10 @@
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! get_option( 'cotlas_wishlist_enabled' ) ) {
-	return;
+if ( ! function_exists( 'cotlas_wishlist_is_enabled' ) ) {
+	function cotlas_wishlist_is_enabled() {
+		return '0' !== (string) get_option( 'cotlas_wishlist_enabled', '1' );
+	}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -30,6 +32,10 @@ add_action( 'wp_ajax_cotlas_toggle_wishlist', 'cotlas_ajax_toggle_wishlist' );
  * Toggle a post ID in/out of the current user's wishlist and update the count.
  */
 function cotlas_ajax_toggle_wishlist() {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		wp_send_json_error( 'Wishlist is disabled.' );
+	}
+
 	check_ajax_referer( 'cotlas_wl_nonce', 'nonce' );
 
 	$post_id = absint( isset( $_POST['post_id'] ) ? $_POST['post_id'] : 0 );
@@ -80,6 +86,10 @@ add_action( 'wp_ajax_nopriv_cotlas_wishlist_guest_count', 'cotlas_ajax_wishlist_
  * Increment or decrement the wish count for a post (guest path).
  */
 function cotlas_ajax_wishlist_guest_count() {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		wp_send_json_error( 'Wishlist is disabled.' );
+	}
+
 	$post_id     = absint( isset( $_POST['post_id'] ) ? $_POST['post_id'] : 0 );
 	$action_type = isset( $_POST['action_type'] ) ? sanitize_key( $_POST['action_type'] ) : '';
 
@@ -109,6 +119,10 @@ add_action( 'wp_ajax_cotlas_get_wishlists', 'cotlas_ajax_get_wishlists' );
  * Return the complete wishlist for the current user.
  */
 function cotlas_ajax_get_wishlists() {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		wp_send_json_error( 'Wishlist is disabled.' );
+	}
+
 	check_ajax_referer( 'cotlas_wl_nonce', 'nonce' );
 
 	$list = get_user_meta( get_current_user_id(), 'cotlas_wishlist', true );
@@ -138,6 +152,11 @@ function cotlas_apply_wishlist_query( $query_args, $attributes ) {
 	}
 
 	unset( $query_args['wishlistPosts'] );
+
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		$query_args['post__in'] = array( 0 );
+		return $query_args;
+	}
 
 	$post_ids = array();
 
@@ -175,6 +194,10 @@ add_shortcode( 'cotlas_wishlist', 'cotlas_wishlist_shortcode' );
  * @return string HTML button.
  */
 function cotlas_wishlist_shortcode( $atts ) {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		return '';
+	}
+
 	$atts = shortcode_atts(
 		array(
 			'class'      => '',
@@ -246,6 +269,10 @@ add_shortcode( 'cotlas_wishlist_count', 'cotlas_wishlist_count_shortcode' );
  * @return string
  */
 function cotlas_wishlist_count_shortcode() {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		return '';
+	}
+
 	$post_id = get_the_ID();
 	if ( ! $post_id ) {
 		return '0';
@@ -267,6 +294,10 @@ add_action( 'wp_enqueue_scripts', 'cotlas_wishlist_assets' );
  * Enqueue wishlist styles and inline JS.
  */
 function cotlas_wishlist_assets() {
+	if ( ! cotlas_wishlist_is_enabled() ) {
+		return;
+	}
+
 	wp_add_inline_style( 'wp-block-library', cotlas_wl_css() );
 
 	wp_register_script( 'cotlas-wishlist', false, array(), false, true );

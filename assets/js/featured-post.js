@@ -39,21 +39,66 @@
                 group: __( 'Post', 'gp-child' ),
         };
 
-        /* Register both params on the newer "Query" block */
+        /* ------------------------------------------------------------------ */
+        /* 1c. Reading List parameter (show only the visitor's bookmarked posts)*/
+        /* ------------------------------------------------------------------ */
+        var READING_LIST_PARAM = {
+                id: 'readingListPosts',
+                type: 'select',
+                default: 'true',
+                selectOptions: [
+                        { value: 'true', label: __( 'Yes', 'gp-child' ) },
+                ],
+                label:       __( 'Reading list posts', 'gp-child' ),
+                description: __( 'Show only posts the current visitor has bookmarked. Guests: cookie. Logged-in: database.', 'gp-child' ),
+                group: __( 'Post', 'gp-child' ),
+        };
+
+        /* ------------------------------------------------------------------ */
+        /* 1d. Wishlist parameter (show only the visitor's wishlisted posts)   */
+        /* ------------------------------------------------------------------ */
+        var WISHLIST_PARAM = {
+                id: 'wishlistPosts',
+                type: 'select',
+                default: 'true',
+                selectOptions: [
+                        { value: 'true', label: __( 'Yes', 'gp-child' ) },
+                ],
+                label:       __( 'Wishlist posts', 'gp-child' ),
+                description: __( 'Show only posts the current visitor has wishlisted. Guests: cookie. Logged-in: database.', 'gp-child' ),
+                group: __( 'Post', 'gp-child' ),
+        };
+
+        /* ------------------------------------------------------------------ */
+        /* 1e. My Posts parameter (current logged-in user's own posts only)   */
+        /* ------------------------------------------------------------------ */
+        var MY_POSTS_PARAM = {
+                id: 'myPosts',
+                type: 'select',
+                default: 'true',
+                selectOptions: [
+                        { value: 'true', label: __( 'Yes', 'gp-child' ) },
+                ],
+                label:       __( 'My posts', 'gp-child' ),
+                description: __( 'Show only published posts authored by the currently logged-in user. Logged-out visitors see no results.', 'gp-child' ),
+                group: __( 'Post', 'gp-child' ),
+        };
+
+        /* Register all five params on the newer "Query" block */
         addFilter(
                 'generateblocks.editor.query.query-parameters',
                 'gp-child/custom-query-params',
                 function ( params ) {
-                        return params.concat( [ FEATURED_PARAM, POPULAR_PARAM ] );
+                        return params.concat( [ FEATURED_PARAM, POPULAR_PARAM, READING_LIST_PARAM, WISHLIST_PARAM, MY_POSTS_PARAM ] );
                 }
         );
 
-        /* Register both params on the legacy "Query Loop" block */
+        /* Register all five params on the legacy "Query Loop" block */
         addFilter(
                 'generateblocks.editor.query-loop.query-parameters',
                 'gp-child/custom-query-loop-params',
                 function ( params ) {
-                        return params.concat( [ FEATURED_PARAM, POPULAR_PARAM ] );
+                        return params.concat( [ FEATURED_PARAM, POPULAR_PARAM, READING_LIST_PARAM, WISHLIST_PARAM, MY_POSTS_PARAM ] );
                 }
         );
 

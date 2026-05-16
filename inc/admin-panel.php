@@ -973,9 +973,15 @@ function cotlas_panel_page_gb_tags() {
 		array( 'Term Image',          'term_image',       'term',   'Featured image of a category (set via Categories screen).',                            array( 'key: url (default) | id | alt', 'size: any registered image size (default: full)', 'id: explicit term ID' ) ),
 		array( 'Company Info',        'company_info',     'option', 'Any company detail saved in Site Settings.',                                           array( 'Options: name, tagline, address, phone, email, whatsapp, short_intro' ) ),
 		array( 'Company Social URL',  'company_social',   'option', 'A social media URL from Site Settings. Use as Dynamic Link on button/image.',          array( 'Options: facebook, twitter, youtube, instagram, linkedin, threads' ) ),
+		array( 'Bookmark Button',     'bookmark_button',  'post',   'Renders the reading-list bookmark toggle button for the current loop post.',          array( 'size — button size in px (default: 34)', 'class — extra CSS class' ) ),
+		array( 'Wishlist Button',     'wishlist_button',  'post',   'Renders the wishlist heart toggle button with optional wish count.',                  array( 'size — button size in px (default: 34)', 'show_count — true or false', 'class — extra CSS class' ) ),
+		array( 'Edit Post Link',      'edit_post_link',   'post',   'Frontend edit page URL for the current post.',                                        array( 'page — edit page slug (default: edit-post)', 'param — query string key (default: post)' ) ),
+		array( 'Delete Post Link',    'delete_post_link', 'post',   'Secure frontend delete URL that moves the current post to trash.',                    array( 'Only outputs for the post author or users who can edit others posts', 'redirect — page slug after delete (default: my-posts)' ) ),
 		array( 'Featured Post Query', 'featuredPosts',    'query',  'Filter GenerateBlocks Query Loop by Featured Post flag (_is_featured meta).',          array( 'only — show only featured', 'exclude — hide featured' ) ),
 		array( 'Popular Posts Query', 'popularPosts',     'query',  'Sort a GB Query Loop by view count (most viewed first). Requires Post Views Counter.', array( '1 — enable sorting by views' ) ),
 		array( 'Reading List Query', 'readingListPosts',  'query',  'Filter a GB Query Loop to show only the current visitor\'s bookmarked posts.',        array( 'Yes — enable the filter', 'Guests: cookie · Logged-in: user_meta' ) ),
+		array( 'Wishlist Query',      'wishlistPosts',    'query',  'Filter a GB Query Loop to show only the current visitor\'s wishlisted posts.',         array( 'Yes — enable the filter', 'Guests: cookie · Logged-in: user_meta' ) ),
+		array( 'My Posts Query',      'myPosts',          'query',  'Filter a GB Query Loop to show only posts authored by the logged-in user.',           array( 'Yes — enable the filter', 'Logged-out visitors see no results' ) ),
 	);
 	echo '<div class="ctap-tag-grid">';
 	foreach ( $tag_cards as $card ) {
@@ -1001,6 +1007,8 @@ function cotlas_panel_page_gb_tags() {
 		array( 'featuredPosts',    'Filter by Featured Post flag (_is_featured meta).', '<code>only</code> — show only featured<br><code>exclude</code> — hide featured posts' ),
 		array( 'popularPosts',    'Sort by view count descending (Post Views Counter required).', '<code>1</code> — enable sorting' ),
 		array( 'readingListPosts','Show only the current visitor\'s bookmarked posts. Requires Reading List module.', '<code>Yes</code> — enable the filter' ),
+		array( 'wishlistPosts',   'Show only the current visitor\'s wishlisted posts. Requires Wishlist module.', '<code>Yes</code> — enable the filter' ),
+		array( 'myPosts',         'Show only published posts authored by the currently logged-in user.', '<code>Yes</code> — enable the filter<br>Logged-out visitors receive no results' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
@@ -1032,6 +1040,10 @@ function cotlas_panel_page_gb_tags() {
 			'<code>style="modern"</code> <code>style="minimal"</code> <code>style="dark"</code><br><code>width="100%"</code> <code>height="54px"</code><br><code>autoplay="0"</code> or <code>autoplay="1"</code><br><code>loop="0"</code> or <code>loop="1"</code>' ),
 		array( 'cotlas_bookmark',        'Reading list bookmark toggle button (Reading List module).',
 			'<code>size="34"</code> — button size px<br><code>class="my-class"</code> — extra CSS class' ),
+		array( 'cotlas_wishlist',        'Wishlist heart toggle button with optional wish count (Wishlist module).',
+			'<code>size="34"</code> — button size px<br><code>show_count="false"</code> — hide the count<br><code>class="my-class"</code> — extra CSS class' ),
+		array( 'cotlas_wishlist_count',  'Standalone wish count for the current post (Wishlist module).',
+			'<em style="color:#999">none</em>' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
@@ -1400,7 +1412,7 @@ function cotlas_panel_page_reading_list() {
 		'cotlas_reading_list_enabled',
 		'Reading List',
 		'When enabled, registers the [cotlas_bookmark] shortcode, the readingListPosts GB query parameter, and the AJAX endpoints for logged-in bookmark syncing.',
-		0
+		1
 	);
 	ctap_card_close();
 	ctap_card_open( 'Wishlist', 'dashicons-heart' );
@@ -1408,7 +1420,7 @@ function cotlas_panel_page_reading_list() {
 		'cotlas_wishlist_enabled',
 		'Wishlist',
 		'When enabled, registers the [cotlas_wishlist] shortcode, the wishlistPosts GB query parameter, and tracks per-post wish counts. Logged-in users affect the global count stored in post meta.',
-		0
+		1
 	);
 	ctap_card_close();
 	ctap_form_close();
