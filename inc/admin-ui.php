@@ -63,6 +63,17 @@ add_action('wp_enqueue_scripts', function() {
         array(),
         file_exists($file) ? (string) filemtime($file) : '1.0.0'
     );
+
+    $delete_confirm_file = plugin_dir_path( dirname(__FILE__) ) . 'assets/js/delete-post-confirm.js';
+    if ( file_exists( $delete_confirm_file ) ) {
+        wp_enqueue_script(
+            'cotlas-delete-post-confirm',
+            plugin_dir_url( dirname(__FILE__) ) . 'assets/js/delete-post-confirm.js',
+            array(),
+            (string) filemtime( $delete_confirm_file ),
+            true
+        );
+    }
 });
 
 /**
@@ -104,5 +115,4 @@ function cotlas_enqueue_honeypot_script() {
     }
 }
 add_action('wp_enqueue_scripts', 'cotlas_enqueue_honeypot_script');
-
 

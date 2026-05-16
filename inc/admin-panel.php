@@ -163,6 +163,13 @@ function cotlas_panel_process_saves() {
 				'cotlas_user_social_links_enabled' => 'checkbox',
 			),
 		),
+		'ctap_save_reading_list' => array(
+			'page' => 'cotlas-reading-list',
+			'map'  => array(
+				'cotlas_reading_list_enabled' => 'checkbox',
+				'cotlas_wishlist_enabled'     => 'checkbox',
+			),
+		),
 	);
 
 	foreach ( $maps as $nonce_action => $cfg ) {
@@ -208,6 +215,7 @@ function cotlas_panel_register_menus() {
 		array( 'cotlas-social-media',          __( 'Social Media', 'cotlas-admin' ),             'cotlas_panel_page_social'         ),
 		array( 'cotlas-tracking-codes',        __( 'Tracking Codes', 'cotlas-admin' ),           'cotlas_panel_page_tracking'       ),
 		array( 'cotlas-user-settings',         __( 'User Settings', 'cotlas-admin' ),            'cotlas_panel_page_users'          ),
+		array( 'cotlas-reading-list',           __( 'Reading List', 'cotlas-admin' ),             'cotlas_panel_page_reading_list'   ),
 	);
 
 	foreach ( $subs as $s ) {
@@ -234,6 +242,7 @@ function cotlas_panel_assets( $hook ) {
 		'cotlas-admin_page_cotlas-social-media',
 		'cotlas-admin_page_cotlas-tracking-codes',
 		'cotlas-admin_page_cotlas-user-settings',
+		'cotlas-admin_page_cotlas-reading-list',
 	);
 	if ( ! in_array( $hook, $hooks, true ) ) {
 		return;
@@ -966,6 +975,7 @@ function cotlas_panel_page_gb_tags() {
 		array( 'Company Social URL',  'company_social',   'option', 'A social media URL from Site Settings. Use as Dynamic Link on button/image.',          array( 'Options: facebook, twitter, youtube, instagram, linkedin, threads' ) ),
 		array( 'Featured Post Query', 'featuredPosts',    'query',  'Filter GenerateBlocks Query Loop by Featured Post flag (_is_featured meta).',          array( 'only — show only featured', 'exclude — hide featured' ) ),
 		array( 'Popular Posts Query', 'popularPosts',     'query',  'Sort a GB Query Loop by view count (most viewed first). Requires Post Views Counter.', array( '1 — enable sorting by views' ) ),
+		array( 'Reading List Query', 'readingListPosts',  'query',  'Filter a GB Query Loop to show only the current visitor\'s bookmarked posts.',        array( 'Yes — enable the filter', 'Guests: cookie · Logged-in: user_meta' ) ),
 	);
 	echo '<div class="ctap-tag-grid">';
 	foreach ( $tag_cards as $card ) {
@@ -988,8 +998,9 @@ function cotlas_panel_page_gb_tags() {
 	ctap_card_open( 'GB Query Loop Parameters', 'dashicons-database-view' );
 	ctap_info( 'Add these in the <strong>Query Parameters</strong> panel of a GenerateBlocks Query Loop block in the editor.' );
 	ctap_ref_table( array(
-		array( 'featuredPosts', 'Filter by Featured Post flag (_is_featured meta).', '<code>only</code> — show only featured<br><code>exclude</code> — hide featured posts' ),
-		array( 'popularPosts',  'Sort by view count descending (Post Views Counter required).', '<code>1</code> — enable sorting' ),
+		array( 'featuredPosts',    'Filter by Featured Post flag (_is_featured meta).', '<code>only</code> — show only featured<br><code>exclude</code> — hide featured posts' ),
+		array( 'popularPosts',    'Sort by view count descending (Post Views Counter required).', '<code>1</code> — enable sorting' ),
+		array( 'readingListPosts','Show only the current visitor\'s bookmarked posts. Requires Reading List module.', '<code>Yes</code> — enable the filter' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
@@ -1019,6 +1030,8 @@ function cotlas_panel_page_gb_tags() {
 			'<code>class="my-class"</code><br><code>date_format="DD/MM/YYYY"</code><br><code>time_format="HH:mm"</code>' ),
 		array( 'audio_player',           'HTML5 audio player for Audio-format posts.',
 			'<code>style="modern"</code> <code>style="minimal"</code> <code>style="dark"</code><br><code>width="100%"</code> <code>height="54px"</code><br><code>autoplay="0"</code> or <code>autoplay="1"</code><br><code>loop="0"</code> or <code>loop="1"</code>' ),
+		array( 'cotlas_bookmark',        'Reading list bookmark toggle button (Reading List module).',
+			'<code>size="34"</code> — button size px<br><code>class="my-class"</code> — extra CSS class' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
@@ -1359,6 +1372,137 @@ function cotlas_panel_page_users() {
 	ctap_ref_table( array(
 		array( 'author_social_links', "Post author's social links from their WP profile. Only platforms with a saved URL are shown.",
 			'<code>class="my-class"</code><br><code>size="24"</code> — icon size in px<br><code>show_names="1"</code> — show platform names<br><code>networks="facebook,twitter,youtube,instagram,linkedin,pinterest"</code>' ),
+	) );
+	ctap_card_close();
+	ctap_pane_close();
+
+	ctap_page_close();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 17. PAGE: READING LIST
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+function cotlas_panel_page_reading_list() {
+	ctap_page_open( 'Reading List & Wishlist', 'dashicons-heart', 'Bookmark and wishlist systems — guests use localStorage + cookie, logged-in users use the database.' );
+	$tabs = array(
+		array( 'id' => 'settings', 'label' => 'Settings',  'icon' => 'dashicons-admin-generic' ),
+		array( 'id' => 'howto',    'label' => 'How To Use', 'icon' => 'dashicons-info' ),
+		array( 'id' => 'codes',    'label' => 'Shortcodes', 'icon' => 'dashicons-shortcode' ),
+	);
+	$active = ctap_nav( $tabs );
+
+	/* ── Settings tab ──────────────────────────────────────── */
+	ctap_pane_open( 'settings', $active );
+	ctap_form_open( 'ctap_save_reading_list', 'settings' );
+	ctap_card_open( 'Reading List', 'dashicons-book-alt' );
+	ctap_module_status(
+		'cotlas_reading_list_enabled',
+		'Reading List',
+		'When enabled, registers the [cotlas_bookmark] shortcode, the readingListPosts GB query parameter, and the AJAX endpoints for logged-in bookmark syncing.',
+		0
+	);
+	ctap_card_close();
+	ctap_card_open( 'Wishlist', 'dashicons-heart' );
+	ctap_module_status(
+		'cotlas_wishlist_enabled',
+		'Wishlist',
+		'When enabled, registers the [cotlas_wishlist] shortcode, the wishlistPosts GB query parameter, and tracks per-post wish counts. Logged-in users affect the global count stored in post meta.',
+		0
+	);
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── How To Use tab ────────────────────────────────────── */
+	ctap_pane_open( 'howto', $active );
+
+	ctap_card_open( 'Reading List — How It Works', 'dashicons-book-alt' );
+	ctap_info(
+		'<strong>Guest users:</strong> bookmarks are stored in <code>localStorage</code> and mirrored to a first-party cookie (<code>cotlas_rl</code>) so the server can read the list on the Reading List page.' .
+		'<br><br><strong>Logged-in users:</strong> bookmarks are stored in <code>user_meta</code> (key: <code>cotlas_reading_list</code>). On every page load the JS layer syncs the server list to localStorage so all buttons reflect the correct state instantly.'
+	);
+	ctap_card_close();
+
+	ctap_card_open( 'Reading List — Step-by-step Setup', 'dashicons-list-view' );
+	echo '<ol style="margin:.5em 0 0 1.4em;font-size:13px;line-height:1.8;">';
+	echo '<li>Enable the Reading List module in Settings and save.</li>';
+	echo '<li>Add <code>[cotlas_bookmark]</code> inside your post card Query Loop template.</li>';
+	echo '<li>Create a WordPress <strong>Page</strong> for the Reading List (e.g. slug <code>/reading-list/</code>).</li>';
+	echo '<li>Add a <strong>GenerateBlocks Query Loop</strong> block to that page.</li>';
+	echo '<li>In the Query Loop <strong>Query Parameters</strong> panel, select <code>readingListPosts → Yes</code>.</li>';
+	echo '<li>Point your menu Reading List icon to the page URL.</li>';
+	echo '</ol>';
+	ctap_card_close();
+
+	ctap_card_open( 'Wishlist — How It Works', 'dashicons-heart' );
+	ctap_info(
+		'<strong>Guest users:</strong> wishlist is stored in <code>localStorage</code> and mirrored to a first-party cookie (<code>cotlas_wl</code>). Guest activity does <em>not</em> affect the public wish count.' .
+		'<br><br><strong>Logged-in users:</strong> wishlist stored in <code>user_meta</code> (key: <code>cotlas_wishlist</code>). Each add/remove also increments/decrements the per-post count stored in <code>post_meta</code> (key: <code>_cotlas_wishlist_count</code>).'
+	);
+	ctap_card_close();
+
+	ctap_card_open( 'Wishlist — Step-by-step Setup', 'dashicons-list-view' );
+	echo '<ol style="margin:.5em 0 0 1.4em;font-size:13px;line-height:1.8;">';
+	echo '<li>Enable the Wishlist module in Settings and save.</li>';
+	echo '<li>Add <code>[cotlas_wishlist]</code> inside your post card Query Loop template. The heart icon and wish count render automatically.</li>';
+	echo '<li>Use <code>[cotlas_wishlist_count]</code> anywhere you want to display only the count number.</li>';
+	echo '<li>Create a WordPress <strong>Page</strong> for the Wishlist (e.g. slug <code>/wishlist/</code>).</li>';
+	echo '<li>Add a <strong>GenerateBlocks Query Loop</strong> block to that page.</li>';
+	echo '<li>In the Query Loop <strong>Query Parameters</strong> panel, select <code>wishlistPosts → Yes</code>.</li>';
+	echo '<li>Point your menu Wishlist icon to the page URL.</li>';
+	echo '</ol>';
+	ctap_card_close();
+
+	ctap_card_open( 'Empty State', 'dashicons-info-outline' );
+	ctap_info( 'When a visitor has no items, the Query Loop returns zero posts. Add an "empty state" message using GenerateBlocks built-in <em>No Results</em> template part inside the Query Loop.' );
+	ctap_card_close();
+	ctap_pane_close();
+
+	/* ── Shortcodes tab ────────────────────────────────────── */
+	ctap_pane_open( 'codes', $active );
+	ctap_card_open( 'Reading List Shortcodes', 'dashicons-book-alt' );
+	ctap_ref_table( array(
+		array(
+			'cotlas_bookmark',
+			'Bookmark toggle button. Place inside a GB Query Loop card. Filled/dark when bookmarked; outlined when not. Guests: localStorage. Logged-in: database.',
+			'<code>size="34"</code> — button size in px (default 34)<br><code>class="my-class"</code> — extra CSS class',
+		),
+	) );
+	ctap_card_close();
+
+	ctap_card_open( 'Reading List — GB Query Parameter', 'dashicons-database-view' );
+	ctap_ref_table( array(
+		array(
+			'readingListPosts',
+			'Filter the query to return only posts the visitor has bookmarked. Logged-in: reads user_meta. Guests: reads cotlas_rl cookie.',
+			'<code>Yes</code> — enable the filter',
+		),
+	) );
+	ctap_card_close();
+
+	ctap_card_open( 'Wishlist Shortcodes', 'dashicons-heart' );
+	ctap_ref_table( array(
+		array(
+			'cotlas_wishlist',
+			'Heart toggle button with wish count. Place inside a GB Query Loop card. Heart fills red when wishlisted. Count reflects logged-in users only.',
+			'<code>size="34"</code> — button size in px (default 34)<br><code>show_count="false"</code> — hide the count<br><code>class="my-class"</code> — extra CSS class',
+		),
+		array(
+			'cotlas_wishlist_count',
+			'Standalone wish count span for the current post. Use outside of the wishlist button if you need the count displayed separately.',
+			'No attributes',
+		),
+	) );
+	ctap_card_close();
+
+	ctap_card_open( 'Wishlist — GB Query Parameter', 'dashicons-database-view' );
+	ctap_ref_table( array(
+		array(
+			'wishlistPosts',
+			'Filter the query to return only posts the visitor has wishlisted. Logged-in: reads user_meta. Guests: reads cotlas_wl cookie.',
+			'<code>Yes</code> — enable the filter',
+		),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
