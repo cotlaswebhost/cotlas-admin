@@ -66,6 +66,7 @@ function cotlas_render_shortcodes_info_page() {
         ['tag' => 'category_info',          'desc' => "Output any category's name, description, or URL. Supports: id, slug, field, link."],
         ['tag' => 'post_marquee',           'desc' => 'Scrolling headline ticker for recent posts. Supports: count, category, speed.'],
         ['tag' => 'trending_categories',    'desc' => 'List of trending categories by post activity. Cached 1 hour. Supports: count, label.'],
+        ['tag' => 'trending_terms',         'desc' => 'List of trending terms by post activity. Cached 1 hour. Supports: taxonomy, count, label.'],
         ['tag' => 'most_read',              'desc' => 'Most-viewed posts (requires Post Views Counter plugin). Cached 1 hour. Supports: count.'],
         ['tag' => 'human_date',             'desc' => 'Relative date ("3 hours ago"). Falls back to formatted date after 24 h. Supports: type, id.'],
         ['tag' => 'focused_categories',     'desc' => 'Horizontal scrollable focus bar of tagged categories. Mark categories via Posts → Categories. Supports: label, highlight, orderby, order, class.'],
@@ -360,6 +361,17 @@ function cotlas_render_shortcodes_info_page() {
     echo '<ul>';
     echo '<li><strong>count</strong>: Number of categories to show. Min: 1, Max: 20. Default: <code>6</code>. Example: <code>[trending_categories count="8"]</code></li>';
     echo '<li><strong>label</strong>: Optional heading text shown above the category list. Default: none. Example: <code>[trending_categories label="Popular Topics"]</code></li>';
+    echo '</ul>';
+    echo '</div>';
+
+        // [trending_terms]
+    echo '<div class="usage-block">';
+    echo '<h3>[trending_terms]</h3>';
+    echo '<p>Displays a list of popular terms ranked by number of published posts. Results are cached for 1 hour.</p>';
+    echo '<ul>';
+    echo '<li><strong>count</strong>: Number of terms to show. Min: 1, Max: 20. Default: <code>6</code>. Example: <code>[trending_terms count="8"]</code></li>';
+    echo '<li><strong>taxonomy</strong>: Taxonomy to display terms from. Default: <code>category</code>. Example: <code>[trending_terms taxonomy="post_tag"]</code></li>';
+    echo '<li><strong>label</strong>: Optional heading text shown above the term list. Default: none. Example: <code>[trending_terms label="Popular Topics"]</code></li>';
     echo '</ul>';
     echo '</div>';
 

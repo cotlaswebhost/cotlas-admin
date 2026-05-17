@@ -7,44 +7,53 @@
 
 defined( 'ABSPATH' ) || exit;
 
+
 /**
- * Trending Categories Shortcode
+ * Trending Terms Shortcode (formerly Trending Categories)
  *
- * Displays top categories ranked by total post views (Post Views Counter plugin).
- * Automatically falls back to categories with the most recent posts when no view
- * data is available — making it safe to use on new/boilerplate installs.
- *
- * Usage: [trending_categories count="6" label=""]
+ * Displays top terms (categories, tags, or custom taxonomies) ranked by total post views.
+ * 
+ * Usage: [trending_terms taxonomy="category" count="6" label=""]
  *
  * Attributes:
- *   count  - number of categories to show (default: 6, max: 20)
- *   label  - optional heading text shown above the list
+ *   taxonomy  - taxonomy slug to display terms from (default: 'category')
+ *   count     - number of terms to show (default: 6, max: 20)
+ *   label     - optional heading text shown above the list
  */
-class Cotlas_Trending_Categories {
+class Cotlas_Trending_Terms {
 
     public function __construct() {
+        add_shortcode( 'trending_terms', array( $this, 'render' ) );
+        // Keep legacy shortcode for backward compatibility
         add_shortcode( 'trending_categories', array( $this, 'render' ) );
     }
 
     public function render( $atts ) {
         $atts = shortcode_atts( array(
-            'count' => 6,
-            'label' => '',
-        ), $atts, 'trending_categories' );
+            'taxonomy' => 'category',
+            'count'    => 6,
+            'label'    => '',
+        ), $atts, 'trending_terms' );
 
-        $count = max( 1, min( 20, intval( $atts['count'] ) ) );
-        $label = sanitize_text_field( $atts['label'] );
+        $taxonomy = sanitize_key( $atts['taxonomy'] );
+        $count    = max( 1, min( 20, intval( $atts['count'] ) ) );
+        $label    = sanitize_text_field( $atts['label'] );
 
-        // Transient cache — 1 hour per unique count value
-        $cache_key  = 'cotlas_trending_cats_' . $count;
-        $categories = get_transient( $cache_key );
-
-        if ( false === $categories ) {
-            $categories = $this->get_trending_categories( $count );
-            set_transient( $cache_key, $categories, HOUR_IN_SECONDS );
+        // Validate taxonomy exists
+        if ( ! taxonomy_exists( $taxonomy ) ) {
+            return '<p class="cotlas-trending-error">Error: Taxonomy "' . esc_html( $taxonomy ) . '" does not exist.</p>';
         }
 
-        if ( empty( $categories ) ) {
+        // Transient cache — 1 hour per unique combination
+        $cache_key  = 'cotlas_trending_terms_' . $taxonomy . '_' . $count;
+        $terms = get_transient( $cache_key );
+
+        if ( false === $terms ) {
+            $terms = $this->get_trending_terms( $taxonomy, $count );
+            set_transient( $cache_key, $terms, HOUR_IN_SECONDS );
+        }
+
+        if ( empty( $terms ) ) {
             return '';
         }
 
@@ -55,11 +64,11 @@ class Cotlas_Trending_Categories {
                 <p class="cotlas-trending-label"><?php echo esc_html( $label ); ?></p>
             <?php endif; ?>
             <ul class="cotlas-trending-list">
-                <?php foreach ( $categories as $cat ) : ?>
+                <?php foreach ( $terms as $term ) : ?>
                     <li class="cotlas-trending-item">
-                        <a href="<?php echo esc_url( get_category_link( $cat->term_id ) ); ?>" class="cotlas-trending-link">
+                        <a href="<?php echo esc_url( get_term_link( $term ) ); ?>" class="cotlas-trending-link">
                             <span class="cotlas-trending-icon" aria-hidden="true"><?php echo $this->flame_icon(); ?></span>
-                            <span class="cotlas-trending-name"><?php echo esc_html( $cat->name ); ?></span>
+                            <span class="cotlas-trending-name"><?php echo esc_html( $term->name ); ?></span>
                         </a>
                     </li>
                 <?php endforeach; ?>
@@ -70,28 +79,27 @@ class Cotlas_Trending_Categories {
     }
 
     /**
-     * Build the ranked category list.
+     * Build the ranked term list.
      * 1. Try Post Views Counter view-based ranking.
      * 2. Fill any remaining slots from most-recent posts.
      */
-    private function get_trending_categories( $count ) {
-        $view_based = $this->categories_by_views( $count );
+    private function get_trending_terms( $taxonomy, $count ) {
+        $view_based = $this->terms_by_views( $taxonomy, $count );
 
         if ( count( $view_based ) >= $count ) {
             return $view_based;
         }
 
         $existing_ids = wp_list_pluck( $view_based, 'term_id' );
-        $recent_based = $this->categories_by_recency( $count - count( $view_based ), $existing_ids );
+        $recent_based = $this->terms_by_recency( $taxonomy, $count - count( $view_based ), $existing_ids );
 
         return array_merge( $view_based, $recent_based );
     }
 
     /**
-     * Get categories from posts ordered by Post Views Counter total views.
-     * Returns an empty array when PVC has no data yet (all views = 0).
+     * Get terms from posts ordered by Post Views Counter total views.
      */
-    private function categories_by_views( $count ) {
+    private function terms_by_views( $taxonomy, $count ) {
         if ( ! function_exists( 'pvc_get_post_views' ) ) {
             return array();
         }
@@ -114,13 +122,13 @@ class Cotlas_Trending_Categories {
             return array();
         }
 
-        return $this->posts_to_unique_categories( $post_ids, $count );
+        return $this->posts_to_unique_terms( $post_ids, $taxonomy, $count );
     }
 
     /**
-     * Get categories from the most recently published posts.
+     * Get terms from the most recently published posts.
      */
-    private function categories_by_recency( $count, $exclude_term_ids = array() ) {
+    private function terms_by_recency( $taxonomy, $count, $exclude_term_ids = array() ) {
         $post_ids = get_posts( array(
             'post_type'      => 'post',
             'post_status'    => 'publish',
@@ -130,13 +138,17 @@ class Cotlas_Trending_Categories {
             'fields'         => 'ids',
         ) );
 
-        return $this->posts_to_unique_categories( $post_ids, $count, $exclude_term_ids );
+        if ( empty( $post_ids ) ) {
+            return array();
+        }
+
+        return $this->posts_to_unique_terms( $post_ids, $taxonomy, $count, $exclude_term_ids );
     }
 
     /**
-     * Walk a list of post IDs and collect unique primary categories up to $limit.
+     * Walk a list of post IDs and collect unique primary terms up to $limit.
      */
-    private function posts_to_unique_categories( $post_ids, $limit, $exclude_term_ids = array() ) {
+    private function posts_to_unique_terms( $post_ids, $taxonomy, $limit, $exclude_term_ids = array() ) {
         $seen   = array_flip( $exclude_term_ids );
         $result = array();
 
@@ -145,7 +157,7 @@ class Cotlas_Trending_Categories {
                 break;
             }
 
-            $primary = $this->get_primary_category( (int) $post_id );
+            $primary = $this->get_primary_term( (int) $post_id, $taxonomy );
 
             if ( ! $primary || isset( $seen[ $primary->term_id ] ) ) {
                 continue;
@@ -159,33 +171,35 @@ class Cotlas_Trending_Categories {
     }
 
     /**
-     * Return the primary category for a post.
-     * Respects Yoast SEO primary category when available.
-     * Skips "Uncategorized" unless it is the only option.
+     * Return the primary term for a post based on the specified taxonomy.
+     * Respects Yoast SEO primary term when available.
+     * Skips default terms like "Uncategorized" for category taxonomy.
      */
-    private function get_primary_category( $post_id ) {
-        // Yoast SEO primary category
-        if ( class_exists( 'WPSEO_Primary_Term' ) ) {
-            $pt      = new WPSEO_Primary_Term( 'category', $post_id );
+    private function get_primary_term( $post_id, $taxonomy ) {
+        // Yoast SEO primary term support (works for categories only in Yoast)
+        if ( $taxonomy === 'category' && class_exists( 'WPSEO_Primary_Term' ) ) {
+            $pt      = new WPSEO_Primary_Term( $taxonomy, $post_id );
             $term_id = $pt->get_primary_term();
 
             if ( $term_id ) {
-                $term = get_term( (int) $term_id, 'category' );
+                $term = get_term( (int) $term_id, $taxonomy );
                 if ( $term && ! is_wp_error( $term ) ) {
                     return $term;
                 }
             }
         }
 
-        $terms = get_the_terms( $post_id, 'category' );
+        $terms = get_the_terms( $post_id, $taxonomy );
         if ( ! $terms || is_wp_error( $terms ) ) {
             return null;
         }
 
-        // Prefer any term that isn't "Uncategorized"
-        foreach ( $terms as $term ) {
-            if ( 'uncategorized' !== $term->slug ) {
-                return $term;
+        // For categories, prefer any term that isn't "Uncategorized"
+        if ( $taxonomy === 'category' ) {
+            foreach ( $terms as $term ) {
+                if ( 'uncategorized' !== $term->slug ) {
+                    return $term;
+                }
             }
         }
 
@@ -199,8 +213,11 @@ class Cotlas_Trending_Categories {
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" focusable="false"><path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 17.03 19.32C18.86 17.66 19.5 15 18.56 12.72L18.43 12.46C18.22 12 17.66 11.2 17.66 11.2Z"/></svg>';
     }
 }
-add_action( 'plugins_loaded', function() { new Cotlas_Trending_Categories(); } );
 
+// Initialize the shortcode
+add_action( 'plugins_loaded', function() { 
+    new Cotlas_Trending_Terms(); 
+} );
 /**
  * Most Read Articles Shortcode
  *
