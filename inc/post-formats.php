@@ -264,7 +264,7 @@ function gp_move_video_to_featured_image() {
                     `;
                     
                     // Target the featured image container
-                    var featuredContainer = document.querySelector('.gb-element-dab3bde9');
+                    var featuredContainer = document.querySelector('.featured-image');
                     if (featuredContainer) {
                         featuredContainer.innerHTML = videoHTML;
                         featuredContainer.classList.add('video-loaded');
@@ -278,7 +278,7 @@ function gp_move_video_to_featured_image() {
                     }
                     
                     // Remove video marker from content
-                    var contentArea = document.querySelector('.gb-element-850a602b');
+                    var contentArea = document.querySelector('.post-content');
                     if (contentArea) {
                         contentArea.innerHTML = contentArea.innerHTML.replace('<!-- VIDEO_MARKER -->', '');
                     }
@@ -681,12 +681,12 @@ function gp_audio_player_shortcode($atts) {
                 <div class="gp-audio-header" style="background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%); border: 1px solid #e5e5e5; padding: 15px; border-radius: 10px 10px 0 0;">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
                         <div style="display: flex; align-items: center;">
-                            <svg style="width: 20px; height: 20px; margin-right: 10px; fill: #06940c;" viewBox="0 0 24 24">
+                            <svg style="width: 20px; height: 20px; margin-right: 10px; fill: #e70606;" viewBox="0 0 24 24">
                                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                             </svg>
-                            <span style="color: #06940c; font-weight: 600;">Listen to this Post</span>
+                            <span style="color: #e70606; font-weight: 600;">Listen to this Post</span>
                         </div>
-                        <span style="color: rgba(6, 110, 21, 0.8); font-size: 12px;">' . $file_name . '</span>
+                        <span style="color: #e70606; font-size: 12px;">' . $file_name . '</span>
                     </div>
                 </div>
                 <div class="gp-audio-body" style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; border: 1px solid #e9ecef; border-top: none;">
@@ -786,8 +786,9 @@ function gp_audio_player_styles() {
             }
             
             .gp-audio-player audio::-webkit-media-controls-play-button {
-                background-color: #667eea;
+                background-color: #e4effd;
                 border-radius: 50%;
+                fill: white;
             }
             
             .gp-audio-player audio::-webkit-media-controls-current-time-display,

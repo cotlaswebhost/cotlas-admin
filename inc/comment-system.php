@@ -44,15 +44,15 @@ function cotlas_render_comment( $comment, $depth = 0, $top_id = 0 ) {
     $diff     = $now - $date_ts;
 
     if ( $diff < 5 ) {
-        $ago = 'अभी';
+        $ago = 'Just now';
     } elseif ( $diff < 60 ) {
-        $ago = $diff . ' सेकंड पहले';
+        $ago = $diff . ' seconds ago';
     } elseif ( $diff < 3600 ) {
         $mins = (int)( $diff / 60 );
-        $ago  = $mins . ' मिनट पहले';
+        $ago  = $mins . ' minutes ago';
     } elseif ( $diff < 43200 ) {
         $hrs = (int)( $diff / 3600 );
-        $ago = $hrs . ' घंटे पहले';
+        $ago = $hrs . ' hours ago';
     } else {
         $ago = date_i18n( 'd M Y, g:i a', $date_ts + ( get_option('gmt_offset') * 3600 ) );
     }
@@ -89,6 +89,7 @@ function cotlas_render_comment( $comment, $depth = 0, $top_id = 0 ) {
                  alt="<?php echo esc_attr( $author ); ?>"
                  width="36" height="36"
                  loading="lazy"
+                 onload="if(this.nextElementSibling) this.nextElementSibling.style.display='none';"
                  onerror="this.style.display='none'" />
             <span class="ctc-comment__initial"><?php echo esc_html( $avatar['initials'] ); ?></span>
         </div>
@@ -96,7 +97,7 @@ function cotlas_render_comment( $comment, $depth = 0, $top_id = 0 ) {
             <div class="ctc-comment__bubble">
                 <span class="ctc-comment__author"><?php echo $author; ?></span>
                 <?php if ( ! $approved ) : ?>
-                    <span class="ctc-comment__pending">⏳ अनुमोदन में</span>
+                    <span class="ctc-comment__pending">⏳ Pending approval</span>
                 <?php endif; ?>
                 <div class="ctc-comment__text" data-raw="<?php echo esc_attr( $content ); ?>"><?php echo wp_kses_post( $content ); ?></div>
             </div>
@@ -209,7 +210,7 @@ function cotlas_comments_shortcode( $atts ) {
                 <?php if ( $logged_in ) : ?>
                     <?php $av = cotlas_comment_avatar( $user_email, $user_name ); ?>
                     <div class="ctc-comment__avatar ctc-form__avatar" style="background:<?php echo esc_attr($av['color']); ?>">
-                        <img src="<?php echo esc_url($av['src']); ?>" width="36" height="36" loading="lazy" onerror="this.style.display='none'" />
+                        <img src="<?php echo esc_url($av['src']); ?>" width="36" height="36" loading="lazy" onload="if(this.nextElementSibling) this.nextElementSibling.style.display='none';" onerror="this.style.display='none'" />
                         <span class="ctc-comment__initial"><?php echo esc_html($av['initials']); ?></span>
                     </div>
                 <?php else : ?>
@@ -221,15 +222,15 @@ function cotlas_comments_shortcode( $atts ) {
                 <div class="ctc-form__inputs">
                     <?php if ( ! $logged_in ) : ?>
                         <div class="ctc-form__guest-fields">
-                            <input type="text" name="author" class="ctc-input" placeholder="आपका नाम *" required maxlength="100" />
-                            <input type="email" name="email" class="ctc-input" placeholder="ईमेल *" required maxlength="200" />
+                            <input type="text" name="author" class="ctc-input" placeholder="Your Name *" required maxlength="100" />
+                            <input type="email" name="email" class="ctc-input" placeholder="Email *" required maxlength="200" />
                         </div>
                     <?php endif; ?>
                     <div class="ctc-form__textarea-wrap">
-                        <textarea name="comment" class="ctc-textarea" placeholder="अपनी राय लिखें…" rows="3" required maxlength="1000"></textarea>
+                        <textarea name="comment" class="ctc-textarea" placeholder="Leave your feedback…" rows="3" required maxlength="1000"></textarea>
                     </div>
                     <div class="ctc-form__footer">
-                        <button type="submit" class="ctc-submit">पोस्ट करें</button>
+                        <button type="submit" class="ctc-submit">Post</button>
                     </div>
                 </div>
             </div>
@@ -246,7 +247,7 @@ function cotlas_comments_shortcode( $atts ) {
         <!-- ── Comment list ── -->
         <div class="ctc-list">
             <?php if ( empty( $top ) ) : ?>
-                <p class="ctc-empty">अभी तक कोई टिप्पणी नहीं। पहले आप लिखें!</p>
+                <p class="ctc-empty">No comments yet. Be the first to comment!</p>
             <?php else : ?>
                 <?php foreach ( $top as $c ) :
                     echo cotlas_render_comment( $c, 0 );
@@ -347,13 +348,13 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
         if (!mainForm) return;
         var clone = mainForm.cloneNode(true);
         clone.querySelector('.ctc-parent-id').value = cid;
-        clone.querySelector('.ctc-textarea').placeholder = 'जवाब लिखें…';
+        clone.querySelector('.ctc-textarea').placeholder = 'Write a reply…';
         clone.classList.add('ctc-form--reply');
         // Cancel button
         var cancel = document.createElement('button');
         cancel.type = 'button';
         cancel.className = 'ctc-cancel-reply';
-        cancel.textContent = 'रद्द करें';
+        cancel.textContent = 'Cancel';
         cancel.addEventListener('click', function(){
             slot.style.display = 'none';
             slot.innerHTML = '';
@@ -385,8 +386,8 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
             wrap.innerHTML =
                 '<textarea class="ctc-textarea ctc-edit-textarea" rows="3" maxlength="1000"></textarea>' +
                 '<div class="ctc-edit-actions">' +
-                  '<button type="button" class="ctc-submit ctc-edit-save" data-cid="' + cid + '" data-nonce="' + nonce + '">सहेजें</button>' +
-                  '<button type="button" class="ctc-cancel-reply ctc-edit-cancel">रद्द करें</button>' +
+                  '<button type="button" class="ctc-submit ctc-edit-save" data-cid="' + cid + '" data-nonce="' + nonce + '">Save</button>' +
+                  '<button type="button" class="ctc-cancel-reply ctc-edit-cancel">Cancel</button>' +
                 '</div>';
             wrap.querySelector('textarea').value = raw;
             textEl.style.display = 'none';
@@ -431,7 +432,7 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (!data.success) {
-                        saveBtn.textContent = 'सहेजें';
+                        saveBtn.textContent = 'Save';
                         saveBtn.disabled = false;
                         alert('Error: ' + (data.data || 'unknown'));
                         return;
@@ -449,7 +450,7 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
                     if (editBtn) { editBtn.style.display = ''; }
                 })
                 .catch(function() {
-                    saveBtn.textContent = 'सहेजें';
+                    saveBtn.textContent = 'Save';
                     saveBtn.disabled = false;
                 });
         }
