@@ -39,7 +39,7 @@ function gp_youtube_video_url_callback($post) {
     ?>
     <div style="margin-bottom: 15px;">
         <label for="youtube_video_url" style="display: block; margin-bottom: 5px; font-weight: bold;">YouTube Video URL:</label>
-        <input type="url" id="youtube_video_url" name="youtube_video_url" value="<?php echo esc_attr($youtube_url); ?>" style="width:100%; margin-bottom: 10px;" placeholder="https://www.youtube.com/watch?v=..." />
+        <input type="text" id="youtube_video_url" name="youtube_video_url" value="<?php echo esc_attr($youtube_url); ?>" style="width:100%; margin-bottom: 10px;" placeholder="https://www.youtube.com/watch?v=..." />
         
         <div style="margin-bottom: 10px;">
             <input type="checkbox" id="youtube_auto_fetch" name="youtube_auto_fetch" value="1" <?php checked($auto_fetch_data, '1'); ?> />
@@ -350,7 +350,7 @@ function gp_audio_file_url_callback($post) {
     
     // Fixed label with correct for attribute
     echo '<label for="' . esc_attr($input_id) . '">Audio File URL:</label>';
-    echo '<input type="url" id="' . esc_attr($input_id) . '" name="audio_file_url" value="' . esc_attr($audio_url) . '" style="width:100%; margin-top:5px;" placeholder="https://example.com/audio.mp3" />';
+    echo '<input type="text" id="' . esc_attr($input_id) . '" name="audio_file_url" value="' . esc_attr($audio_url) . '" style="width:100%; margin-top:5px;" placeholder="https://example.com/audio.mp3" />';
     echo '<input type="hidden" id="' . esc_attr($attachment_id) . '" name="audio_attachment_id" value="' . esc_attr($audio_attachment_id) . '" />';
     
     echo '<div style="margin-top: 10px;">';

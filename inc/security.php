@@ -62,6 +62,9 @@ add_filter( 'show_admin_bar', '__return_false' );
 add_filter('the_generator', '__return_empty_string');
 
 function shapeSpace_remove_version_scripts_styles($src) {
+	if ( is_admin() ) {
+		return $src;
+	}
 	if (strpos($src, 'ver=') !== false) {
 		$src = remove_query_arg('ver', $src);
 	}
