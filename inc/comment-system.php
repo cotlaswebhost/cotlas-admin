@@ -271,6 +271,64 @@ function cotlas_comments_shortcode( $atts ) {
 add_shortcode( 'cotlas_comments', 'cotlas_comments_shortcode' );
 
 /**
+ * AJAX handler: submit a new comment without forcing a full page reload.
+ */
+function cotlas_ajax_submit_comment() {
+    $nonce = isset( $_POST['_wp_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_wp_nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'comment-post' ) ) {
+        wp_send_json_error( 'Invalid request' );
+    }
+
+    $post_id = isset( $_POST['comment_post_ID'] ) ? (int) $_POST['comment_post_ID'] : 0;
+    if ( ! $post_id || ! comments_open( $post_id ) ) {
+        wp_send_json_error( 'Comments are closed for this post' );
+    }
+
+    if ( get_option( 'comment_registration' ) && ! is_user_logged_in() ) {
+        wp_send_json_error( 'Please log in to comment' );
+    }
+
+    if ( ! is_user_logged_in() && get_option( 'turnstile_enable_comments' ) && function_exists( 'cotlas_verify_turnstile' ) ) {
+        $turnstile = cotlas_verify_turnstile();
+        if ( is_wp_error( $turnstile ) ) {
+            wp_send_json_error( wp_strip_all_tags( $turnstile->get_error_message() ) );
+        }
+    }
+
+    $comment = wp_handle_comment_submission( wp_unslash( $_POST ) );
+    if ( is_wp_error( $comment ) ) {
+        wp_send_json_error( wp_strip_all_tags( $comment->get_error_message() ) );
+    }
+
+    $user = wp_get_current_user();
+    do_action( 'set_comment_cookies', $comment, $user );
+
+    if ( ! is_user_logged_in() ) {
+        $_COOKIE[ 'comment_author_' . COOKIEHASH ]       = $comment->comment_author;
+        $_COOKIE[ 'comment_author_email_' . COOKIEHASH ] = $comment->comment_author_email;
+    }
+
+    $parent_id = (int) $comment->comment_parent;
+    $top_id    = $parent_id;
+    if ( $parent_id ) {
+        $parent = get_comment( $parent_id );
+        if ( $parent && (int) $parent->comment_parent ) {
+            $top_id = (int) $parent->comment_parent;
+        }
+    }
+
+    wp_send_json_success( array(
+        'html'      => cotlas_render_comment( $comment, $parent_id ? 1 : 0, $top_id ),
+        'commentId' => (int) $comment->comment_ID,
+        'parentId'  => $parent_id,
+        'topId'     => $top_id,
+        'approved'  => '1' === $comment->comment_approved,
+    ) );
+}
+add_action( 'wp_ajax_cotlas_submit_comment',        'cotlas_ajax_submit_comment' );
+add_action( 'wp_ajax_nopriv_cotlas_submit_comment', 'cotlas_ajax_submit_comment' );
+
+/**
  * AJAX handler: edit own comment (logged-in user or matching guest cookie within 60 min).
  */
 function cotlas_ajax_edit_comment() {
@@ -331,6 +389,63 @@ add_action( 'wp_footer', function () { ?>
 <script>
 var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
 (function(){
+    function resetTurnstile(form) {
+        var widget = form && form.querySelector('.cf-turnstile');
+        if (widget && window.turnstile) {
+            window.turnstile.reset(widget);
+        }
+    }
+
+    function updateHeadingCount(widget) {
+        var heading = widget && widget.querySelector('.ctc-heading');
+        if (!heading) return;
+        var count = heading.querySelector('.ctc-heading__count');
+        if (!count) {
+            count = document.createElement('span');
+            count.className = 'ctc-heading__count';
+            count.textContent = '0';
+            heading.appendChild(count);
+        }
+        count.textContent = String((parseInt(count.textContent, 10) || 0) + 1);
+    }
+
+    function insertComment(widget, data) {
+        if (!widget || !data || !data.html) return;
+        var list = widget.querySelector('.ctc-list');
+        if (!list) return;
+
+        var empty = list.querySelector('.ctc-empty');
+        if (empty) {
+            empty.parentNode.removeChild(empty);
+        }
+
+        var temp = document.createElement('div');
+        temp.innerHTML = data.html;
+        var commentNode = temp.firstElementChild;
+        if (!commentNode) return;
+
+        if (data.parentId && data.topId) {
+            var topComment = document.getElementById('ctc-c-' + data.topId);
+            var replies = topComment && topComment.nextElementSibling && topComment.nextElementSibling.classList.contains('ctc-replies')
+                ? topComment.nextElementSibling
+                : null;
+            if (!replies && topComment) {
+                replies = document.createElement('div');
+                replies.className = 'ctc-replies';
+                topComment.parentNode.insertBefore(replies, topComment.nextSibling);
+            }
+            if (replies) {
+                replies.appendChild(commentNode);
+            } else {
+                list.appendChild(commentNode);
+            }
+        } else {
+            list.appendChild(commentNode);
+        }
+
+        updateHeadingCount(widget);
+    }
+
     document.addEventListener('click', function(e){
         var btn = e.target.closest('.ctc-reply-btn');
         if (!btn) return;
@@ -373,6 +488,61 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
         slot.style.display = 'block';
         clone.querySelector('.ctc-textarea').focus();
         return;
+    });
+
+    // ── New comment / reply submit ──────────────────────────────────
+    document.addEventListener('submit', function(e) {
+        var form = e.target.closest('.ctc-form');
+        if (!form || !form.closest('.cotlas-comments')) return;
+        e.preventDefault();
+
+        var submit = form.querySelector('.ctc-submit');
+        var originalText = submit ? submit.textContent : '';
+        if (submit) {
+            submit.textContent = 'Posting...';
+            submit.disabled = true;
+        }
+
+        var fd = new FormData(form);
+        fd.set('action', 'cotlas_submit_comment');
+
+        fetch(ctcAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.success) {
+                    alert('Error: ' + (data.data || 'Unable to post comment'));
+                    resetTurnstile(form);
+                    return;
+                }
+
+                var widget = form.closest('.cotlas-comments');
+                insertComment(widget, data.data);
+
+                var textarea = form.querySelector('.ctc-textarea');
+                if (textarea) {
+                    textarea.value = '';
+                }
+
+                if (form.classList.contains('ctc-form--reply')) {
+                    var slot = form.closest('.ctc-inline-reply');
+                    if (slot) {
+                        slot.style.display = 'none';
+                        slot.innerHTML = '';
+                    }
+                } else {
+                    resetTurnstile(form);
+                }
+            })
+            .catch(function() {
+                alert('Error: Unable to post comment');
+                resetTurnstile(form);
+            })
+            .finally(function() {
+                if (submit) {
+                    submit.textContent = originalText || 'Post';
+                    submit.disabled = false;
+                }
+            });
     });
 
     // ── Inline edit ──────────────────────────────────────────────────
@@ -466,4 +636,3 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
 })();
 </script>
 <?php }, 20 );
-

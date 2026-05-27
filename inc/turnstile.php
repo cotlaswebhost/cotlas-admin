@@ -18,19 +18,16 @@ defined( 'ABSPATH' ) || exit;
  */
 // Menu registration moved to admin-panel.php
 
-
-
-
 /**
  * Enqueue the Cloudflare Turnstile JS on login/register and frontend pages
  * only when at least one protection toggle is enabled.
  */
 function cotlas_turnstile_script() {
     // Only enqueue if at least one feature is enabled
-    $login_enabled = get_option('turnstile_enable_login');
+    $login_enabled    = get_option('turnstile_enable_login');
     $register_enabled = get_option('turnstile_enable_register');
-    $comments_enabled = get_option('turnstile_enable_comments');
-    
+    $comments_enabled = get_option('turnstile_enable_comments') && ! is_user_logged_in();
+
     if ($login_enabled || $register_enabled || $comments_enabled) {
         wp_enqueue_script('cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), null, true);
     }
@@ -54,7 +51,9 @@ function cotlas_display_turnstile() {
     } elseif ($current_filter === 'register_form' && get_option('turnstile_enable_register')) {
         $show = true;
     } elseif ($current_filter === 'comment_form' && get_option('turnstile_enable_comments')) {
-        $show = true;
+        if ( ! is_user_logged_in() ) {
+            $show = true;
+        }
     }
 
     if ($show) {
