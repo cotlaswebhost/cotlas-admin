@@ -182,10 +182,23 @@ function cotlas_ajax_register() {
         wp_send_json_error( [ 'message' => wp_strip_all_tags( implode( ' ', $messages ) ) ] );
     }
 
-    // On success, send back a message – the form will show it and not redirect
-    wp_send_json_success( [
+    $requested_redirect = isset( $_POST['cotlas_redirect'] ) ? esc_url_raw( wp_unslash( $_POST['cotlas_redirect'] ) ) : ''; // phpcs:ignore
+    $redirect = $requested_redirect ?: get_option( 'cotlas_auth_redirect_register' );
+    if ( $redirect && strpos( $redirect, 'http' ) !== 0 && strpos( $redirect, '/' ) !== 0 ) {
+        $redirect = '/' . $redirect;
+    }
+
+    // On success, send back a message – the form will show it and then optionally redirect
+    $response = [
         'message' => __( 'Account created! Check your email for your login details.', 'cotlas-admin' ),
-    ] );
+    ];
+
+    if ( $redirect ) {
+        $response['redirect'] = $redirect;
+        $response['redirect_delay'] = 2500; // Wait 2.5 seconds to read the message
+    }
+
+    wp_send_json_success( $response );
 }
 
 // ---------------------------------------------------------------------------

@@ -72,6 +72,12 @@ add_action('comment_form', 'cotlas_display_turnstile');
  * @return true|WP_Error
  */
 function cotlas_verify_turnstile() {
+    static $verification_result = null;
+
+    if ( $verification_result !== null ) {
+        return $verification_result;
+    }
+
     // Check which context we are in to decide if verification is needed
     $need_verify = false;
     
@@ -81,10 +87,14 @@ function cotlas_verify_turnstile() {
     
     // But let's check keys first.
     $secret_key = get_option('turnstile_secret_key');
-    if (empty($secret_key)) return true; // No key, no check (fail open to avoid lockout)
+    if (empty($secret_key)) {
+        $verification_result = true;
+        return $verification_result; // No key, no check (fail open to avoid lockout)
+    }
 
     if (!isset($_POST['cf-turnstile-response']) || empty($_POST['cf-turnstile-response'])) {
-         return new WP_Error('turnstile_missing', __('<strong>ERROR</strong>: Please verify you are human.'));
+         $verification_result = new WP_Error('turnstile_missing', __('<strong>ERROR</strong>: Please verify you are human.'));
+         return $verification_result;
     }
 
     $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
@@ -96,17 +106,20 @@ function cotlas_verify_turnstile() {
     ]);
 
     if (is_wp_error($response)) {
-        return new WP_Error('turnstile_error', __('<strong>ERROR</strong>: Unable to verify Turnstile.'));
+        $verification_result = new WP_Error('turnstile_error', __('<strong>ERROR</strong>: Unable to verify Turnstile.'));
+        return $verification_result;
     }
 
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
 
     if (!$data || !isset($data['success']) || !$data['success']) {
-        return new WP_Error('turnstile_invalid', __('<strong>ERROR</strong>: Turnstile verification failed.'));
+        $verification_result = new WP_Error('turnstile_invalid', __('<strong>ERROR</strong>: Turnstile verification failed.'));
+        return $verification_result;
     }
 
-    return true;
+    $verification_result = true;
+    return $verification_result;
 }
 
 /** Verify Turnstile token on wp_authenticate_user (login). */

@@ -241,6 +241,7 @@ function cotlas_comments_shortcode( $atts ) {
                 <input type="hidden" name="author" value="<?php echo $user_name; ?>" />
                 <input type="hidden" name="email"  value="<?php echo $user_email; ?>" />
             <?php endif; ?>
+            <?php do_action( 'comment_form', $post_id ); ?>
         </form>
         <?php endif; ?>
 
@@ -362,6 +363,13 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
         clone.appendChild(cancel);
         slot.innerHTML = '';
         slot.appendChild(clone);
+        
+        var tsDiv = clone.querySelector('.cf-turnstile');
+        if (tsDiv && window.turnstile) {
+            tsDiv.innerHTML = ''; // clear cloned iframe and inputs
+            turnstile.render(tsDiv, { sitekey: tsDiv.getAttribute('data-sitekey') });
+        }
+        
         slot.style.display = 'block';
         clone.querySelector('.ctc-textarea').focus();
         return;

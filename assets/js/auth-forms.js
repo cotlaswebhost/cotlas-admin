@@ -97,17 +97,23 @@
                 if (res.success) {
                     var payload = res.data || {};
 
-                    if (payload.redirect) {
-                        // Redirect (login success)
-                        window.location.href = payload.redirect;
-                        return; // keep loading state until page changes
-                    }
-
                     if (payload.message) {
-                        // Non-redirect success (register, forgot password)
+                        // Non-redirect success or delayed redirect (register, forgot password)
                         showMsg(msgBox, payload.message, 'success');
                         form.reset();
                         resetTurnstile(form);
+                    }
+
+                    if (payload.redirect) {
+                        if (payload.redirect_delay) {
+                            setTimeout(function() {
+                                window.location.href = payload.redirect;
+                            }, payload.redirect_delay);
+                        } else {
+                            // Immediate redirect (login success)
+                            window.location.href = payload.redirect;
+                            return; // keep loading state until page changes
+                        }
                     }
                 } else {
                     var msg = (res.data && res.data.message) ? res.data.message : 'An error occurred.';

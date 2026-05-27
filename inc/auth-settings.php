@@ -29,6 +29,7 @@ function cotlas_auth_register_settings() {
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_enabled',             [ 'sanitize_callback' => 'absint',          'default' => 0 ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_login_slug',          [ 'sanitize_callback' => 'sanitize_title',  'default' => 'login' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_register_slug',       [ 'sanitize_callback' => 'sanitize_title',  'default' => 'register' ] );
+    register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_register',   [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_privileged', [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_default',    [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_honeypot',            [ 'sanitize_callback' => 'absint',          'default' => 1 ] );

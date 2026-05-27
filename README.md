@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.0.8
+- **Version:** 2.0.9
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 

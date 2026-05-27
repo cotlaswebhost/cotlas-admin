@@ -43,6 +43,7 @@ function cotlas_panel_process_saves() {
 				'cotlas_auth_login_slug'          => 'sanitize_text_field',
 				'cotlas_auth_register_slug'       => 'sanitize_text_field',
 				'cotlas_auth_forgot_slug'         => 'sanitize_text_field',
+				'cotlas_auth_redirect_register'   => 'sanitize_text_field',
 				'cotlas_auth_redirect_privileged' => 'sanitize_text_field',
 				'cotlas_auth_redirect_default'    => 'sanitize_text_field',
 				'cotlas_auth_rate_limit'          => 'absint',
@@ -836,6 +837,8 @@ function cotlas_panel_page_login() {
 	ctap_section( 'Redirects After Login' );
 	ctap_field( 'Privileged Roles (Admin/Editor/Author)', ctap_input( 'cotlas_auth_redirect_privileged', '/wp-admin/' ), 'Relative path or full URL, e.g. <code>/wp-admin/</code> or <code>https://example.com/dashboard/</code>.' );
 	ctap_field( 'Default Roles (Subscriber etc.)',        ctap_input( 'cotlas_auth_redirect_default',    '/' ),          'Relative path or full URL, e.g. <code>/</code> or <code>/my-account/</code>.' );
+	ctap_section( 'Redirect After Registration' );
+	ctap_field( 'Redirect URL', ctap_input( 'cotlas_auth_redirect_register', '/' ), 'Relative path or full URL, e.g. <code>/welcome/</code> or <code>https://example.com/login/</code>. Empty means no redirect.' );
 	ctap_section( 'Rate Limiting' );
 	ctap_field( 'Max Login Attempts', ctap_input( 'cotlas_auth_rate_limit', '5', 'number' ), 'Failed attempts before a 15-minute lockout. Default: 5.' );
 	ctap_card_close();
