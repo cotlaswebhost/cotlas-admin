@@ -244,8 +244,30 @@ html.cotlas-delete-modal-open {
 }
 .ctc-form__footer {
     display: flex;
+    align-items: center;
+    gap: 12px;
     justify-content: flex-end;
     margin-top: 8px;
+    flex-wrap: wrap;
+}
+.ctc-form[data-login-required="1"] .ctc-form__row {
+    align-items: center;
+}
+.cotlas-comments .ctc-login-required {
+    color: #4b5563;
+    font-size: 0.92rem;
+    line-height: 1.4;
+    padding: 8px 0;
+    text-align: left;
+}
+.cotlas-comments .ctc-login-required a {
+    color: #1877f2;
+    font-weight: 400;
+    text-decoration: none;
+}
+.cotlas-comments .ctc-login-required a:hover {
+    text-decoration: none;
+    font-weight: 700;
 }
 .ctc-submit {
     background: #1877f2;
@@ -261,6 +283,10 @@ html.cotlas-delete-modal-open {
     letter-spacing: 0.01em;
 }
 .ctc-submit:hover { background: #1464d8; }
+.ctc-submit:disabled {
+    background: #aeb8c6;
+    cursor: not-allowed;
+}
 .ctc-cancel-reply {
     background: none;
     border: none;

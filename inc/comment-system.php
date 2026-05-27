@@ -80,6 +80,7 @@ function cotlas_render_comment( $comment, $depth = 0, $top_id = 0 ) {
         }
     }
     $edit_nonce = $can_edit ? wp_create_nonce( 'ctc_edit_' . $cid ) : '';
+    $can_reply  = is_user_logged_in() || ! get_option( 'comment_registration' );
 
     ob_start();
     ?>
@@ -105,7 +106,7 @@ function cotlas_render_comment( $comment, $depth = 0, $top_id = 0 ) {
                 <span class="ctc-comment__time"><?php echo esc_html( $ago ); ?></span>
                 <?php
                 $reply_target = ( $depth === 0 ) ? $cid : (int) $top_id;
-                if ( $reply_target ) : ?>
+                if ( $reply_target && $can_reply ) : ?>
                     <button class="ctc-reply-btn" data-cid="<?php echo $reply_target; ?>">Reply</button>
                 <?php endif; ?>
                 <?php if ( $can_edit ) : ?>
@@ -187,6 +188,13 @@ function cotlas_comments_shortcode( $atts ) {
     $logged_in    = $current_user->exists();
     $user_name    = $logged_in ? esc_html( $current_user->display_name ) : '';
     $user_email   = $logged_in ? esc_html( $current_user->user_email )  : '';
+    $login_required = ! $logged_in && get_option( 'comment_registration' );
+    $login_url      = get_option( 'cotlas_auth_enabled' )
+        ? add_query_arg( 'redirect_to', rawurlencode( get_permalink( $post_id ) ), home_url( '/' . ( get_option( 'cotlas_auth_login_slug' ) ?: 'login' ) . '/' ) )
+        : wp_login_url( get_permalink( $post_id ) );
+    $register_url   = get_option( 'cotlas_auth_enabled' )
+        ? home_url( '/' . ( get_option( 'cotlas_auth_register_slug' ) ?: 'register' ) . '/' )
+        : wp_registration_url();
 
     $uid = 'ctc-' . $post_id;
 
@@ -204,8 +212,7 @@ function cotlas_comments_shortcode( $atts ) {
         </div>
 
         <!-- ── Comment form ── -->
-        <?php if ( is_user_logged_in() || get_option( 'comment_registration' ) == 0 ) : ?>
-        <form class="ctc-form" method="post" action="<?php echo esc_url( site_url('/wp-comments-post.php') ); ?>">
+        <form class="ctc-form" method="post" action="<?php echo esc_url( site_url('/wp-comments-post.php') ); ?>"<?php echo $login_required ? ' data-login-required="1"' : ''; ?>>
             <div class="ctc-form__row">
                 <?php if ( $logged_in ) : ?>
                     <?php $av = cotlas_comment_avatar( $user_email, $user_name ); ?>
@@ -220,18 +227,26 @@ function cotlas_comments_shortcode( $atts ) {
                 <?php endif; ?>
 
                 <div class="ctc-form__inputs">
-                    <?php if ( ! $logged_in ) : ?>
+                    <?php if ( ! $logged_in && ! $login_required ) : ?>
                         <div class="ctc-form__guest-fields">
                             <input type="text" name="author" class="ctc-input" placeholder="Your Name *" required maxlength="100" />
                             <input type="email" name="email" class="ctc-input" placeholder="Email *" required maxlength="200" />
                         </div>
                     <?php endif; ?>
-                    <div class="ctc-form__textarea-wrap">
-                        <textarea name="comment" class="ctc-textarea" placeholder="Leave your feedback…" rows="3" required maxlength="1000"></textarea>
-                    </div>
-                    <div class="ctc-form__footer">
-                        <button type="submit" class="ctc-submit">Post</button>
-                    </div>
+                    <?php if ( $login_required ) : ?>
+                        <div class="ctc-login-required">
+                            <span>
+                                <a href="<?php echo esc_url( $login_url ); ?>">Login</a> or <a href="<?php echo esc_url( $register_url ); ?>">Create an account</a> to comment
+                            </span>
+                        </div>
+                    <?php else : ?>
+                        <div class="ctc-form__textarea-wrap">
+                            <textarea name="comment" class="ctc-textarea" placeholder="Leave your feedback…" rows="3" required maxlength="1000"></textarea>
+                        </div>
+                        <div class="ctc-form__footer">
+                            <button type="submit" class="ctc-submit">Post</button>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <?php wp_nonce_field( 'comment-post', '_wp_nonce' ); ?>
@@ -241,9 +256,10 @@ function cotlas_comments_shortcode( $atts ) {
                 <input type="hidden" name="author" value="<?php echo $user_name; ?>" />
                 <input type="hidden" name="email"  value="<?php echo $user_email; ?>" />
             <?php endif; ?>
-            <?php do_action( 'comment_form', $post_id ); ?>
+            <?php if ( ! $login_required ) : ?>
+                <?php do_action( 'comment_form', $post_id ); ?>
+            <?php endif; ?>
         </form>
-        <?php endif; ?>
 
         <!-- ── Comment list ── -->
         <div class="ctc-list">
@@ -284,8 +300,8 @@ function cotlas_ajax_submit_comment() {
         wp_send_json_error( 'Comments are closed for this post' );
     }
 
-    if ( get_option( 'comment_registration' ) && ! is_user_logged_in() ) {
-        wp_send_json_error( 'Please log in to comment' );
+    if ( ! is_user_logged_in() && get_option( 'comment_registration' ) ) {
+        wp_send_json_error( 'Please log in or create an account to comment' );
     }
 
     if ( ! is_user_logged_in() && get_option( 'turnstile_enable_comments' ) && function_exists( 'cotlas_verify_turnstile' ) ) {
@@ -295,13 +311,56 @@ function cotlas_ajax_submit_comment() {
         }
     }
 
-    $comment = wp_handle_comment_submission( wp_unslash( $_POST ) );
-    if ( is_wp_error( $comment ) ) {
-        wp_send_json_error( wp_strip_all_tags( $comment->get_error_message() ) );
+    $current_user = wp_get_current_user();
+    $logged_in    = $current_user->exists();
+    $content      = isset( $_POST['comment'] ) ? trim( wp_unslash( $_POST['comment'] ) ) : '';
+    $parent_id    = isset( $_POST['comment_parent'] ) ? (int) $_POST['comment_parent'] : 0;
+
+    if ( '' === $content ) {
+        wp_send_json_error( 'Please write a comment' );
     }
 
-    $user = wp_get_current_user();
-    do_action( 'set_comment_cookies', $comment, $user );
+    if ( $logged_in ) {
+        $author  = $current_user->display_name;
+        $email   = $current_user->user_email;
+        $user_id = (int) $current_user->ID;
+    } else {
+        $author  = isset( $_POST['author'] ) ? sanitize_text_field( wp_unslash( $_POST['author'] ) ) : '';
+        $email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
+        $user_id = 0;
+
+        if ( '' === $author || '' === $email || ! is_email( $email ) ) {
+            wp_send_json_error( 'Please enter your name and a valid email address' );
+        }
+    }
+
+    if ( $parent_id ) {
+        $parent = get_comment( $parent_id );
+        if ( ! $parent || (int) $parent->comment_post_ID !== $post_id ) {
+            wp_send_json_error( 'Invalid reply target' );
+        }
+    }
+
+    $comment_id = wp_new_comment( array(
+        'comment_post_ID'      => $post_id,
+        'comment_parent'       => $parent_id,
+        'comment_author'       => $author,
+        'comment_author_email' => $email,
+        'comment_content'      => $content,
+        'user_id'              => $user_id,
+        'comment_type'         => 'comment',
+    ), true );
+
+    if ( is_wp_error( $comment_id ) ) {
+        wp_send_json_error( wp_strip_all_tags( $comment_id->get_error_message() ) );
+    }
+
+    $comment = get_comment( $comment_id );
+    if ( ! $comment ) {
+        wp_send_json_error( 'Unable to load the new comment' );
+    }
+
+    do_action( 'set_comment_cookies', $comment, $current_user );
 
     if ( ! is_user_logged_in() ) {
         $_COOKIE[ 'comment_author_' . COOKIEHASH ]       = $comment->comment_author;
@@ -479,10 +538,14 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
         slot.innerHTML = '';
         slot.appendChild(clone);
         
+        clone.querySelectorAll('input[name="cf-turnstile-response"]').forEach(function(input) {
+            input.parentNode.removeChild(input);
+        });
+
         var tsDiv = clone.querySelector('.cf-turnstile');
         if (tsDiv && window.turnstile) {
             tsDiv.innerHTML = ''; // clear cloned iframe and inputs
-            turnstile.render(tsDiv, { sitekey: tsDiv.getAttribute('data-sitekey') });
+            window.turnstile.render(tsDiv, { sitekey: tsDiv.getAttribute('data-sitekey') });
         }
         
         slot.style.display = 'block';
