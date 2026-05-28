@@ -149,6 +149,7 @@ function cotlas_panel_process_saves() {
 				'cotlas_bing_console_code'   => 'tracking_code',
 				'cotlas_adsense_code'        => 'tracking_code',
 				'cotlas_facebook_pixel_code' => 'tracking_code',
+				'cotlas_x_pixel_code'        => 'tracking_code',
 				'cotlas_quora_pixel_code'    => 'tracking_code',
 				'cotlas_linkedin_insight_tag' => 'tracking_code',
 			),
@@ -1366,6 +1367,7 @@ function cotlas_panel_page_tracking() {
 	ctap_field( 'Bing Console Meta Tag', ctap_textarea( 'cotlas_bing_console_code', '<meta name="msvalidate.01" content="..." />', 2 ), 'Paste the full Bing Webmaster Tools verification meta tag.' );
 	ctap_field( 'AdSense Code', ctap_textarea( 'cotlas_adsense_code', '<script async src="https://pagead2.googlesyndication.com/...">', 4 ), 'Injected in &lt;head&gt; as recommended by Google.' );
 	ctap_field( 'Facebook Pixel Code', ctap_textarea( 'cotlas_facebook_pixel_code', '<script>...</script>', 5 ), 'Paste the full Meta/Facebook Pixel base code.' );
+	ctap_field( 'X Pixel Code', ctap_textarea( 'cotlas_x_pixel_code', '<script>...</script>', 5 ), 'Paste the full X Pixel base code.' );
 	ctap_field( 'Quora Pixel Code', ctap_textarea( 'cotlas_quora_pixel_code', '<script>...</script>', 5 ), 'Paste the full Quora Pixel base code.' );
 	ctap_field( 'LinkedIn Insight Tag', ctap_textarea( 'cotlas_linkedin_insight_tag', '<script>...</script>', 5 ), 'Paste the full LinkedIn Insight Tag.' );
 	ctap_card_close();

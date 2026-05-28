@@ -49,6 +49,7 @@ class Cotlas_Tracking_Codes {
         register_setting('cotlas_site_settings', 'cotlas_bing_console_code');
         register_setting('cotlas_site_settings', 'cotlas_adsense_code');
         register_setting('cotlas_site_settings', 'cotlas_facebook_pixel_code');
+        register_setting('cotlas_site_settings', 'cotlas_x_pixel_code');
         register_setting('cotlas_site_settings', 'cotlas_quora_pixel_code');
         register_setting('cotlas_site_settings', 'cotlas_linkedin_insight_tag');
         // Custom Scripts
@@ -167,6 +168,13 @@ class Cotlas_Tracking_Codes {
                         </td>
                     </tr>
                     <tr valign="top">
+                        <th scope="row">X Pixel Code</th>
+                        <td>
+                            <textarea name="cotlas_x_pixel_code" rows="5" cols="50" class="large-text" placeholder="<script>...</script>"><?php echo esc_textarea(get_option('cotlas_x_pixel_code')); ?></textarea>
+                            <p class="description">Paste the full X Pixel base code.</p>
+                        </td>
+                    </tr>
+                    <tr valign="top">
                         <th scope="row">Quora Pixel Code</th>
                         <td>
                             <textarea name="cotlas_quora_pixel_code" rows="5" cols="50" class="large-text" placeholder="<script>...</script>"><?php echo esc_textarea(get_option('cotlas_quora_pixel_code')); ?></textarea>
@@ -281,6 +289,7 @@ class Cotlas_Tracking_Codes {
         $bing_console_code = get_option('cotlas_bing_console_code');
         $adsense_code = get_option('cotlas_adsense_code');
         $facebook_pixel_code = get_option('cotlas_facebook_pixel_code');
+        $x_pixel_code = get_option('cotlas_x_pixel_code');
         $quora_pixel_code = get_option('cotlas_quora_pixel_code');
         $linkedin_insight_tag = get_option('cotlas_linkedin_insight_tag');
         $header_scripts = get_option('cotlas_header_scripts');
@@ -311,6 +320,12 @@ class Cotlas_Tracking_Codes {
         if ($facebook_pixel_code) {
             echo "\n<!-- Facebook Pixel -->\n";
             echo $facebook_pixel_code . "\n";
+        }
+
+        // X Pixel
+        if ($x_pixel_code) {
+            echo "\n<!-- X Pixel -->\n";
+            echo $x_pixel_code . "\n";
         }
 
         // Quora Pixel
