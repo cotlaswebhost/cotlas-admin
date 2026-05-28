@@ -46,7 +46,11 @@ class Cotlas_Tracking_Codes {
         // Analytics & Tracking
         register_setting('cotlas_site_settings', 'cotlas_ga4_code');
         register_setting('cotlas_site_settings', 'cotlas_search_console_code');
+        register_setting('cotlas_site_settings', 'cotlas_bing_console_code');
         register_setting('cotlas_site_settings', 'cotlas_adsense_code');
+        register_setting('cotlas_site_settings', 'cotlas_facebook_pixel_code');
+        register_setting('cotlas_site_settings', 'cotlas_quora_pixel_code');
+        register_setting('cotlas_site_settings', 'cotlas_linkedin_insight_tag');
         // Custom Scripts
         register_setting('cotlas_site_settings', 'cotlas_header_scripts');
         register_setting('cotlas_site_settings', 'cotlas_footer_scripts');
@@ -142,10 +146,38 @@ class Cotlas_Tracking_Codes {
                         </td>
                     </tr>
                     <tr valign="top">
+                        <th scope="row">Bing Console Meta Tag</th>
+                        <td>
+                            <textarea name="cotlas_bing_console_code" rows="3" cols="50" class="large-text" placeholder='<meta name="msvalidate.01" content="..." />'><?php echo esc_textarea(get_option('cotlas_bing_console_code')); ?></textarea>
+                            <p class="description">Paste the full Bing Webmaster Tools verification meta tag.</p>
+                        </td>
+                    </tr>
+                    <tr valign="top">
                         <th scope="row">AdSense Code</th>
                         <td>
                             <textarea name="cotlas_adsense_code" rows="5" cols="50" class="large-text"><?php echo esc_textarea(get_option('cotlas_adsense_code')); ?></textarea>
                             <p class="description">Paste the full AdSense script. This will be automatically placed in the &lt;head&gt; (recommended by Google).</p>
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Facebook Pixel Code</th>
+                        <td>
+                            <textarea name="cotlas_facebook_pixel_code" rows="5" cols="50" class="large-text" placeholder="<script>...</script>"><?php echo esc_textarea(get_option('cotlas_facebook_pixel_code')); ?></textarea>
+                            <p class="description">Paste the full Meta/Facebook Pixel base code.</p>
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Quora Pixel Code</th>
+                        <td>
+                            <textarea name="cotlas_quora_pixel_code" rows="5" cols="50" class="large-text" placeholder="<script>...</script>"><?php echo esc_textarea(get_option('cotlas_quora_pixel_code')); ?></textarea>
+                            <p class="description">Paste the full Quora Pixel base code.</p>
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">LinkedIn Insight Tag</th>
+                        <td>
+                            <textarea name="cotlas_linkedin_insight_tag" rows="5" cols="50" class="large-text" placeholder="<script>...</script>"><?php echo esc_textarea(get_option('cotlas_linkedin_insight_tag')); ?></textarea>
+                            <p class="description">Paste the full LinkedIn Insight Tag.</p>
                         </td>
                     </tr>
                     <tr valign="top">
@@ -246,12 +278,21 @@ class Cotlas_Tracking_Codes {
     public function inject_tracking_codes() {
         $ga4_code = get_option('cotlas_ga4_code');
         $search_console_code = get_option('cotlas_search_console_code');
+        $bing_console_code = get_option('cotlas_bing_console_code');
         $adsense_code = get_option('cotlas_adsense_code');
+        $facebook_pixel_code = get_option('cotlas_facebook_pixel_code');
+        $quora_pixel_code = get_option('cotlas_quora_pixel_code');
+        $linkedin_insight_tag = get_option('cotlas_linkedin_insight_tag');
         $header_scripts = get_option('cotlas_header_scripts');
 
         // Search Console
         if ($search_console_code) {
             echo "\n" . wp_kses($search_console_code, array('meta' => array('name' => array(), 'content' => array()))) . "\n";
+        }
+
+        // Bing Webmaster Tools
+        if ($bing_console_code) {
+            echo "\n" . wp_kses($bing_console_code, array('meta' => array('name' => array(), 'content' => array()))) . "\n";
         }
 
         // Custom Header Scripts
@@ -264,6 +305,24 @@ class Cotlas_Tracking_Codes {
         if ($adsense_code) {
             echo "\n<!-- Google AdSense -->\n";
             echo $adsense_code . "\n";
+        }
+
+        // Facebook Pixel
+        if ($facebook_pixel_code) {
+            echo "\n<!-- Facebook Pixel -->\n";
+            echo $facebook_pixel_code . "\n";
+        }
+
+        // Quora Pixel
+        if ($quora_pixel_code) {
+            echo "\n<!-- Quora Pixel -->\n";
+            echo $quora_pixel_code . "\n";
+        }
+
+        // LinkedIn Insight Tag
+        if ($linkedin_insight_tag) {
+            echo "\n<!-- LinkedIn Insight Tag -->\n";
+            echo $linkedin_insight_tag . "\n";
         }
 
         // Google Analytics 4 — inject whenever a GA4 ID is saved

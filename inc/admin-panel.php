@@ -145,15 +145,19 @@ function cotlas_panel_process_saves() {
 			'page' => 'cotlas-tracking-codes',
 			'map'  => array(
 				'cotlas_ga4_code'            => 'sanitize_text_field',
-				'cotlas_search_console_code' => 'sanitize_textarea_field',
-				'cotlas_adsense_code'        => 'sanitize_textarea_field',
+				'cotlas_search_console_code' => 'tracking_code',
+				'cotlas_bing_console_code'   => 'tracking_code',
+				'cotlas_adsense_code'        => 'tracking_code',
+				'cotlas_facebook_pixel_code' => 'tracking_code',
+				'cotlas_quora_pixel_code'    => 'tracking_code',
+				'cotlas_linkedin_insight_tag' => 'tracking_code',
 			),
 		),
 		'ctap_save_tracking_scripts' => array(
 			'page' => 'cotlas-tracking-codes',
 			'map'  => array(
-				'cotlas_header_scripts' => 'textarea',
-				'cotlas_footer_scripts' => 'textarea',
+				'cotlas_header_scripts' => 'tracking_code',
+				'cotlas_footer_scripts' => 'tracking_code',
 			),
 		),
 		'ctap_save_users' => array(
@@ -552,7 +556,8 @@ document.addEventListener("DOMContentLoaded", function() {
 /**
  * Process a POST form save. Returns true if saved, false otherwise.
  * $map: [ 'option_key' => 'sanitize_callback_or_type' ]
- * Special types: 'checkbox', 'textarea' (wp_kses_post), 'url' (esc_url_raw)
+ * Special types: 'checkbox', 'textarea' (wp_kses_post), 'url' (esc_url_raw),
+ * 'tracking_code' (trusted tracking snippets from site admins).
  */
 function ctap_save( $page_slug, $nonce_action, array $map ) {
 	if ( empty( $_POST['_ctap_nonce'] ) ) {
@@ -582,6 +587,9 @@ function ctap_save( $page_slug, $nonce_action, array $map ) {
 			case 'url':
 				update_option( $key, esc_url_raw( $raw ) );
 				break;
+			case 'tracking_code':
+				update_option( $key, ctap_sanitize_tracking_code( $raw ) );
+				break;
 			default:
 				if ( is_callable( $type ) ) {
 					update_option( $key, call_user_func( $type, $raw ) );
@@ -593,6 +601,21 @@ function ctap_save( $page_slug, $nonce_action, array $map ) {
 	$tab = isset( $_POST['_ctap_tab'] ) ? '#' . sanitize_key( wp_unslash( $_POST['_ctap_tab'] ) ) : '';
 	wp_safe_redirect( admin_url( 'admin.php?page=' . $page_slug . '&saved=1' . $tab ) );
 	exit;
+}
+
+/**
+ * Preserve analytics/tracking snippets that intentionally contain script tags.
+ *
+ * These settings are only saved by manage_options users after a nonce check.
+ * WordPress' generic textarea sanitizers strip <script> entirely, so we only
+ * do basic input cleanup here and leave the trusted snippet intact.
+ */
+function ctap_sanitize_tracking_code( $code ) {
+	$code = is_string( $code ) ? $code : '';
+	$code = wp_check_invalid_utf8( $code );
+	$code = str_replace( "\0", '', $code );
+
+	return trim( $code );
 }
 
 /** Open the page wrapper + gradient header. */
@@ -1340,7 +1363,11 @@ function cotlas_panel_page_tracking() {
 	ctap_card_open( 'Analytics & Verification', 'dashicons-chart-bar' );
 	ctap_field( 'Google Analytics 4 (GA4) ID', ctap_input( 'cotlas_ga4_code', 'G-XXXXXXXXXX' ), 'Measurement ID only (e.g. G-XXXXXXXXXX). The gtag.js script is injected automatically.' );
 	ctap_field( 'Search Console Meta Tag', ctap_textarea( 'cotlas_search_console_code', '<meta name="google-site-verification" content="..." />', 2 ), 'Paste the full meta verification tag.' );
+	ctap_field( 'Bing Console Meta Tag', ctap_textarea( 'cotlas_bing_console_code', '<meta name="msvalidate.01" content="..." />', 2 ), 'Paste the full Bing Webmaster Tools verification meta tag.' );
 	ctap_field( 'AdSense Code', ctap_textarea( 'cotlas_adsense_code', '<script async src="https://pagead2.googlesyndication.com/...">', 4 ), 'Injected in &lt;head&gt; as recommended by Google.' );
+	ctap_field( 'Facebook Pixel Code', ctap_textarea( 'cotlas_facebook_pixel_code', '<script>...</script>', 5 ), 'Paste the full Meta/Facebook Pixel base code.' );
+	ctap_field( 'Quora Pixel Code', ctap_textarea( 'cotlas_quora_pixel_code', '<script>...</script>', 5 ), 'Paste the full Quora Pixel base code.' );
+	ctap_field( 'LinkedIn Insight Tag', ctap_textarea( 'cotlas_linkedin_insight_tag', '<script>...</script>', 5 ), 'Paste the full LinkedIn Insight Tag.' );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();
@@ -1348,7 +1375,7 @@ function cotlas_panel_page_tracking() {
 	ctap_pane_open( 'scripts', $active );
 	ctap_form_open( 'ctap_save_tracking_scripts', 'scripts' );
 	ctap_card_open( 'Custom Scripts', 'dashicons-editor-code' );
-	ctap_info( 'Scripts here are output verbatim — include full <code>&lt;script&gt;</code> tags. Not sanitised beyond XSS-safe wp_kses_post rules.' );
+	ctap_info( 'Scripts here are output verbatim for site admins — include full <code>&lt;script&gt;</code> tags.' );
 	ctap_field( 'Header Scripts', ctap_textarea( 'cotlas_header_scripts', '<script>...</script>', 6 ), 'Injected inside &lt;head&gt; before &lt;/head&gt;.' );
 	ctap_field( 'Footer Scripts', ctap_textarea( 'cotlas_footer_scripts', '<script>...</script>', 6 ), 'Injected before &lt;/body&gt;.' );
 	ctap_card_close();
