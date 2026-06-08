@@ -55,6 +55,10 @@ function cotlas_panel_process_saves() {
 				'cotlas_auth_honeypot'           => 'checkbox',
 				'cotlas_auth_turnstile_login'    => 'checkbox',
 				'cotlas_auth_turnstile_register' => 'checkbox',
+				'cotlas_auth_recaptcha_login'    => 'checkbox',
+				'cotlas_auth_recaptcha_register' => 'checkbox',
+				'cotlas_auth_math_captcha_login' => 'checkbox',
+				'cotlas_auth_math_captcha_register' => 'checkbox',
 			),
 		),
 		'ctap_save_categories' => array(
@@ -83,6 +87,31 @@ function cotlas_panel_process_saves() {
 				'turnstile_enable_login'    => 'checkbox',
 				'turnstile_enable_register' => 'checkbox',
 				'turnstile_enable_comments' => 'checkbox',
+				'cotlas_auth_turnstile_login' => 'checkbox',
+				'cotlas_auth_turnstile_register' => 'checkbox',
+			),
+		),
+		'ctap_save_recaptcha_v3' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'recaptcha_v3_site_key'        => 'sanitize_text_field',
+				'recaptcha_v3_secret_key'      => 'sanitize_text_field',
+				'recaptcha_v3_score_threshold' => 'cotlas_sanitize_recaptcha_threshold',
+				'recaptcha_v3_enable_login'    => 'checkbox',
+				'recaptcha_v3_enable_register' => 'checkbox',
+				'recaptcha_v3_enable_comments' => 'checkbox',
+				'cotlas_auth_recaptcha_login'  => 'checkbox',
+				'cotlas_auth_recaptcha_register' => 'checkbox',
+			),
+		),
+		'ctap_save_math_captcha' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'math_captcha_enable_login'    => 'checkbox',
+				'math_captcha_enable_register' => 'checkbox',
+				'math_captcha_enable_comments' => 'checkbox',
+				'cotlas_auth_math_captcha_login' => 'checkbox',
+				'cotlas_auth_math_captcha_register' => 'checkbox',
 			),
 		),
 		'ctap_save_honeypot' => array(
@@ -180,6 +209,14 @@ function cotlas_panel_process_saves() {
 
 	foreach ( $maps as $nonce_action => $cfg ) {
 		if ( wp_verify_nonce( $nonce, $nonce_action ) ) {
+			if ( in_array( $nonce_action, array( 'ctap_save_turnstile', 'ctap_save_recaptcha_v3', 'ctap_save_math_captcha', 'ctap_save_login_spam' ), true ) ) {
+				foreach ( array( 'turnstile', 'recaptcha', 'math' ) as $provider ) {
+					if ( cotlas_request_enables_provider( $provider ) ) {
+						cotlas_disable_other_captcha_providers( $provider );
+						break;
+					}
+				}
+			}
 			ctap_save( $cfg['page'], $nonce_action, $cfg['map'] );
 			return; // ctap_save() calls exit, but just in case
 		}
@@ -879,6 +916,12 @@ function cotlas_panel_page_login() {
 	} else {
 		ctap_info( 'Cloudflare Turnstile keys are not configured yet. Set them in <a href="' . esc_url( admin_url( 'admin.php?page=cotlas-security-settings' ) ) . '">Security Settings</a> to enable CAPTCHA protection.' );
 	}
+	if ( get_option( 'recaptcha_v3_site_key' ) ) {
+		ctap_toggle( 'cotlas_auth_recaptcha_login',    'Google reCAPTCHA v3 on Login Form', 'Enabling this disables Turnstile and Math CAPTCHA toggles.' );
+		ctap_toggle( 'cotlas_auth_recaptcha_register', 'Google reCAPTCHA v3 on Register Form', 'Enabling this disables Turnstile and Math CAPTCHA toggles.' );
+	}
+	ctap_toggle( 'cotlas_auth_math_captcha_login',    'Math CAPTCHA on Login Form', 'Simple question for sites without third-party CAPTCHA keys. Enabling this disables Turnstile and reCAPTCHA toggles.', 0 );
+	ctap_toggle( 'cotlas_auth_math_captcha_register', 'Math CAPTCHA on Register Form', 'Simple question for sites without third-party CAPTCHA keys. Enabling this disables Turnstile and reCAPTCHA toggles.', 0 );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();
@@ -1091,10 +1134,12 @@ function cotlas_panel_page_gb_tags() {
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 function cotlas_panel_page_security() {
-	ctap_page_open( 'Security Settings', 'dashicons-shield', 'Cloudflare Turnstile CAPTCHA and honeypot spam protection per form.' );
+	ctap_page_open( 'Security Settings', 'dashicons-shield', 'CAPTCHA and honeypot spam protection per form.' );
 	$tabs = array(
-		array( 'id' => 'turnstile', 'label' => 'Turnstile', 'icon' => 'dashicons-shield-alt' ),
-		array( 'id' => 'honeypot',  'label' => 'Honeypot',  'icon' => 'dashicons-hidden' ),
+		array( 'id' => 'turnstile',  'label' => 'Turnstile',     'icon' => 'dashicons-shield-alt' ),
+		array( 'id' => 'recaptcha',  'label' => 'reCAPTCHA v3',  'icon' => 'dashicons-search' ),
+		array( 'id' => 'math',       'label' => 'Math CAPTCHA',  'icon' => 'dashicons-editor-help' ),
+		array( 'id' => 'honeypot',   'label' => 'Honeypot',      'icon' => 'dashicons-hidden' ),
 	);
 	$active = ctap_nav( $tabs );
 
@@ -1108,7 +1153,44 @@ function cotlas_panel_page_security() {
 	ctap_section( 'Enable on Forms' );
 	ctap_toggle( 'turnstile_enable_login',    'WP Default Login Form',        'Adds Turnstile to the standard wp-login.php login form.' );
 	ctap_toggle( 'turnstile_enable_register', 'WP Default Registration Form', 'Adds Turnstile to the standard wp-login.php registration form.' );
-	ctap_toggle( 'turnstile_enable_comments', 'WP Default Comment Form',      'Adds Turnstile to the standard WordPress comment form (guest users only).' );
+	ctap_toggle( 'turnstile_enable_comments', 'WP Default & Cotlas Comment Forms', 'Adds Turnstile to native WordPress comments and the [cotlas_comments] form (guest users only).' );
+	ctap_section( 'Cotlas Forms' );
+	ctap_toggle( 'cotlas_auth_turnstile_login',    'Cotlas Login Form',    'Adds Turnstile to the [cotlas_login] and login panel forms.', 0 );
+	ctap_toggle( 'cotlas_auth_turnstile_register', 'Cotlas Register Form', 'Adds Turnstile to the [cotlas_register] and register panel forms.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	ctap_pane_open( 'recaptcha', $active );
+	ctap_form_open( 'ctap_save_recaptcha_v3', 'recaptcha' );
+	ctap_card_open( 'Google reCAPTCHA v3', 'dashicons-search' );
+	ctap_info( 'Get your keys from <a href="https://www.google.com/recaptcha/admin/create" target="_blank" rel="noopener">Google reCAPTCHA Admin Console</a>. Use reCAPTCHA v3 keys. Enabling reCAPTCHA v3 disables Turnstile and Math CAPTCHA form toggles.' );
+	ctap_section( 'API Keys' );
+	ctap_field( 'Site Key',   ctap_input( 'recaptcha_v3_site_key',   'Paste your reCAPTCHA v3 site key' ) );
+	ctap_field( 'Secret Key', ctap_input( 'recaptcha_v3_secret_key', 'Paste your reCAPTCHA v3 secret key' ) );
+	ctap_field( 'Score Threshold', ctap_input( 'recaptcha_v3_score_threshold', '0.5' ), 'Recommended: <code>0.5</code>. Higher values are stricter.' );
+	ctap_section( 'WordPress Default Forms' );
+	ctap_toggle( 'recaptcha_v3_enable_login',    'WP Default Login Form',        'Adds reCAPTCHA v3 to the standard wp-login.php login form.', 0 );
+	ctap_toggle( 'recaptcha_v3_enable_register', 'WP Default Registration Form', 'Adds reCAPTCHA v3 to the standard wp-login.php registration form.', 0 );
+	ctap_toggle( 'recaptcha_v3_enable_comments', 'WP Default & Cotlas Comment Forms', 'Adds reCAPTCHA v3 to native WordPress comments and the [cotlas_comments] form (guest users only).', 0 );
+	ctap_section( 'Cotlas Forms' );
+	ctap_toggle( 'cotlas_auth_recaptcha_login',    'Cotlas Login Form',    'Adds reCAPTCHA v3 to the [cotlas_login] and login panel forms.', 0 );
+	ctap_toggle( 'cotlas_auth_recaptcha_register', 'Cotlas Register Form', 'Adds reCAPTCHA v3 to the [cotlas_register] and register panel forms.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	ctap_pane_open( 'math', $active );
+	ctap_form_open( 'ctap_save_math_captcha', 'math' );
+	ctap_card_open( 'Math CAPTCHA', 'dashicons-editor-help' );
+	ctap_info( 'Adds a simple addition question to selected forms. This is useful when you do not have Cloudflare Turnstile or Google reCAPTCHA keys. Enabling Math CAPTCHA disables Turnstile and reCAPTCHA form toggles.' );
+	ctap_section( 'WordPress Default Forms' );
+	ctap_toggle( 'math_captcha_enable_login',    'WP Default Login Form',        'Adds a math question to the standard wp-login.php login form.', 0 );
+	ctap_toggle( 'math_captcha_enable_register', 'WP Default Registration Form', 'Adds a math question to the standard wp-login.php registration form.', 0 );
+	ctap_toggle( 'math_captcha_enable_comments', 'WP Default & Cotlas Comment Forms', 'Adds a math question to native WordPress comments and the [cotlas_comments] form (guest users only).', 0 );
+	ctap_section( 'Cotlas Forms' );
+	ctap_toggle( 'cotlas_auth_math_captcha_login',    'Cotlas Login Form',    'Adds a math question to the [cotlas_login] and login panel forms.', 0 );
+	ctap_toggle( 'cotlas_auth_math_captcha_register', 'Cotlas Register Form', 'Adds a math question to the [cotlas_register] and register panel forms.', 0 );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();

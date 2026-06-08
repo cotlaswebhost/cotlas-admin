@@ -82,7 +82,8 @@
 
 .cotlas-auth-form input[type="text"],
 .cotlas-auth-form input[type="email"],
-.cotlas-auth-form input[type="password"] {
+.cotlas-auth-form input[type="password"],
+.cotlas-auth-form input[type="number"] {
     display: block;
     width: 100%;
     padding: 10px 14px;
@@ -99,15 +100,21 @@
 
 .cotlas-auth-form input[type="text"]:focus,
 .cotlas-auth-form input[type="email"]:focus,
-.cotlas-auth-form input[type="password"]:focus {
+.cotlas-auth-form input[type="password"]:focus,
+.cotlas-auth-form input[type="number"]:focus {
     border-color: var(--cotlas-accent);
     box-shadow: 0 0 0 3px var(--cotlas-accent-ring);
 }
 
 .cotlas-auth-form input[type="text"]::placeholder,
 .cotlas-auth-form input[type="email"]::placeholder,
-.cotlas-auth-form input[type="password"]::placeholder {
+.cotlas-auth-form input[type="password"]::placeholder,
+.cotlas-auth-form input[type="number"]::placeholder {
     color: #9ca3af;
+}
+
+.cotlas-auth-form .cotlas-math-captcha {
+    width: 100%;
 }
 
 /* ── Remember me checkbox row ──────────────────────────────────────────── */

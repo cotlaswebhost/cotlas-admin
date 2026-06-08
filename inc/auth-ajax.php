@@ -67,13 +67,13 @@ function cotlas_auth_check_rate_limit( $action ) {
 }
 
 /**
- * Shared guard: nonce + honeypot + rate-limit + optional Turnstile.
+ * Shared guard: nonce + honeypot + rate-limit + optional CAPTCHA challenge.
  * Calls wp_send_json_error and exits on failure.
  *
  * @param string $action            Rate-limit action key.
- * @param bool   $check_turnstile   Whether to verify the Turnstile token.
+ * @param bool   $check_challenge   Whether to verify the active challenge.
  */
-function cotlas_auth_run_guards( $action, $check_turnstile = false ) {
+function cotlas_auth_run_guards( $action, $check_challenge = false ) {
     // 1. Nonce
     $nonce = isset( $_POST['cotlas_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_nonce'] ) ) : ''; // phpcs:ignore
     if ( ! wp_verify_nonce( $nonce, 'cotlas_auth_nonce' ) ) {
@@ -94,9 +94,10 @@ function cotlas_auth_run_guards( $action, $check_turnstile = false ) {
         wp_send_json_error( [ 'message' => __( 'Too many attempts. Please wait 10 minutes and try again.', 'cotlas-admin' ) ] );
     }
 
-    // 4. Cloudflare Turnstile
-    if ( $check_turnstile && get_option( 'turnstile_site_key' ) ) {
-        $result = cotlas_verify_turnstile(); // defined in the main plugin file
+    // 4. CAPTCHA challenge
+    if ( $check_challenge ) {
+        $form   = 'register' === $action ? 'cotlas_register' : 'cotlas_login';
+        $result = cotlas_verify_challenge_for_form( $form, $form );
         if ( is_wp_error( $result ) ) {
             wp_send_json_error( [ 'message' => wp_strip_all_tags( $result->get_error_message() ) ] );
         }
@@ -109,8 +110,8 @@ function cotlas_auth_run_guards( $action, $check_turnstile = false ) {
 add_action( 'wp_ajax_nopriv_cotlas_login', 'cotlas_ajax_login' );
 
 function cotlas_ajax_login() {
-    $use_turnstile = (bool) get_option( 'cotlas_auth_turnstile_login' );
-    cotlas_auth_run_guards( 'login', $use_turnstile );
+    $use_challenge = (bool) cotlas_challenge_provider_for_form( 'cotlas_login' );
+    cotlas_auth_run_guards( 'login', $use_challenge );
 
     $username = isset( $_POST['log'] ) ? sanitize_text_field( wp_unslash( $_POST['log'] ) ) : ''; // phpcs:ignore
     // Passwords may contain any character; wp_unslash is sufficient before passing to wp_signon.
@@ -151,8 +152,8 @@ function cotlas_ajax_register() {
         wp_send_json_error( [ 'message' => __( 'User registration is currently disabled.', 'cotlas-admin' ) ] );
     }
 
-    $use_turnstile = (bool) get_option( 'cotlas_auth_turnstile_register' );
-    cotlas_auth_run_guards( 'register', $use_turnstile );
+    $use_challenge = (bool) cotlas_challenge_provider_for_form( 'cotlas_register' );
+    cotlas_auth_run_guards( 'register', $use_challenge );
 
     $username = isset( $_POST['user_login'] ) ? sanitize_user( wp_unslash( $_POST['user_login'] ) ) : ''; // phpcs:ignore
     $email    = isset( $_POST['user_email'] ) ? sanitize_email( wp_unslash( $_POST['user_email'] ) ) : ''; // phpcs:ignore

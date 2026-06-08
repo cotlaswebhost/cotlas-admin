@@ -71,20 +71,23 @@
         if (spinner) spinner.hidden = false;
         clearMsg(msgBox);
 
-        // Build form data; refresh the nonce value from the localized object
-        // in case the page has been open a long time (nonces expire after 12h).
-        var data = new FormData(form);
+        refreshRecaptchaToken(form)
+            .then(function () {
+                // Build form data; refresh the nonce value from the localized object
+                // in case the page has been open a long time (nonces expire after 12h).
+                var data = new FormData(form);
 
-        // Update nonce with the one from wp_localize_script (most recent)
-        if (cfg.nonce) {
-            data.set('cotlas_nonce', cfg.nonce);
-        }
+                // Update nonce with the one from wp_localize_script (most recent)
+                if (cfg.nonce) {
+                    data.set('cotlas_nonce', cfg.nonce);
+                }
 
-        fetch(cfg.ajaxurl, {
-            method:      'POST',
-            credentials: 'same-origin',
-            body:        data,
-        })
+                return fetch(cfg.ajaxurl, {
+                    method:      'POST',
+                    credentials: 'same-origin',
+                    body:        data,
+                });
+            })
             .then(function (response) {
                 if (!response.ok) {
                     throw new Error('HTTP ' + response.status);
@@ -175,5 +178,24 @@
         if (widget) {
             window.turnstile.reset(widget);
         }
+    }
+
+    function refreshRecaptchaToken(form) {
+        var input = form.querySelector('.cotlas-recaptcha-v3-response');
+        if (!input) return Promise.resolve();
+        if (!window.grecaptcha || !window.cotlasRecaptchaV3SiteKey) {
+            return Promise.reject(new Error('recaptcha-unavailable'));
+        }
+        var action = input.getAttribute('data-recaptcha-action') || 'cotlas_auth';
+        return new Promise(function (resolve, reject) {
+            window.grecaptcha.ready(function () {
+                window.grecaptcha.execute(window.cotlasRecaptchaV3SiteKey, { action: action })
+                    .then(function (token) {
+                        input.value = token;
+                        resolve();
+                    })
+                    .catch(reject);
+            });
+        });
     }
 })();

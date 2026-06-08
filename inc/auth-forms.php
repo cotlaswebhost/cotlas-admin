@@ -54,9 +54,9 @@ function cotlas_auth_enqueue_assets() {
         ],
     ] );
 
-    // Cloudflare Turnstile – only load if a key exists AND at least one custom form toggle is on
+    // Cloudflare Turnstile – only load if it is the active challenge on a custom auth form.
     $ts_key = get_option( 'turnstile_site_key' );
-    if ( $ts_key && ( get_option( 'cotlas_auth_turnstile_login' ) || get_option( 'cotlas_auth_turnstile_register' ) ) ) {
+    if ( $ts_key && ( 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_login' ) || 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) ) {
         wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', [], null, true );
     }
 }
@@ -98,8 +98,7 @@ function cotlas_login_shortcode( $atts ) {
         'cotlas_login'
     );
 
-    $site_key       = get_option( 'turnstile_site_key' );
-    $show_turnstile = $site_key && get_option( 'cotlas_auth_turnstile_login' );
+    $show_challenge = (bool) cotlas_challenge_provider_for_form( 'cotlas_login' );
 
     // Redirect: shortcode attr > URL query param > empty (AJAX handler will use role default)
     $redirect = '';
@@ -166,9 +165,9 @@ function cotlas_login_shortcode( $atts ) {
 
             <?php echo cotlas_auth_honeypot_field(); // phpcs:ignore ?>
 
-            <?php if ( $show_turnstile ) : ?>
+            <?php if ( $show_challenge ) : ?>
                 <div class="cotlas-field">
-                    <div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $site_key ); ?>"></div>
+                    <?php cotlas_render_challenge_for_form( 'cotlas_login', 'cotlas_login' ); ?>
                 </div>
             <?php endif; ?>
 
@@ -224,8 +223,7 @@ function cotlas_register_shortcode( $atts ) {
         'cotlas_register'
     );
 
-    $site_key       = get_option( 'turnstile_site_key' );
-    $show_turnstile = $site_key && get_option( 'cotlas_auth_turnstile_register' );
+    $show_challenge = (bool) cotlas_challenge_provider_for_form( 'cotlas_register' );
 
     $redirect    = $atts['redirect'] ? esc_url_raw( $atts['redirect'] ) : '';
     $extra_class = sanitize_html_class( $atts['class'] );
@@ -274,9 +272,9 @@ function cotlas_register_shortcode( $atts ) {
 
             <?php echo cotlas_auth_honeypot_field(); // phpcs:ignore ?>
 
-            <?php if ( $show_turnstile ) : ?>
+            <?php if ( $show_challenge ) : ?>
                 <div class="cotlas-field">
-                    <div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $site_key ); ?>"></div>
+                    <?php cotlas_render_challenge_for_form( 'cotlas_register', 'cotlas_register' ); ?>
                 </div>
             <?php endif; ?>
 
@@ -398,9 +396,8 @@ function cotlas_auth_panel_shortcode( $atts ) {
         'cotlas_auth_panel'
     );
 
-    $site_key         = get_option( 'turnstile_site_key' );
-    $ts_login         = $site_key && get_option( 'cotlas_auth_turnstile_login' );
-    $ts_register      = $site_key && get_option( 'cotlas_auth_turnstile_register' );
+    $show_login_challenge    = (bool) cotlas_challenge_provider_for_form( 'cotlas_login' );
+    $show_register_challenge = (bool) cotlas_challenge_provider_for_form( 'cotlas_register' );
     $can_register     = (bool) get_option( 'users_can_register' );
     $extra_class      = sanitize_html_class( $atts['class'] );
     $active_panel     = in_array( $atts['panel'], [ 'login', 'register', 'forgot' ], true ) ? $atts['panel'] : 'login';
@@ -459,9 +456,9 @@ function cotlas_auth_panel_shortcode( $atts ) {
 
                 <?php echo cotlas_auth_honeypot_field(); // phpcs:ignore ?>
 
-                <?php if ( $ts_login ) : ?>
+                <?php if ( $show_login_challenge ) : ?>
                     <div class="cotlas-field">
-                        <div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $site_key ); ?>"></div>
+                        <?php cotlas_render_challenge_for_form( 'cotlas_login', 'cotlas_login' ); ?>
                     </div>
                 <?php endif; ?>
 
@@ -519,9 +516,9 @@ function cotlas_auth_panel_shortcode( $atts ) {
 
                 <?php echo cotlas_auth_honeypot_field(); // phpcs:ignore ?>
 
-                <?php if ( $ts_register ) : ?>
+                <?php if ( $show_register_challenge ) : ?>
                     <div class="cotlas-field">
-                        <div class="cf-turnstile" data-sitekey="<?php echo esc_attr( $site_key ); ?>"></div>
+                        <?php cotlas_render_challenge_for_form( 'cotlas_register', 'cotlas_register' ); ?>
                     </div>
                 <?php endif; ?>
 

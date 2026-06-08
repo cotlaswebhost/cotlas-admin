@@ -214,6 +214,29 @@ html.cotlas-delete-modal-open {
 }
 .ctc-input:focus { border-color: #3b82f6; background: #fff; }
 
+.cotlas-comments .cotlas-math-captcha {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    color: #4b5563;
+    font-size: 0.88rem;
+}
+
+.cotlas-comments .cotlas-math-captcha label {
+    margin: 0;
+    font-weight: 600;
+}
+
+.cotlas-comments .cotlas-math-captcha input[type="number"] {
+    width: 90px;
+    border: 1px solid #dde3ee;
+    border-radius: 20px;
+    padding: 8px 12px;
+    background: #f7f8fc;
+}
+
 .ctc-form__textarea-wrap {
     background: #f7f8fc;
     border: 1px solid #dde3ee;

@@ -24,9 +24,9 @@ defined( 'ABSPATH' ) || exit;
  */
 function cotlas_turnstile_script() {
     // Only enqueue if at least one feature is enabled
-    $login_enabled    = get_option('turnstile_enable_login');
-    $register_enabled = get_option('turnstile_enable_register');
-    $comments_enabled = get_option('turnstile_enable_comments') && ! is_user_logged_in() && ! get_option('comment_registration');
+    $login_enabled    = 'turnstile' === cotlas_challenge_provider_for_form( 'wp_login' );
+    $register_enabled = 'turnstile' === cotlas_challenge_provider_for_form( 'wp_register' );
+    $comments_enabled = 'turnstile' === cotlas_challenge_provider_for_form( 'comments' ) && ! is_user_logged_in() && ! get_option('comment_registration');
 
     if ($login_enabled || $register_enabled || $comments_enabled) {
         wp_enqueue_script('cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), null, true);
@@ -40,24 +40,14 @@ add_action('wp_enqueue_scripts', 'cotlas_turnstile_script');
  * Checks the current filter to decide whether to render.
  */
 function cotlas_display_turnstile() {
-    $site_key = get_option('turnstile_site_key');
-    if (!$site_key) return;
-
-    $show = false;
     $current_filter = current_filter();
 
-    if ($current_filter === 'login_form' && get_option('turnstile_enable_login')) {
-        $show = true;
-    } elseif ($current_filter === 'register_form' && get_option('turnstile_enable_register')) {
-        $show = true;
-    } elseif ($current_filter === 'comment_form' && get_option('turnstile_enable_comments') && ! get_option('comment_registration')) {
-        if ( ! is_user_logged_in() ) {
-            $show = true;
-        }
-    }
-
-    if ($show) {
-        echo '<div class="cf-turnstile" data-sitekey="' . esc_attr($site_key) . '"></div>';
+    if ($current_filter === 'login_form') {
+        cotlas_render_challenge_for_form( 'wp_login', 'wp_login' );
+    } elseif ($current_filter === 'register_form') {
+        cotlas_render_challenge_for_form( 'wp_register', 'wp_register' );
+    } elseif ($current_filter === 'comment_form' && ! get_option('comment_registration') && ! is_user_logged_in()) {
+        cotlas_render_challenge_for_form( 'comments', 'comments' );
     }
 }
 add_action('login_form', 'cotlas_display_turnstile');
@@ -124,10 +114,10 @@ function cotlas_verify_turnstile() {
 /** Verify Turnstile token on wp_authenticate_user (login). */
 add_filter('wp_authenticate_user', function($user, $password) {
     // If feature disabled, skip check
-    if (!get_option('turnstile_enable_login')) return $user;
+    if (!cotlas_challenge_provider_for_form( 'wp_login' )) return $user;
     
     if (is_wp_error($user)) return $user;
-    $check = cotlas_verify_turnstile();
+    $check = cotlas_verify_challenge_for_form( 'wp_login', 'wp_login' );
     if (is_wp_error($check)) {
         return $check;
     }
@@ -137,9 +127,9 @@ add_filter('wp_authenticate_user', function($user, $password) {
 /** Verify Turnstile token on registration_errors. */
 add_filter('registration_errors', function($errors, $sanitized_user_login, $user_email) {
     // If feature disabled, skip check
-    if (!get_option('turnstile_enable_register')) return $errors;
+    if (!cotlas_challenge_provider_for_form( 'wp_register' )) return $errors;
 
-    $check = cotlas_verify_turnstile();
+    $check = cotlas_verify_challenge_for_form( 'wp_register', 'wp_register' );
     if (is_wp_error($check)) {
         $errors->add($check->get_error_code(), $check->get_error_message());
     }
@@ -151,9 +141,9 @@ add_filter('preprocess_comment', function($commentdata) {
     if (is_user_logged_in()) return $commentdata;
     
     // If feature disabled, skip check
-    if (!get_option('turnstile_enable_comments')) return $commentdata;
+    if (!cotlas_challenge_provider_for_form( 'comments' )) return $commentdata;
     
-    $check = cotlas_verify_turnstile();
+    $check = cotlas_verify_challenge_for_form( 'comments', 'comments' );
     if (is_wp_error($check)) {
         wp_die($check->get_error_message());
     }

@@ -17,6 +17,7 @@ defined( 'ABSPATH' ) || exit;
 // ---------------------------------------------------------------------------
 require_once plugin_dir_path( __FILE__ ) . 'inc/auth-settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/auth-redirects.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/captcha.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/auth-forms.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/auth-ajax.php';
 

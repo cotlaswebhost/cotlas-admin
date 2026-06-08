@@ -304,10 +304,10 @@ function cotlas_ajax_submit_comment() {
         wp_send_json_error( 'Please log in or create an account to comment' );
     }
 
-    if ( ! is_user_logged_in() && get_option( 'turnstile_enable_comments' ) && function_exists( 'cotlas_verify_turnstile' ) ) {
-        $turnstile = cotlas_verify_turnstile();
-        if ( is_wp_error( $turnstile ) ) {
-            wp_send_json_error( wp_strip_all_tags( $turnstile->get_error_message() ) );
+    if ( ! is_user_logged_in() && cotlas_challenge_provider_for_form( 'comments' ) ) {
+        $challenge = cotlas_verify_challenge_for_form( 'comments', 'comments' );
+        if ( is_wp_error( $challenge ) ) {
+            wp_send_json_error( wp_strip_all_tags( $challenge->get_error_message() ) );
         }
     }
 
@@ -455,6 +455,23 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
         }
     }
 
+    function refreshRecaptchaToken(form) {
+        var input = form && form.querySelector('.cotlas-recaptcha-v3-response');
+        if (!input) return Promise.resolve();
+        if (!window.grecaptcha || !window.cotlasRecaptchaV3SiteKey) return Promise.reject(new Error('recaptcha-unavailable'));
+        var action = input.getAttribute('data-recaptcha-action') || 'comments';
+        return new Promise(function(resolve, reject) {
+            window.grecaptcha.ready(function() {
+                window.grecaptcha.execute(window.cotlasRecaptchaV3SiteKey, { action: action })
+                    .then(function(token) {
+                        input.value = token;
+                        resolve();
+                    })
+                    .catch(reject);
+            });
+        });
+    }
+
     function updateHeadingCount(widget) {
         var heading = widget && widget.querySelector('.ctc-heading');
         if (!heading) return;
@@ -566,10 +583,13 @@ var ctcAjaxUrl = '<?php echo esc_url( admin_url('admin-ajax.php') ); ?>';
             submit.disabled = true;
         }
 
-        var fd = new FormData(form);
-        fd.set('action', 'cotlas_submit_comment');
+        refreshRecaptchaToken(form)
+            .then(function() {
+                var fd = new FormData(form);
+                fd.set('action', 'cotlas_submit_comment');
 
-        fetch(ctcAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                return fetch(ctcAjaxUrl, { method: 'POST', body: fd, credentials: 'same-origin' });
+            })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (!data.success) {
