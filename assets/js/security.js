@@ -10,8 +10,6 @@
         // Honeypot field validation
         // This is a placeholder - implement your honeypot logic here
         
-        console.log('Security script loaded from local mu-plugins directory');
-        
         // Example: Hide honeypot fields on page load
         $('input[name="cc-city"]').closest('p').hide();
         

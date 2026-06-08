@@ -1267,3 +1267,14 @@ body.cotlas-admin-light #adminmenu a:focus, body.cotlas-admin-light #adminmenu a
 #wpadminbar .yoast-brand-insights-gradient-border {
     background: none!important;
 }
+#wpadminbar #wp-admin-bar-user-info a {
+    background: 0 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+    align-items: flex-start;
+}
+#wpadminbar #wp-admin-bar-user-info .display-name {
+    color: #121111!important;
+}

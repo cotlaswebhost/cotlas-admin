@@ -28,27 +28,31 @@ function cotlas_auth_enqueue_assets() {
     }
 
     $plugin_url = plugin_dir_url( dirname( __FILE__ ) );
-    $version    = '1.0.0';
+    $version    = defined( 'COTLAS_ADMIN_FILE' ) ? filemtime( COTLAS_ADMIN_FILE ) : '1.0.0';
+    $asset_base  = plugin_dir_path( dirname( __FILE__ ) ) . 'assets/';
+    $css_version = file_exists( $asset_base . 'css/auth-forms.css' ) ? filemtime( $asset_base . 'css/auth-forms.css' ) : $version;
+    $js_version  = file_exists( $asset_base . 'js/auth-forms.js' ) ? filemtime( $asset_base . 'js/auth-forms.js' ) : $version;
 
     wp_enqueue_style(
         'cotlas-auth',
         $plugin_url . 'assets/css/auth-forms.css',
         [],
-        $version
+        $css_version
     );
 
     wp_enqueue_script(
         'cotlas-auth',
         $plugin_url . 'assets/js/auth-forms.js',
         [],          // no jQuery dependency – uses native fetch
-        $version,
+        $js_version,
         true         // footer
     );
 
     wp_localize_script( 'cotlas-auth', 'cotlasAuth', [
-        'ajaxurl' => admin_url( 'admin-ajax.php' ),
-        'nonce'   => wp_create_nonce( 'cotlas_auth_nonce' ),
-        'i18n'    => [
+        'ajaxurl'          => admin_url( 'admin-ajax.php' ),
+        'nonce'            => wp_create_nonce( 'cotlas_auth_nonce' ),
+        'recaptchaSiteKey' => get_option( 'recaptcha_v3_site_key' ),
+        'i18n'             => [
             'connectionError' => __( 'Connection error. Please try again.', 'cotlas-admin' ),
             'loading'         => __( 'Please wait…', 'cotlas-admin' ),
         ],

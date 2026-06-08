@@ -183,13 +183,14 @@
     function refreshRecaptchaToken(form) {
         var input = form.querySelector('.cotlas-recaptcha-v3-response');
         if (!input) return Promise.resolve();
-        if (!window.grecaptcha || !window.cotlasRecaptchaV3SiteKey) {
+        var siteKey = window.cotlasRecaptchaV3SiteKey || cfg.recaptchaSiteKey;
+        if (!window.grecaptcha || !siteKey) {
             return Promise.reject(new Error('recaptcha-unavailable'));
         }
         var action = input.getAttribute('data-recaptcha-action') || 'cotlas_auth';
         return new Promise(function (resolve, reject) {
             window.grecaptcha.ready(function () {
-                window.grecaptcha.execute(window.cotlasRecaptchaV3SiteKey, { action: action })
+                window.grecaptcha.execute(siteKey, { action: action })
                     .then(function (token) {
                         input.value = token;
                         resolve();
