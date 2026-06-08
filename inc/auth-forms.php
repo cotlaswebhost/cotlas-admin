@@ -40,10 +40,33 @@ function cotlas_auth_enqueue_assets() {
         $css_version
     );
 
+    $script_deps = [];
+    $recaptcha_site_key = get_option( 'recaptcha_v3_site_key' );
+    $recaptcha_on_custom_forms = $recaptcha_site_key && (
+        'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_login' )
+        || 'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_register' )
+    );
+
+    if ( $recaptcha_on_custom_forms ) {
+        wp_enqueue_script(
+            'google-recaptcha-v3',
+            'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( $recaptcha_site_key ),
+            [],
+            null,
+            true
+        );
+        wp_add_inline_script(
+            'google-recaptcha-v3',
+            'window.cotlasRecaptchaV3SiteKey=' . wp_json_encode( $recaptcha_site_key ) . ';',
+            'before'
+        );
+        $script_deps[] = 'google-recaptcha-v3';
+    }
+
     wp_enqueue_script(
         'cotlas-auth',
         $plugin_url . 'assets/js/auth-forms.js',
-        [],          // no jQuery dependency – uses native fetch
+        $script_deps,
         $js_version,
         true         // footer
     );

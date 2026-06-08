@@ -55,6 +55,24 @@ add_action('register_form', 'cotlas_display_turnstile');
 add_action('comment_form', 'cotlas_display_turnstile');
 
 /**
+ * Detect Cotlas custom auth AJAX requests.
+ *
+ * Custom login/register already verify the active challenge in auth-ajax.php.
+ * Running default form hooks again during wp_signon/register_new_user causes
+ * duplicate verification and action mismatches (wp_login vs cotlas_login).
+ *
+ * @return bool
+ */
+function cotlas_is_custom_auth_ajax_request() {
+    if ( ! wp_doing_ajax() ) {
+        return false;
+    }
+
+    $action = isset( $_POST['action'] ) ? sanitize_text_field( wp_unslash( $_POST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+    return in_array( $action, array( 'cotlas_login', 'cotlas_register', 'cotlas_forgot_password' ), true );
+}
+
+/**
  * Verify the Turnstile token by calling the Cloudflare siteverify endpoint.
  * Returns true on success or a WP_Error on failure/missing token.
  *
@@ -113,6 +131,8 @@ function cotlas_verify_turnstile() {
 
 /** Verify Turnstile token on wp_authenticate_user (login). */
 add_filter('wp_authenticate_user', function($user, $password) {
+    if ( cotlas_is_custom_auth_ajax_request() ) return $user;
+
     // If feature disabled, skip check
     if (!cotlas_challenge_provider_for_form( 'wp_login' )) return $user;
     
@@ -126,6 +146,8 @@ add_filter('wp_authenticate_user', function($user, $password) {
 
 /** Verify Turnstile token on registration_errors. */
 add_filter('registration_errors', function($errors, $sanitized_user_login, $user_email) {
+    if ( cotlas_is_custom_auth_ajax_request() ) return $errors;
+
     // If feature disabled, skip check
     if (!cotlas_challenge_provider_for_form( 'wp_register' )) return $errors;
 

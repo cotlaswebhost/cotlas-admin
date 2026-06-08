@@ -121,8 +121,8 @@ function cotlas_verify_recaptcha_v3( $expected_action = '' ) {
 
 	$secret_key = get_option( 'recaptcha_v3_secret_key' );
 	if ( empty( $secret_key ) ) {
-		$results[ $token_key ] = true;
-		return true;
+		$results[ $token_key ] = new WP_Error( 'recaptcha_misconfigured', __( '<strong>ERROR</strong>: reCAPTCHA is not configured correctly.', 'cotlas-admin' ) );
+		return $results[ $token_key ];
 	}
 
 	if ( ! cotlas_captcha_request_has( 'g-recaptcha-response' ) ) {
@@ -156,7 +156,7 @@ function cotlas_verify_recaptcha_v3( $expected_action = '' ) {
 		return $results[ $token_key ];
 	}
 
-	if ( $expected_action && ! empty( $data['action'] ) && $data['action'] !== $expected_action ) {
+	if ( $expected_action && ( empty( $data['action'] ) || $data['action'] !== $expected_action ) ) {
 		$results[ $token_key ] = new WP_Error( 'recaptcha_action_mismatch', __( '<strong>ERROR</strong>: reCAPTCHA action mismatch.', 'cotlas-admin' ) );
 		return $results[ $token_key ];
 	}
