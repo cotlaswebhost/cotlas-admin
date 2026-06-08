@@ -137,6 +137,59 @@ function cimg_pick_serve_format( $src_url, $baseurl, $basedir ) {
 	return '';
 }
 
+function cimg_swap_image_url( $src_url ) {
+	if ( is_admin() || empty( $src_url ) || cimg_should_exclude( $src_url ) ) {
+		return $src_url;
+	}
+
+	$upload  = wp_get_upload_dir();
+	$baseurl = trailingslashit( $upload['baseurl'] );
+	$basedir = trailingslashit( $upload['basedir'] );
+
+	$ext = cimg_pick_serve_format( $src_url, $baseurl, $basedir );
+	if ( ! $ext ) {
+		return $src_url;
+	}
+
+	$new_src  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $src_url );
+	$new_path = str_replace( $baseurl, $basedir, $new_src );
+
+	return ( $new_path !== $new_src && file_exists( $new_path ) ) ? $new_src : $src_url;
+}
+
+function cimg_swap_srcset_urls( $srcset ) {
+	if ( empty( $srcset ) ) {
+		return $srcset;
+	}
+
+	$parts   = array();
+	$upload  = wp_get_upload_dir();
+	$baseurl = trailingslashit( $upload['baseurl'] );
+	$basedir = trailingslashit( $upload['basedir'] );
+
+	foreach ( explode( ', ', $srcset ) as $entry ) {
+		$entry = trim( $entry );
+		if ( ! preg_match( '/^(\S+)(\s+\d+[wx])$/', $entry, $m ) ) {
+			$parts[] = $entry;
+			continue;
+		}
+
+		$ext = cimg_pick_serve_format( $m[1], $baseurl, $basedir );
+		if ( ! $ext ) {
+			$parts[] = $entry;
+			continue;
+		}
+
+		$new_url  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $m[1] );
+		$new_path = str_replace( $baseurl, $basedir, $new_url );
+		$parts[]  = ( $new_path !== $new_url && file_exists( $new_path ) )
+			? $new_url . $m[2]
+			: $entry;
+	}
+
+	return implode( ', ', $parts );
+}
+
 /* ── Convert a single file to WebP and/or AVIF ───────────── */
 
 function cimg_convert_file( $source, $do_webp, $do_avif ) {
@@ -328,43 +381,29 @@ function cimg_cleanup_converted_files( $attachment_id ) {
 
 /* ── Serve modern formats in attachment image tags ────────── */
 
+add_filter( 'wp_get_attachment_url', 'cimg_swap_attachment_url', 10, 2 );
+add_filter( 'wp_get_attachment_image_src', 'cimg_swap_attachment_image_src', 10, 4 );
 add_filter( 'wp_get_attachment_image_attributes', 'cimg_swap_image_attrs', 10, 2 );
 
-function cimg_swap_image_attrs( $attr, $attachment ) {
-	if ( is_admin() ) { return $attr; }
-	if ( ! get_option( 'cotlas_imgconv_enabled' ) ) { return $attr; }
-	if ( empty( $attr['src'] ) || cimg_should_exclude( $attr['src'] ) ) { return $attr; }
+function cimg_swap_attachment_url( $url, $attachment_id ) {
+	return cimg_swap_image_url( $url );
+}
 
-	$upload  = wp_get_upload_dir();
-	$baseurl = trailingslashit( $upload['baseurl'] );
-	$basedir = trailingslashit( $upload['basedir'] );
-
-	$ext = cimg_pick_serve_format( $attr['src'], $baseurl, $basedir );
-	if ( ! $ext ) { return $attr; }
-
-	// Swap src.
-	$new_src  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $attr['src'] );
-	$new_path = str_replace( $baseurl, $basedir, $new_src );
-	if ( $new_path !== $new_src && file_exists( $new_path ) ) {
-		$attr['src'] = $new_src;
+function cimg_swap_attachment_image_src( $image, $attachment_id, $size, $icon ) {
+	if ( is_admin() || empty( $image[0] ) ) {
+		return $image;
 	}
 
-	// Swap srcset, verifying each entry exists.
+	$image[0] = cimg_swap_image_url( $image[0] );
+	return $image;
+}
+
+function cimg_swap_image_attrs( $attr, $attachment ) {
+	if ( is_admin() || empty( $attr['src'] ) ) { return $attr; }
+
+	$attr['src'] = cimg_swap_image_url( $attr['src'] );
 	if ( ! empty( $attr['srcset'] ) ) {
-		$parts = array();
-		foreach ( explode( ', ', $attr['srcset'] ) as $entry ) {
-			$entry = trim( $entry );
-			if ( ! preg_match( '/^(\S+)(\s+\d+[wx])$/', $entry, $m ) ) {
-				$parts[] = $entry;
-				continue;
-			}
-			$new_url  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $m[1] );
-			$new_path = str_replace( $baseurl, $basedir, $new_url );
-			$parts[]  = ( $new_path !== $new_url && file_exists( $new_path ) )
-				? $new_url . $m[2]
-				: $entry;
-		}
-		$attr['srcset'] = implode( ', ', $parts );
+		$attr['srcset'] = cimg_swap_srcset_urls( $attr['srcset'] );
 	}
 
 	return $attr;
@@ -376,41 +415,16 @@ add_filter( 'wp_content_img_tag', 'cimg_swap_content_images', 10, 3 );
 
 function cimg_swap_content_images( $filtered_image, $context, $attachment_id ) {
 	if ( is_admin() ) { return $filtered_image; }
-	if ( ! get_option( 'cotlas_imgconv_enabled' ) ) { return $filtered_image; }
 
 	if ( ! preg_match( '/src="([^"]+)"/', $filtered_image, $sm ) ) { return $filtered_image; }
-	if ( cimg_should_exclude( $sm[1] ) ) { return $filtered_image; }
-
-	$upload  = wp_get_upload_dir();
-	$baseurl = trailingslashit( $upload['baseurl'] );
-	$basedir = trailingslashit( $upload['basedir'] );
-
-	$ext = cimg_pick_serve_format( $sm[1], $baseurl, $basedir );
-	if ( ! $ext ) { return $filtered_image; }
-
-	// Swap src.
-	$new_src  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $sm[1] );
-	$new_path = str_replace( $baseurl, $basedir, $new_src );
-	if ( $new_path !== $new_src && file_exists( $new_path ) ) {
+	$new_src = cimg_swap_image_url( $sm[1] );
+	if ( $new_src !== $sm[1] ) {
 		$filtered_image = str_replace( 'src="' . $sm[1] . '"', 'src="' . $new_src . '"', $filtered_image );
 	}
 
 	// Swap srcset.
 	if ( preg_match( '/srcset="([^"]+)"/', $filtered_image, $ssm ) ) {
-		$parts = array();
-		foreach ( explode( ', ', $ssm[1] ) as $entry ) {
-			$entry = trim( $entry );
-			if ( ! preg_match( '/^(\S+)(\s+\d+[wx])$/', $entry, $m ) ) {
-				$parts[] = $entry;
-				continue;
-			}
-			$new_url  = preg_replace( '/\.(jpe?g|png)$/i', '.' . $ext, $m[1] );
-			$new_path = str_replace( $baseurl, $basedir, $new_url );
-			$parts[]  = ( $new_path !== $new_url && file_exists( $new_path ) )
-				? $new_url . $m[2]
-				: $entry;
-		}
-		$new_srcset     = implode( ', ', $parts );
+		$new_srcset     = cimg_swap_srcset_urls( $ssm[1] );
 		$filtered_image = str_replace( 'srcset="' . $ssm[1] . '"', 'srcset="' . $new_srcset . '"', $filtered_image );
 	}
 
