@@ -61,10 +61,14 @@ function cimg_browser_supports_webp() {
 
 /* ── Exclusion check ──────────────────────────────────────── */
 
-function cimg_should_exclude( $src ) {
+function cimg_should_exclude( $src, $serve_mode = false ) {
 	// Always exclude theme and plugin asset paths.
 	if ( strpos( $src, '/themes/' ) !== false || strpos( $src, '/plugins/' ) !== false ) {
 		return true;
+	}
+
+	if ( $serve_mode ) {
+		return false;
 	}
 	// User-defined exclusion patterns (newline-separated; plain words or /regex/).
 	$raw = get_option( 'cotlas_imgconv_exclude_patterns', '' );
@@ -138,7 +142,12 @@ function cimg_pick_serve_format( $src_url, $baseurl, $basedir ) {
 }
 
 function cimg_swap_image_url( $src_url ) {
-	if ( is_admin() || empty( $src_url ) || cimg_should_exclude( $src_url ) ) {
+	if ( is_admin() || empty( $src_url ) ) {
+		return $src_url;
+	}
+
+	$is_logo_asset = (bool) preg_match( '/(logo|site-logo|brand|favicon|icon)/i', $src_url );
+	if ( cimg_should_exclude( $src_url ) && ! $is_logo_asset ) {
 		return $src_url;
 	}
 
