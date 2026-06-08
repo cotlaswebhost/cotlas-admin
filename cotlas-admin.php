@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.1.7
+ * Version:     2.2.0
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -56,3 +56,5 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/image-optimization.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/image-conversion.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/reading-list.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/wishlist.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/cache-settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/admin-tools.php';

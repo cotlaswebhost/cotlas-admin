@@ -205,6 +205,15 @@ function cotlas_panel_process_saves() {
 				'cotlas_wishlist_enabled'     => 'checkbox',
 			),
 		),
+		'ctap_save_cache' => array(
+			'page' => 'cotlas-cache',
+			'map'  => array(
+				'cotlas_cache_enabled'           => 'checkbox',
+				'cotlas_cache_lifetime_images'   => 'absint',
+				'cotlas_cache_lifetime_css_js'   => 'absint',
+				'cotlas_cache_lifetime_fonts'    => 'absint',
+			),
+		),
 	);
 
 	foreach ( $maps as $nonce_action => $cfg ) {
@@ -259,6 +268,7 @@ function cotlas_panel_register_menus() {
 		array( 'cotlas-tracking-codes',        __( 'Tracking Codes', 'cotlas-admin' ),           'cotlas_panel_page_tracking'       ),
 		array( 'cotlas-user-settings',         __( 'User Settings', 'cotlas-admin' ),            'cotlas_panel_page_users'          ),
 		array( 'cotlas-reading-list',           __( 'Reading List', 'cotlas-admin' ),             'cotlas_panel_page_reading_list'   ),
+		array( 'cotlas-cache',                  __( 'Browser Cache', 'cotlas-admin' ),            'cotlas_panel_page_cache'          ),
 	);
 
 	foreach ( $subs as $s ) {
@@ -286,6 +296,8 @@ function cotlas_panel_assets( $hook ) {
 		'cotlas-admin_page_cotlas-tracking-codes',
 		'cotlas-admin_page_cotlas-user-settings',
 		'cotlas-admin_page_cotlas-reading-list',
+		'cotlas-admin_page_cotlas-cache',
+		'cotlas-admin_page_cotlas-tools',
 	);
 	if ( ! in_array( $hook, $hooks, true ) ) {
 		return;
