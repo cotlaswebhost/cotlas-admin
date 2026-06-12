@@ -265,7 +265,7 @@ function cotlas_panel_register_menus() {
 		array( 'cotlas-image-optimization',    __( 'Image Optimization', 'cotlas-admin' ),       'cotlas_panel_page_image_opt'      ),
 		array( 'cotlas-post-formats',          __( 'Post Formats', 'cotlas-admin' ),             'cotlas_panel_page_post_formats'   ),
 		array( 'cotlas-social-media',          __( 'Social Media', 'cotlas-admin' ),             'cotlas_panel_page_social'         ),
-		array( 'cotlas-seo-schema-settings',   __( 'SEO & Schema Settings', 'cotlas-admin' ),    array( '\\CotlasAdmin\\SEO\\Settings', 'render_page' ) ),
+		array( 'cotlas-seo-schema-settings',   __( 'SEO & Schema', 'cotlas-admin' ),    array( '\\CotlasAdmin\\SEO\\Settings', 'render_page' ) ),
 		array( 'cotlas-tracking-codes',        __( 'Tracking Codes', 'cotlas-admin' ),           'cotlas_panel_page_tracking'       ),
 		array( 'cotlas-user-settings',         __( 'User Settings', 'cotlas-admin' ),            'cotlas_panel_page_users'          ),
 		array( 'cotlas-reading-list',           __( 'Reading List', 'cotlas-admin' ),             'cotlas_panel_page_reading_list'   ),
