@@ -35,6 +35,33 @@ define( 'COTLAS_CACHE_DEFAULT_FONTS',  2592000 ); // 30 days
 add_action( 'send_headers', 'cotlas_send_cache_headers' );
 
 /**
+ * Determine whether the current request is a frontend request.
+ *
+ * This guard prevents cache headers from affecting admin/login/API flows.
+ *
+ * @return bool
+ */
+function cotlas_is_frontend_request() {
+	if ( is_admin() || wp_doing_ajax() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+		return false;
+	}
+
+	if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+		return false;
+	}
+
+	$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? strtolower( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) : '';
+	if ( '' !== $request_uri ) {
+		$path = strtok( $request_uri, '?' );
+		if ( false !== strpos( $path, '/wp-admin/' ) || false !== strpos( $path, '/wp-login.php' ) || false !== strpos( $path, '/wp-json/' ) || false !== strpos( $path, '/xmlrpc.php' ) ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/**
  * Add Expires + Cache-Control headers for static assets.
  *
  * WordPress itself never really sends these headers; the web-server config
@@ -49,8 +76,8 @@ function cotlas_send_cache_headers() {
 		return;
 	}
 
-	// Don't interfere with admin, login or AJAX requests.
-	if ( is_admin() || wp_doing_ajax() || ( defined( 'DOING_CRON' ) && DOING_CRON ) ) {
+	// Frontend-only: never cache admin/login/API responses.
+	if ( ! cotlas_is_frontend_request() ) {
 		return;
 	}
 
@@ -91,7 +118,7 @@ add_filter( 'script_loader_src', 'cotlas_append_cache_version', 10, 2 );
  * Only runs on the front-end; skips external URLs.
  */
 function cotlas_append_cache_version( $src, $handle ) {
-	if ( is_admin() ) {
+	if ( ! cotlas_is_frontend_request() ) {
 		return $src;
 	}
 
