@@ -578,14 +578,33 @@ document.addEventListener("DOMContentLoaded", function() {
       p.classList.toggle("ctap-active", p.id === "ctap-pane-" + id);
     });
     try {
-      var url = window.location.pathname + window.location.search.replace(/[?&]tab=[^&]*/g, "") + "#" + id;
-      history.replaceState(null, "", url);
+			var url = new URL(window.location.href);
+			url.searchParams.set("tab", id);
+			url.hash = id;
+			history.replaceState(null, "", url.toString());
     } catch(e) {}
   }
 
-  var hash  = window.location.hash.replace("#", "");
-  var first = btns[0].getAttribute("data-tab");
-  activate(hash && document.getElementById("ctap-pane-" + hash) ? hash : first);
+	var hash = window.location.hash.replace("#", "");
+	var qsTab = "";
+	try {
+		qsTab = new URL(window.location.href).searchParams.get("tab") || "";
+	} catch(e) {}
+
+	var activeBtn = document.querySelector(".ctap-tab-btn.ctap-active");
+	var serverTab = activeBtn ? activeBtn.getAttribute("data-tab") : "";
+	var first = btns[0].getAttribute("data-tab");
+	var initial = first;
+
+	if (hash && document.getElementById("ctap-pane-" + hash)) {
+		initial = hash;
+	} else if (qsTab && document.getElementById("ctap-pane-" + qsTab)) {
+		initial = qsTab;
+	} else if (serverTab && document.getElementById("ctap-pane-" + serverTab)) {
+		initial = serverTab;
+	}
+
+	activate(initial);
 
   btns.forEach(function(b) {
     b.addEventListener("click", function() { activate(this.getAttribute("data-tab")); });
