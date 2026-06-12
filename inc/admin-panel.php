@@ -600,7 +600,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			}
 
 			if (activeTab) {
-				var refererInput = f.querySelector('input[name="_wp_http_referer"]');
+				var refererInput = f.querySelector("input[name=\"_wp_http_referer\"]");
 				var refererUrl = new URL(window.location.href);
 				refererUrl.searchParams.set("tab", activeTab);
 				refererUrl.hash = "";
