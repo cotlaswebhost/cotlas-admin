@@ -68,12 +68,17 @@ class Breadcrumb_Schema {
 
 		$list = array();
 		foreach ( $items as $index => $item ) {
-			$list[] = array(
+			$entry = array(
 				'@type'    => 'ListItem',
 				'position' => $index + 1,
 				'name'     => $item['label'],
-				'item'     => ! empty( $item['url'] ) ? $item['url'] : '',
 			);
+
+			if ( ! empty( $item['url'] ) ) {
+				$entry['item'] = $item['url'];
+			}
+
+			$list[] = $entry;
 		}
 
 		return array(

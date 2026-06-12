@@ -90,6 +90,12 @@ class Article_Schema {
 			return 0;
 		}
 
-		return str_word_count( wp_strip_all_tags( strip_shortcodes( $post->post_content ) ) );
+		$text = trim( preg_replace( '/\s+/u', ' ', wp_strip_all_tags( strip_shortcodes( $post->post_content ) ) ) );
+		if ( '' === $text ) {
+			return 0;
+		}
+
+		$tokens = preg_split( '/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY );
+		return is_array( $tokens ) ? count( $tokens ) : 0;
 	}
 }
