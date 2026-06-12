@@ -32,7 +32,7 @@ function cotlas_auth_register_settings() {
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_register',   [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_privileged', [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_redirect_default',    [ 'sanitize_callback' => 'esc_url_raw',     'default' => '' ] );
-    register_setting( 'cotlas_auth_settings', 'cotlas_auth_honeypot',            [ 'sanitize_callback' => 'absint',          'default' => 1 ] );
+    register_setting( 'cotlas_auth_settings', 'cotlas_auth_honeypot',            [ 'sanitize_callback' => 'absint',          'default' => 0 ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_turnstile_login',     [ 'sanitize_callback' => 'absint',          'default' => 0 ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_turnstile_register',  [ 'sanitize_callback' => 'absint',          'default' => 0 ] );
     register_setting( 'cotlas_auth_settings', 'cotlas_auth_rate_limit',          [ 'sanitize_callback' => 'absint',          'default' => 5 ] );

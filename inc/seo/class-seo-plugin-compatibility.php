@@ -33,7 +33,7 @@ class Seo_Plugin_Compatibility {
 	}
 
 	public static function should_defer_output() {
-		return (bool) get_option( 'cotlas_seo_enable_seo_plugin_integration', 1 ) && ! empty( self::active_plugins() );
+		return Schema_Generator::is_module_enabled() && (bool) get_option( 'cotlas_seo_enable_seo_plugin_integration', 0 ) && ! empty( self::active_plugins() );
 	}
 
 	public static function is_yoast_active() {

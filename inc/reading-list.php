@@ -18,7 +18,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'cotlas_reading_list_is_enabled' ) ) {
 	function cotlas_reading_list_is_enabled() {
-		return '0' !== (string) get_option( 'cotlas_reading_list_enabled', '1' );
+		return '0' !== (string) get_option( 'cotlas_reading_list_enabled', '0' );
 	}
 }
 

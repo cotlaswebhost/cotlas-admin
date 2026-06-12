@@ -11,7 +11,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Breadcrumb_Schema {
 	public static function init() {
-		if ( get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 1 ) ) {
+		if ( Schema_Generator::is_module_enabled() && get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 0 ) ) {
 			add_shortcode( 'cotlas_breadcrumbs', array( __CLASS__, 'shortcode' ) );
 		}
 
@@ -19,7 +19,7 @@ class Breadcrumb_Schema {
 	}
 
 	public static function shortcode( $atts = array() ) {
-		if ( ! get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 1 ) ) {
+		if ( ! Schema_Generator::is_module_enabled() || ! get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 0 ) ) {
 			return '';
 		}
 
@@ -45,7 +45,7 @@ class Breadcrumb_Schema {
 	}
 
 	public static function register_dynamic_tag() {
-		if ( ! get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 1 ) || ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		if ( ! Schema_Generator::is_module_enabled() || ! get_option( 'cotlas_seo_enable_breadcrumb_shortcode', 0 ) || ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
 			return;
 		}
 

@@ -10,11 +10,19 @@ namespace CotlasAdmin\SEO;
 defined( 'ABSPATH' ) || exit;
 
 class Schema_Generator {
+	public static function is_module_enabled() {
+		return (bool) get_option( 'cotlas_seo_enable_module', 0 );
+	}
+
 	public static function is_enabled() {
-		return (bool) get_option( 'cotlas_seo_enable_schema', 1 );
+		return self::is_module_enabled() && (bool) get_option( 'cotlas_seo_enable_schema', 0 );
 	}
 
 	public static function build_graph( $post_id = 0 ) {
+		if ( ! self::is_module_enabled() ) {
+			return array();
+		}
+
 		$post_id = $post_id ? absint( $post_id ) : get_queried_object_id();
 		$cache   = self::get_cached_graph( $post_id );
 		if ( false !== $cache ) {
@@ -60,7 +68,7 @@ class Schema_Generator {
 			}
 		}
 
-		if ( ( is_singular() || is_archive() || is_home() || is_front_page() ) && get_option( 'cotlas_seo_enable_breadcrumb_schema', 1 ) ) {
+		if ( ( is_singular() || is_archive() || is_home() || is_front_page() ) && get_option( 'cotlas_seo_enable_breadcrumb_schema', 0 ) ) {
 			$breadcrumb = Breadcrumb_Schema::build_schema( $post_id );
 			if ( $breadcrumb ) {
 				$graph[] = $breadcrumb;
@@ -227,7 +235,7 @@ class Schema_Generator {
 
 	public static function get_title_for_post( $post_id ) {
 		$plugin_title = Seo_Plugin_Compatibility::get_title( $post_id );
-		if ( $plugin_title && get_option( 'cotlas_seo_use_seo_plugin_title', 1 ) ) {
+		if ( $plugin_title && get_option( 'cotlas_seo_use_seo_plugin_title', 0 ) ) {
 			return $plugin_title;
 		}
 
@@ -236,7 +244,7 @@ class Schema_Generator {
 
 	public static function get_description_for_post( $post_id ) {
 		$plugin_desc = Seo_Plugin_Compatibility::get_description( $post_id );
-		if ( $plugin_desc && get_option( 'cotlas_seo_use_seo_plugin_description', 1 ) ) {
+		if ( $plugin_desc && get_option( 'cotlas_seo_use_seo_plugin_description', 0 ) ) {
 			return $plugin_desc;
 		}
 
@@ -262,8 +270,9 @@ class Schema_Generator {
 		$signature = wp_json_encode( array(
 			'post_id'           => absint( $post_id ),
 			'post_modified_gmt'  => $modified,
-			'schema'            => (int) get_option( 'cotlas_seo_enable_schema', 1 ),
-			'og'                => (int) get_option( 'cotlas_seo_enable_opengraph', 1 ),
+			'module'            => (int) get_option( 'cotlas_seo_enable_module', 0 ),
+			'schema'            => (int) get_option( 'cotlas_seo_enable_schema', 0 ),
+			'og'                => (int) get_option( 'cotlas_seo_enable_opengraph', 0 ),
 			'posttype_map'      => self::hash_value( Posttype_Mapping::get_mapping() ),
 			'company_logo'      => absint( get_option( 'cotlas_seo_company_logo_id', 0 ) ),
 			'default_image'     => absint( get_option( 'cotlas_seo_default_image_id', 0 ) ),

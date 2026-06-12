@@ -19,7 +19,7 @@ defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'cotlas_wishlist_is_enabled' ) ) {
 	function cotlas_wishlist_is_enabled() {
-		return '0' !== (string) get_option( 'cotlas_wishlist_enabled', '1' );
+		return '0' !== (string) get_option( 'cotlas_wishlist_enabled', '0' );
 	}
 }
 

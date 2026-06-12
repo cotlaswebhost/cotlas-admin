@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.3.0
+- **Version:** 2.3.1
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -26,6 +26,7 @@ A WordPress plugin providing core admin customizations, security hardening, site
 
 ### Content & Site Features
 
+- **SEO & Schema Settings** — Dedicated SEO module with OpenGraph output, JSON-LD schema graph generation, breadcrumb schema/shortcode support, post-type schema mapping, SEO-plugin compatibility (Yoast, Rank Math, SEOPress, AIOSEO), and GenerateBlocks dynamic-tag integration.
 - **Tracking Codes** — Manage GA4, Google Search Console, Bing, AdSense, Facebook Pixel, X Pixel, Quora Pixel, LinkedIn Insight Tag, and custom header/footer scripts.
 - **Social Media** — Store and output social media profile URLs (Facebook, Twitter/X, YouTube, Instagram, LinkedIn, Threads, WhatsApp).
 - **Trending Widgets** — Sidebar/widget area trending content.
@@ -75,6 +76,7 @@ A dedicated **Cotlas Admin → Admin Tools** page with four modules:
 | Image Optimization | `cotlas-image-optimization` | Compression settings |
 | Post Formats | `cotlas-post-formats` | Post format and rename options |
 | Social Media | `cotlas-social-media` | Social profile URLs |
+| SEO & Schema Settings | `cotlas-seo-schema-settings` | OpenGraph, schema, SEO compatibility, and breadcrumb controls |
 | Tracking Codes | `cotlas-tracking-codes` | Analytics and pixel scripts |
 | User Settings | `cotlas-user-settings` | Profile, avatar, and social link options |
 | Reading List | `cotlas-reading-list` | Reading list and wishlist toggles |

@@ -20,6 +20,7 @@ class Settings {
 
 	public function register_settings() {
 		$bools = array(
+			'cotlas_seo_enable_module',
 			'cotlas_seo_enable_opengraph',
 			'cotlas_seo_enable_schema',
 			'cotlas_seo_enable_breadcrumb_schema',
@@ -42,7 +43,7 @@ class Settings {
 				array(
 					'type'              => 'integer',
 					'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_bool' ),
-					'default'           => in_array( $key, array( 'cotlas_seo_enable_opengraph', 'cotlas_seo_enable_schema', 'cotlas_seo_enable_breadcrumb_schema', 'cotlas_seo_enable_twitter_cards', 'cotlas_seo_enable_seo_plugin_integration', 'cotlas_seo_enable_custom_post_type_detection', 'cotlas_seo_enable_breadcrumb_shortcode', 'cotlas_seo_use_seo_plugin_title', 'cotlas_seo_use_seo_plugin_description' ), true ) ? 1 : 0,
+					'default'           => 0,
 				)
 			);
 		}
@@ -166,7 +167,8 @@ class Settings {
 	private static function open_general_tab( $active ) {
 		ctap_pane_open( 'general', $active );
 		ctap_card_open( 'Module Overview', 'dashicons-admin-generic' );
-		ctap_info( 'Use the switches below to enable or disable OpenGraph and Schema output independently. SEO plugin integration is on by default so Cotlas can reuse Yoast, Rank Math, SEOPress, or AIOSEO metadata without duplicating tags.' );
+		self::toggle( 'cotlas_seo_enable_module', 'Enable SEO Module', 'Master switch for all SEO module output. When disabled, OpenGraph tags, schema output, and breadcrumbs are fully disabled.', 0 );
+		ctap_info( 'Enable the SEO module first, then turn on only the features you need in the tabs below. New installs now default all SEO toggles to disabled.' );
 		ctap_card_close();
 		ctap_pane_close();
 	}
@@ -174,10 +176,10 @@ class Settings {
 	private static function open_opengraph_tab( $active ) {
 		ctap_pane_open( 'opengraph', $active );
 		ctap_card_open( 'OpenGraph Meta Tags', 'dashicons-share' );
-		self::toggle( 'cotlas_seo_enable_opengraph', 'Enable OpenGraph Tags', 'Outputs og:* and twitter:* tags in wp_head.', 1 );
-		self::toggle( 'cotlas_seo_use_seo_plugin_title', 'Use SEO plugin title if available', 'Uses Yoast, Rank Math, SEOPress, or AIOSEO title fields before falling back to the WordPress title.', 1 );
-		self::toggle( 'cotlas_seo_use_seo_plugin_description', 'Use SEO plugin description if available', 'Uses SEO plugin meta descriptions before falling back to the excerpt or trimmed content.', 1 );
-		self::toggle( 'cotlas_seo_enable_twitter_cards', 'Enable Twitter Cards', 'Adds twitter:card metadata alongside OpenGraph tags.', 1 );
+		self::toggle( 'cotlas_seo_enable_opengraph', 'Enable OpenGraph Tags', 'Outputs og:* and twitter:* tags in wp_head.', 0 );
+		self::toggle( 'cotlas_seo_use_seo_plugin_title', 'Use SEO plugin title if available', 'Uses Yoast, Rank Math, SEOPress, or AIOSEO title fields before falling back to the WordPress title.', 0 );
+		self::toggle( 'cotlas_seo_use_seo_plugin_description', 'Use SEO plugin description if available', 'Uses SEO plugin meta descriptions before falling back to the excerpt or trimmed content.', 0 );
+		self::toggle( 'cotlas_seo_enable_twitter_cards', 'Enable Twitter Cards', 'Adds twitter:card metadata alongside OpenGraph tags.', 0 );
 		ctap_card_close();
 		ctap_card_open( 'OpenGraph Priority', 'dashicons-editor-help' );
 		ctap_info( '<ul style="margin:.5em 0 0 1.4em"><li><strong>Title</strong>: SEO plugin title if enabled, otherwise the current post or page title.</li><li><strong>Description</strong>: Yoast description, then Rank Math description, then excerpt, then trimmed content.</li><li><strong>Image</strong>: Featured image, then company logo, then default image.</li><li><strong>Type</strong>: article for posts and custom post types, website for pages, archives, and the homepage.</li></ul>' );
@@ -188,11 +190,11 @@ class Settings {
 	private static function open_schema_tab( $active ) {
 		ctap_pane_open( 'schema', $active );
 		ctap_card_open( 'Schema Markup', 'dashicons-feedback' );
-		self::toggle( 'cotlas_seo_enable_schema', 'Enable Schema Markup', 'Outputs JSON-LD in wp_head.', 1 );
-		self::toggle( 'cotlas_seo_enable_breadcrumb_schema', 'Enable Breadcrumb Schema', 'Automatically outputs BreadcrumbList schema where applicable.', 1 );
-		self::toggle( 'cotlas_seo_enable_author_schema', 'Enable Author Schema', 'Outputs Person schema for post authors.', 1 );
-		self::toggle( 'cotlas_seo_enable_faq_schema', 'Enable FAQ Schema', 'Detects FAQ-style blocks or Elementor accordion widgets.', 1 );
-		self::toggle( 'cotlas_seo_enable_search_action_schema', 'Enable SearchAction Schema', 'Includes SearchAction on the WebSite graph.', 1 );
+		self::toggle( 'cotlas_seo_enable_schema', 'Enable Schema Markup', 'Outputs JSON-LD in wp_head.', 0 );
+		self::toggle( 'cotlas_seo_enable_breadcrumb_schema', 'Enable Breadcrumb Schema', 'Automatically outputs BreadcrumbList schema where applicable.', 0 );
+		self::toggle( 'cotlas_seo_enable_author_schema', 'Enable Author Schema', 'Outputs Person schema for post authors.', 0 );
+		self::toggle( 'cotlas_seo_enable_faq_schema', 'Enable FAQ Schema', 'Detects FAQ-style blocks or Elementor accordion widgets.', 0 );
+		self::toggle( 'cotlas_seo_enable_search_action_schema', 'Enable SearchAction Schema', 'Includes SearchAction on the WebSite graph.', 0 );
 		self::toggle( 'cotlas_seo_enable_local_business_schema', 'Enable Local Business Schema', 'Adds a local business node using your organization data and chosen schema type.', 0 );
 		ctap_card_close();
 		ctap_card_open( 'Supported Schema Types', 'dashicons-list-view' );
@@ -268,7 +270,7 @@ class Settings {
 	private static function open_breadcrumbs_tab( $active ) {
 		ctap_pane_open( 'breadcrumbs', $active );
 		ctap_card_open( 'Breadcrumb Shortcode', 'dashicons-admin-links' );
-		self::toggle( 'cotlas_seo_enable_breadcrumb_shortcode', 'Enable Breadcrumb Shortcode', 'Registers [cotlas_breadcrumbs] and the GenerateBlocks dynamic tag when available.', 1 );
+		self::toggle( 'cotlas_seo_enable_breadcrumb_shortcode', 'Enable Breadcrumb Shortcode', 'Registers [cotlas_breadcrumbs] and the GenerateBlocks dynamic tag when available.', 0 );
 		ctap_info( 'Breadcrumb output starts with Home, then includes taxonomy or category hierarchy, and ends with the current title without a link. Use <code>[cotlas_breadcrumbs]</code> anywhere on the site.' );
 		ctap_card_close();
 		ctap_pane_close();
@@ -277,13 +279,13 @@ class Settings {
 	private static function open_advanced_tab( $active ) {
 		ctap_pane_open( 'advanced', $active );
 		ctap_card_open( 'Advanced Settings', 'dashicons-admin-tools' );
-		self::toggle( 'cotlas_seo_enable_seo_plugin_integration', 'Enable SEO Plugin Integration', 'When enabled, Cotlas reuses metadata from Yoast, Rank Math, SEOPress, or AIOSEO and avoids duplicate output.', 1 );
-		self::toggle( 'cotlas_seo_enable_custom_post_type_detection', 'Enable Automatic Custom Post Type Detection', 'Automatically includes public custom post types in the schema mapping table.', 1 );
+		self::toggle( 'cotlas_seo_enable_seo_plugin_integration', 'Enable SEO Plugin Integration', 'When enabled, Cotlas reuses metadata from Yoast, Rank Math, SEOPress, or AIOSEO and avoids duplicate output.', 0 );
+		self::toggle( 'cotlas_seo_enable_custom_post_type_detection', 'Enable Automatic Custom Post Type Detection', 'Automatically includes public custom post types in the schema mapping table.', 0 );
 		ctap_card_close();
 		ctap_pane_close();
 	}
 
-	private static function toggle( $name, $label, $desc = '', $default = 1 ) {
+	private static function toggle( $name, $label, $desc = '', $default = 0 ) {
 		$checked = get_option( $name, $default ) ? 'checked' : '';
 		echo '<div class="ctap-toggle-row">';
 		echo '<div class="ctap-toggle-info"><strong>' . esc_html( $label ) . '</strong>';
@@ -291,6 +293,7 @@ class Settings {
 			echo '<span>' . wp_kses_post( $desc ) . '</span>';
 		}
 		echo '</div>';
+		echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="0">';
 		echo '<label class="ctap-switch"><input type="checkbox" name="' . esc_attr( $name ) . '" value="1" ' . $checked . '><span class="ctap-slider"></span></label>';
 		echo '</div>';
 	}
@@ -331,24 +334,26 @@ class Settings {
 	}
 
 	private function get_media_script() {
-		return "(function($){
-			$(document).on('click','[data-cotlas-seo-pick-image]',function(e){
-				e.preventDefault();
-				var targetName = $(this).data('cotlas-seo-pick-image');
-				var field = $('input[name="' + targetName + '"]');
-				var preview = field.closest('.ctap-field-input').find('.cotlas-seo-image-preview');
-				var frame = wp.media({ title: 'Select image', button: { text: 'Use image' }, multiple: false });
-				frame.on('select', function(){
-					var attachment = frame.state().get('selection').first().toJSON();
-					field.val(attachment.id).trigger('change');
-					if ( attachment.sizes && attachment.sizes.medium ) {
-						preview.html('<img src="' + attachment.sizes.medium.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
-					} else if ( attachment.url ) {
-						preview.html('<img src="' + attachment.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
-					}
-				});
-				frame.open();
-			});
-		})(jQuery);";
+		return <<<'JS'
+(function($){
+	$(document).on('click','[data-cotlas-seo-pick-image]',function(e){
+		e.preventDefault();
+		var targetName = $(this).data('cotlas-seo-pick-image');
+		var field = $('input[name="' + targetName + '"]');
+		var preview = field.closest('.ctap-field-input').find('.cotlas-seo-image-preview');
+		var frame = wp.media({ title: 'Select image', button: { text: 'Use image' }, multiple: false });
+		frame.on('select', function(){
+			var attachment = frame.state().get('selection').first().toJSON();
+			field.val(attachment.id).trigger('change');
+			if ( attachment.sizes && attachment.sizes.medium ) {
+				preview.html('<img src="' + attachment.sizes.medium.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
+			} else if ( attachment.url ) {
+				preview.html('<img src="' + attachment.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
+			}
+		});
+		frame.open();
+	});
+})(jQuery);
+JS;
 	}
 }

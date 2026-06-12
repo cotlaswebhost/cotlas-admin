@@ -593,6 +593,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
   document.querySelectorAll("form.ctap-form").forEach(function(f) {
     f.addEventListener("submit", function() {
+			var activeBtn = document.querySelector(".ctap-tab-btn.ctap-active");
+			var activeTab = activeBtn ? activeBtn.getAttribute("data-tab") : "";
+			if (!activeTab) {
+				activeTab = window.location.hash.replace("#", "");
+			}
+
+			if (activeTab) {
+				var refererInput = f.querySelector('input[name="_wp_http_referer"]');
+				var refererUrl = new URL(window.location.href);
+				refererUrl.searchParams.set("tab", activeTab);
+				refererUrl.hash = "";
+
+				if (refererInput) {
+					refererInput.value = refererUrl.pathname + refererUrl.search;
+				} else {
+					refererInput = document.createElement("input");
+					refererInput.type = "hidden";
+					refererInput.name = "_wp_http_referer";
+					refererInput.value = refererUrl.pathname + refererUrl.search;
+					f.appendChild(refererInput);
+				}
+			}
+
       var btn = f.querySelector(".ctap-save-btn");
       if (btn) { btn.textContent = "Saving\u2026"; btn.disabled = true; }
     });
@@ -786,7 +809,7 @@ function ctap_textarea( $name, $placeholder = '', $rows = 4 ) {
 }
 
 /** Render a toggle row (checkbox-as-switch). */
-function ctap_toggle( $name, $label, $desc = '', $default = 1 ) {
+function ctap_toggle( $name, $label, $desc = '', $default = 0 ) {
 	$checked = get_option( $name, $default ) ? 'checked' : '';
 	echo '<div class="ctap-toggle-row">';
 	echo '<div class="ctap-toggle-info"><strong>' . esc_html( $label ) . '</strong>';
@@ -799,7 +822,7 @@ function ctap_toggle( $name, $label, $desc = '', $default = 1 ) {
 }
 
 /** Module enable/disable status card (also acts as a toggle in a form). */
-function ctap_module_status( $option_key, $feature_label, $desc, $default = 1 ) {
+function ctap_module_status( $option_key, $feature_label, $desc, $default = 0 ) {
 	$on    = (bool) get_option( $option_key, $default );
 	$class = $on ? 'ctap-enabled' : 'ctap-disabled';
 	$icon  = $on ? 'dashicons-yes-alt' : 'dashicons-dismiss';
@@ -1214,12 +1237,12 @@ function cotlas_panel_page_security() {
 	ctap_card_open( 'Honeypot Protection', 'dashicons-hidden' );
 	ctap_info( 'Honeypots add an invisible field that bots fill in but humans never see. Submission is silently rejected if the field is filled. Zero UX impact.' );
 	ctap_section( 'WordPress Default Forms' );
-	ctap_toggle( 'cotlas_honeypot_wp_login',    'WP Login Form',    'Adds a hidden field to wp-login.php.', 1 );
-	ctap_toggle( 'cotlas_honeypot_wp_register', 'WP Register Form', 'Adds a hidden field to the default WP registration form.', 1 );
+	ctap_toggle( 'cotlas_honeypot_wp_login',    'WP Login Form',    'Adds a hidden field to wp-login.php.', 0 );
+	ctap_toggle( 'cotlas_honeypot_wp_register', 'WP Register Form', 'Adds a hidden field to the default WP registration form.', 0 );
 	ctap_section( 'Custom Auth Forms' );
-	ctap_toggle( 'cotlas_auth_honeypot', 'Custom Login & Register Forms', 'Honeypot on the [cotlas_login] and [cotlas_register] shortcode forms.', 1 );
+	ctap_toggle( 'cotlas_auth_honeypot', 'Custom Login & Register Forms', 'Honeypot on the [cotlas_login] and [cotlas_register] shortcode forms.', 0 );
 	ctap_section( 'Comment Form' );
-	ctap_toggle( 'cotlas_honeypot_cotlas_comments', 'Cotlas Comment Form', 'Honeypot on the [cotlas_comments] comment submission form (guest users only).', 1 );
+	ctap_toggle( 'cotlas_honeypot_cotlas_comments', 'Cotlas Comment Form', 'Honeypot on the [cotlas_comments] comment submission form (guest users only).', 0 );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();

@@ -81,7 +81,7 @@ function cotlas_auth_run_guards( $action, $check_challenge = false ) {
     }
 
     // 2. Honeypot
-    if ( get_option( 'cotlas_auth_honeypot', 1 ) ) {
+    if ( get_option( 'cotlas_auth_honeypot', 0 ) ) {
         $hp = isset( $_POST['cc-city'] ) ? trim( sanitize_text_field( wp_unslash( $_POST['cc-city'] ) ) ) : ''; // phpcs:ignore
         if ( $hp !== '' ) {
             // Silently succeed from the bot's perspective (do not reveal the mechanism)

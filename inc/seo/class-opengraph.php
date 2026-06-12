@@ -15,7 +15,7 @@ class OpenGraph {
 	}
 
 	public function output_tags() {
-		if ( ! get_option( 'cotlas_seo_enable_opengraph', 1 ) || Seo_Plugin_Compatibility::should_defer_output() ) {
+		if ( ! Schema_Generator::is_module_enabled() || ! get_option( 'cotlas_seo_enable_opengraph', 0 ) || Seo_Plugin_Compatibility::should_defer_output() ) {
 			return;
 		}
 
@@ -37,7 +37,7 @@ class OpenGraph {
 		$this->print_meta( 'og:url', $url );
 		$this->print_meta( 'og:type', $type );
 
-		if ( get_option( 'cotlas_seo_enable_twitter_cards', 1 ) ) {
+		if ( get_option( 'cotlas_seo_enable_twitter_cards', 0 ) ) {
 			$this->print_meta( 'twitter:card', 'summary_large_image' );
 			$this->print_meta( 'twitter:title', $title );
 			$this->print_meta( 'twitter:description', $desc );

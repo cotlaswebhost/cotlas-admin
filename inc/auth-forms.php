@@ -92,7 +92,7 @@ function cotlas_auth_enqueue_assets() {
 // Helper: render honeypot field
 // ---------------------------------------------------------------------------
 function cotlas_auth_honeypot_field() {
-    if ( ! get_option( 'cotlas_auth_honeypot', 1 ) ) {
+    if ( ! get_option( 'cotlas_auth_honeypot', 0 ) ) {
         return '';
     }
     // Visually hidden from humans; bots fill it; tabindex=-1 prevents focus

@@ -21,7 +21,7 @@ class Website_Schema {
 			),
 		);
 
-		if ( get_option( 'cotlas_seo_enable_search_action_schema', 1 ) ) {
+		if ( get_option( 'cotlas_seo_enable_search_action_schema', 0 ) ) {
 			$data['potentialAction'] = array(
 				'@type'       => 'SearchAction',
 				'target'      => array(
