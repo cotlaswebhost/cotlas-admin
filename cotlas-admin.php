@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.3.6
+ * Version:     2.3.7
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -26,6 +26,7 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_category_features_enabled'              => 0,
 		'cotlas_comment_system_enabled'                 => 0,
 		'cotlas_gb_tags_enabled'                        => 0,
+		'cotlas_gb_page_hero_enabled'                   => 0,
 		'cotlas_image_optimization_enabled'             => 0,
 		'cotlas_post_formats_enabled'                   => 0,
 		'cotlas_user_profile_enabled'                   => 0,
@@ -39,6 +40,10 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_taxonomy_location_enabled'              => 0,
 		'cotlas_taxonomy_state_city_enabled'            => 0,
 		'cotlas_rename_post_to_news'                    => 0,
+		'cotlas_services_cpt_enabled'                   => 0,
+		'cotlas_testimonials_cpt_enabled'               => 0,
+		'cotlas_clients_cpt_enabled'                    => 0,
+		'cotlas_projects_cpt_enabled'                   => 0,
 
 		// Image conversion toggles.
 		'cotlas_imgconv_enabled'                        => 0,

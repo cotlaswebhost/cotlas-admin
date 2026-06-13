@@ -1402,3 +1402,319 @@ function gpc_delete_post_link_callback( $options, $block, $instance ) {
 		)
 	);
 }
+
+/**
+ * Check whether the Page Hero feature is enabled.
+ *
+ * @return bool
+ */
+function cotlas_gb_page_hero_enabled() {
+	return (bool) get_option( 'cotlas_gb_page_hero_enabled', 0 );
+}
+
+/**
+ * Register the Hero Section meta box on public, UI-visible post types.
+ */
+function cotlas_register_hero_section_meta_box() {
+	if ( ! cotlas_gb_page_hero_enabled() ) {
+		return;
+	}
+
+	$post_types = get_post_types(
+		array(
+			'public'  => true,
+			'show_ui' => true,
+		),
+		'names'
+	);
+
+	unset( $post_types['attachment'] );
+
+	foreach ( $post_types as $post_type ) {
+		add_meta_box(
+			'cotlas_hero_section_meta',
+			__( 'Hero Section', 'cotlas-admin' ),
+			'cotlas_hero_section_meta_box_html',
+			$post_type,
+			'normal',
+			'high'
+		);
+	}
+}
+add_action( 'add_meta_boxes', 'cotlas_register_hero_section_meta_box' );
+
+/**
+ * Render Hero Section meta box fields.
+ *
+ * @param WP_Post $post Current post object.
+ */
+function cotlas_hero_section_meta_box_html( $post ) {
+	wp_nonce_field( 'cotlas_hero_section_save', 'cotlas_hero_section_nonce' );
+
+	$title       = get_post_meta( $post->ID, '_hero_section_title', true );
+	$description = get_post_meta( $post->ID, '_hero_section_description', true );
+	$image_id    = (int) get_post_meta( $post->ID, '_hero_section_image_id', true );
+	$image_url   = $image_id ? wp_get_attachment_image_url( $image_id, 'large' ) : '';
+
+	$select_image_text    = __( 'Select Image', 'cotlas-admin' );
+	$change_image_text    = __( 'Change Image', 'cotlas-admin' );
+	$select_dialog_title  = __( 'Select Hero Image', 'cotlas-admin' );
+	$use_image_button     = __( 'Use this image', 'cotlas-admin' );
+	?>
+	<style>
+		.cotlas-hero-meta { display: flex; flex-direction: column; gap: 14px; padding: 4px 0; }
+		.cotlas-hero-meta label { font-weight: 600; display: block; margin-bottom: 4px; }
+		.cotlas-hero-meta input[type="text"],
+		.cotlas-hero-meta textarea { width: 100%; box-sizing: border-box; }
+		.cotlas-hero-meta textarea { height: 90px; resize: vertical; }
+		.cotlas-hero-image-preview { margin-top: 8px; }
+		.cotlas-hero-image-preview img { max-width: 240px; height: auto; display: block; border: 1px solid #ddd; border-radius: 4px; }
+		.cotlas-hero-image-buttons { margin-top: 6px; display: flex; gap: 8px; align-items: center; }
+	</style>
+	<div class="cotlas-hero-meta">
+		<div>
+			<label for="hero_section_title"><?php esc_html_e( 'Hero Title', 'cotlas-admin' ); ?></label>
+			<input type="text" id="hero_section_title" name="hero_section_title"
+				value="<?php echo esc_attr( $title ); ?>"
+				placeholder="<?php esc_attr_e( 'Enter hero section title...', 'cotlas-admin' ); ?>" />
+			<p class="description"><?php esc_html_e( 'Used as {{hero_section field:title}} in blocks.', 'cotlas-admin' ); ?></p>
+		</div>
+		<div>
+			<label for="hero_section_description"><?php esc_html_e( 'Hero Description', 'cotlas-admin' ); ?></label>
+			<textarea id="hero_section_description" name="hero_section_description"
+				placeholder="<?php esc_attr_e( 'Enter hero section description...', 'cotlas-admin' ); ?>"><?php echo esc_textarea( $description ); ?></textarea>
+			<p class="description"><?php esc_html_e( 'Used as {{hero_section field:description}} in blocks.', 'cotlas-admin' ); ?></p>
+		</div>
+		<div>
+			<label><?php esc_html_e( 'Hero Image', 'cotlas-admin' ); ?></label>
+			<input type="hidden" id="hero_section_image_id" name="hero_section_image_id"
+				value="<?php echo esc_attr( (string) $image_id ); ?>" />
+			<div class="cotlas-hero-image-preview" id="cotlas-hero-image-preview">
+				<?php if ( $image_url ) : ?>
+					<img src="<?php echo esc_url( $image_url ); ?>" alt="" />
+				<?php endif; ?>
+			</div>
+			<div class="cotlas-hero-image-buttons">
+				<button type="button" class="button" id="cotlas-hero-select-image">
+					<?php echo esc_html( $image_id ? $change_image_text : $select_image_text ); ?>
+				</button>
+				<button type="button" class="button-link-delete" id="cotlas-hero-remove-image"
+					style="<?php echo $image_id ? '' : 'display:none;'; ?>">
+					<?php esc_html_e( 'Remove', 'cotlas-admin' ); ?>
+				</button>
+			</div>
+			<p class="description"><?php esc_html_e( 'Used as {{hero_section field:image_url}} in blocks.', 'cotlas-admin' ); ?></p>
+		</div>
+	</div>
+	<script>
+	(function($){
+		'use strict';
+		var frame;
+		var selectText = <?php echo wp_json_encode( $select_image_text ); ?>;
+		var changeText = <?php echo wp_json_encode( $change_image_text ); ?>;
+
+		$('#cotlas-hero-select-image').on('click', function(e) {
+			e.preventDefault();
+
+			if (frame) {
+				frame.open();
+				return;
+			}
+
+			frame = wp.media({
+				title: <?php echo wp_json_encode( $select_dialog_title ); ?>,
+				button: { text: <?php echo wp_json_encode( $use_image_button ); ?> },
+				multiple: false
+			});
+
+			frame.on('select', function() {
+				var attachment = frame.state().get('selection').first().toJSON();
+				var preview = attachment.sizes && attachment.sizes.large ? attachment.sizes.large.url : attachment.url;
+
+				$('#hero_section_image_id').val(attachment.id);
+				$('#cotlas-hero-image-preview').html('<img src="' + preview + '" alt="" />');
+				$('#cotlas-hero-select-image').text(changeText);
+				$('#cotlas-hero-remove-image').show();
+			});
+
+			frame.open();
+		});
+
+		$('#cotlas-hero-remove-image').on('click', function(e) {
+			e.preventDefault();
+			$('#hero_section_image_id').val('');
+			$('#cotlas-hero-image-preview').empty();
+			$('#cotlas-hero-select-image').text(selectText);
+			$(this).hide();
+		});
+	})(jQuery);
+	</script>
+	<?php
+}
+
+/**
+ * Enqueue media uploader on post edit screens when Page Hero is enabled.
+ *
+ * @param string $hook Current admin page hook.
+ */
+function cotlas_hero_section_admin_assets( $hook ) {
+	if ( ! cotlas_gb_page_hero_enabled() ) {
+		return;
+	}
+
+	if ( in_array( $hook, array( 'post.php', 'post-new.php' ), true ) ) {
+		wp_enqueue_media();
+	}
+}
+add_action( 'admin_enqueue_scripts', 'cotlas_hero_section_admin_assets' );
+
+/**
+ * Save Hero Section meta fields.
+ *
+ * @param int $post_id Current post ID.
+ */
+function cotlas_save_hero_section_meta( $post_id ) {
+	if ( ! cotlas_gb_page_hero_enabled() ) {
+		return;
+	}
+
+	if ( ! isset( $_POST['cotlas_hero_section_nonce'] ) ) {
+		return;
+	}
+
+	$nonce = sanitize_text_field( wp_unslash( $_POST['cotlas_hero_section_nonce'] ) );
+	if ( ! wp_verify_nonce( $nonce, 'cotlas_hero_section_save' ) ) {
+		return;
+	}
+
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+
+	if ( wp_is_post_revision( $post_id ) ) {
+		return;
+	}
+
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		return;
+	}
+
+	if ( isset( $_POST['hero_section_title'] ) ) {
+		update_post_meta(
+			$post_id,
+			'_hero_section_title',
+			sanitize_text_field( wp_unslash( $_POST['hero_section_title'] ) )
+		);
+	}
+
+	if ( isset( $_POST['hero_section_description'] ) ) {
+		update_post_meta(
+			$post_id,
+			'_hero_section_description',
+			sanitize_textarea_field( wp_unslash( $_POST['hero_section_description'] ) )
+		);
+	}
+
+	if ( isset( $_POST['hero_section_image_id'] ) ) {
+		$image_id = absint( wp_unslash( $_POST['hero_section_image_id'] ) );
+
+		if ( $image_id ) {
+			update_post_meta( $post_id, '_hero_section_image_id', $image_id );
+		} else {
+			delete_post_meta( $post_id, '_hero_section_image_id' );
+		}
+	}
+}
+add_action( 'save_post', 'cotlas_save_hero_section_meta' );
+
+/**
+ * Register Page Hero as a GenerateBlocks dynamic tag.
+ */
+function cotlas_register_hero_section_dynamic_tag() {
+	if ( ! cotlas_gb_page_hero_enabled() ) {
+		return;
+	}
+
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'title'       => __( 'Page Hero', 'cotlas-admin' ),
+			'tag'         => 'hero_section',
+			'type'        => 'post',
+			'supports'    => array( 'source' ),
+			'description' => __( 'Dynamic fields for the hero section of the current post or page.', 'cotlas-admin' ),
+			'options'     => array(
+				'field' => array(
+					'type'    => 'select',
+					'label'   => __( 'Field', 'cotlas-admin' ),
+					'default' => 'title',
+					'options' => array(
+						array(
+							'value' => 'title',
+							'label' => __( 'Hero Title', 'cotlas-admin' ),
+						),
+						array(
+							'value' => 'description',
+							'label' => __( 'Hero Description', 'cotlas-admin' ),
+						),
+						array(
+							'value' => 'image_url',
+							'label' => __( 'Hero Image URL', 'cotlas-admin' ),
+						),
+					),
+				),
+			),
+			'return'      => 'cotlas_hero_section_dynamic_tag',
+		)
+	);
+}
+add_action( 'init', 'cotlas_register_hero_section_dynamic_tag', 20 );
+
+/**
+ * Callback for {{hero_section}} dynamic tag.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function cotlas_hero_section_dynamic_tag( $options, $block, $instance ) {
+	$field = isset( $options['field'] ) ? sanitize_key( $options['field'] ) : 'title';
+
+	$post_id = 0;
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+		$post_id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+	}
+	if ( ! $post_id ) {
+		$post_id = get_the_ID();
+	}
+	if ( ! $post_id ) {
+		return '';
+	}
+
+	$value = '';
+
+	switch ( $field ) {
+		case 'title':
+			$value = esc_html( (string) get_post_meta( $post_id, '_hero_section_title', true ) );
+			break;
+
+		case 'description':
+			$value = wp_kses_post( nl2br( (string) get_post_meta( $post_id, '_hero_section_description', true ) ) );
+			break;
+
+		case 'image_url':
+			$image_id = (int) get_post_meta( $post_id, '_hero_section_image_id', true );
+			$value    = $image_id ? esc_url( (string) wp_get_attachment_image_url( $image_id, 'full' ) ) : '';
+			break;
+	}
+
+	if ( class_exists( 'GenerateBlocks_Dynamic_Tag_Callbacks' ) ) {
+		return GenerateBlocks_Dynamic_Tag_Callbacks::output( $value, $options, $instance );
+	}
+
+	return $value;
+}

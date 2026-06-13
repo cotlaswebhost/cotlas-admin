@@ -1057,3 +1057,523 @@ add_action( 'admin_footer', function() {
     </script>
     <?php
 } );
+
+/* ============================================================
+ *  CUSTOM POST TYPES: SERVICES, TESTIMONIALS, CLIENTS, PROJECTS
+ * ============================================================ */
+
+add_action( 'init', 'cotlas_pf_register_custom_post_types', 20 );
+
+function cotlas_pf_register_custom_post_types() {
+    if ( get_option( 'cotlas_services_cpt_enabled' ) ) {
+        register_post_type( 'services', array(
+            'labels' => array(
+                'name'          => __( 'Services', 'cotlas-admin' ),
+                'singular_name' => __( 'Service', 'cotlas-admin' ),
+                'menu_name'     => __( 'Services', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Service', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Service', 'cotlas-admin' ),
+                'new_item'      => __( 'New Service', 'cotlas-admin' ),
+                'view_item'     => __( 'View Service', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Services', 'cotlas-admin' ),
+                'all_items'     => __( 'All Services', 'cotlas-admin' ),
+            ),
+            'public'             => true,
+            'show_ui'            => true,
+            'show_in_menu'       => true,
+            'show_in_rest'       => true,
+            'has_archive'        => true,
+            'menu_icon'          => 'dashicons-admin-tools',
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
+            'rewrite'            => array( 'slug' => 'services', 'with_front' => false ),
+            'publicly_queryable' => true,
+            'query_var'          => true,
+        ) );
+
+        register_taxonomy( 'service_type', array( 'services' ), array(
+            'labels' => array(
+                'name'          => __( 'Services Type', 'cotlas-admin' ),
+                'singular_name' => __( 'Service Type', 'cotlas-admin' ),
+                'menu_name'     => __( 'Services Type', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Services Type', 'cotlas-admin' ),
+                'all_items'     => __( 'All Services Types', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Service Type', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Service Type', 'cotlas-admin' ),
+            ),
+            'public'            => true,
+            'hierarchical'      => true,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'show_in_rest'      => true,
+            'rewrite'           => array( 'slug' => 'service-type', 'with_front' => false, 'hierarchical' => true ),
+        ) );
+    }
+
+    if ( get_option( 'cotlas_testimonials_cpt_enabled' ) ) {
+        register_post_type( 'testimonials', array(
+            'labels' => array(
+                'name'          => __( 'Testimonials', 'cotlas-admin' ),
+                'singular_name' => __( 'Testimonial', 'cotlas-admin' ),
+                'menu_name'     => __( 'Testimonials', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Testimonial', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Testimonial', 'cotlas-admin' ),
+                'new_item'      => __( 'New Testimonial', 'cotlas-admin' ),
+                'view_item'     => __( 'View Testimonial', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Testimonials', 'cotlas-admin' ),
+                'all_items'     => __( 'All Testimonials', 'cotlas-admin' ),
+            ),
+            'public'             => true,
+            'show_ui'            => true,
+            'show_in_menu'       => true,
+            'show_in_rest'       => true,
+            'has_archive'        => true,
+            'menu_icon'          => 'dashicons-format-quote',
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
+            'rewrite'            => array( 'slug' => 'testimonials', 'with_front' => false ),
+            'publicly_queryable' => true,
+            'query_var'          => true,
+        ) );
+
+        register_taxonomy( 'testimonial_source', array( 'testimonials' ), array(
+            'labels' => array(
+                'name'          => __( 'Source', 'cotlas-admin' ),
+                'singular_name' => __( 'Source', 'cotlas-admin' ),
+                'menu_name'     => __( 'Source', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Sources', 'cotlas-admin' ),
+                'all_items'     => __( 'All Sources', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Source', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Source', 'cotlas-admin' ),
+            ),
+            'public'            => true,
+            'hierarchical'      => false,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'show_in_rest'      => true,
+            'rewrite'           => array( 'slug' => 'testimonial-source', 'with_front' => false ),
+        ) );
+    }
+
+    if ( get_option( 'cotlas_clients_cpt_enabled' ) ) {
+        register_post_type( 'clients', array(
+            'labels' => array(
+                'name'          => __( 'Clients', 'cotlas-admin' ),
+                'singular_name' => __( 'Client', 'cotlas-admin' ),
+                'menu_name'     => __( 'Clients', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Client', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Client', 'cotlas-admin' ),
+                'new_item'      => __( 'New Client', 'cotlas-admin' ),
+                'view_item'     => __( 'View Client', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Clients', 'cotlas-admin' ),
+                'all_items'     => __( 'All Clients', 'cotlas-admin' ),
+            ),
+            'public'             => true,
+            'show_ui'            => true,
+            'show_in_menu'       => true,
+            'show_in_rest'       => true,
+            'has_archive'        => true,
+            'menu_icon'          => 'dashicons-groups',
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
+            'rewrite'            => array( 'slug' => 'clients', 'with_front' => false ),
+            'publicly_queryable' => true,
+            'query_var'          => true,
+        ) );
+
+        register_taxonomy( 'client_type', array( 'clients' ), array(
+            'labels' => array(
+                'name'          => __( 'Clients Type', 'cotlas-admin' ),
+                'singular_name' => __( 'Client Type', 'cotlas-admin' ),
+                'menu_name'     => __( 'Clients Type', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Clients Type', 'cotlas-admin' ),
+                'all_items'     => __( 'All Clients Types', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Client Type', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Client Type', 'cotlas-admin' ),
+            ),
+            'public'            => true,
+            'hierarchical'      => true,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'show_in_rest'      => true,
+            'rewrite'           => array( 'slug' => 'client-type', 'with_front' => false, 'hierarchical' => true ),
+        ) );
+    }
+
+    if ( get_option( 'cotlas_projects_cpt_enabled' ) ) {
+        register_post_type( 'projects', array(
+            'labels' => array(
+                'name'          => __( 'Projects', 'cotlas-admin' ),
+                'singular_name' => __( 'Project', 'cotlas-admin' ),
+                'menu_name'     => __( 'Projects', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Project', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Project', 'cotlas-admin' ),
+                'new_item'      => __( 'New Project', 'cotlas-admin' ),
+                'view_item'     => __( 'View Project', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Projects', 'cotlas-admin' ),
+                'all_items'     => __( 'All Projects', 'cotlas-admin' ),
+            ),
+            'public'             => true,
+            'show_ui'            => true,
+            'show_in_menu'       => true,
+            'show_in_rest'       => true,
+            'has_archive'        => true,
+            'menu_icon'          => 'dashicons-portfolio',
+            'supports'           => array( 'title', 'editor', 'thumbnail' ),
+            'rewrite'            => array( 'slug' => 'projects', 'with_front' => false ),
+            'publicly_queryable' => true,
+            'query_var'          => true,
+        ) );
+
+        register_taxonomy( 'project_type', array( 'projects' ), array(
+            'labels' => array(
+                'name'          => __( 'Projects Type', 'cotlas-admin' ),
+                'singular_name' => __( 'Project Type', 'cotlas-admin' ),
+                'menu_name'     => __( 'Projects Type', 'cotlas-admin' ),
+                'search_items'  => __( 'Search Projects Type', 'cotlas-admin' ),
+                'all_items'     => __( 'All Projects Types', 'cotlas-admin' ),
+                'edit_item'     => __( 'Edit Project Type', 'cotlas-admin' ),
+                'add_new_item'  => __( 'Add New Project Type', 'cotlas-admin' ),
+            ),
+            'public'            => true,
+            'hierarchical'      => true,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'show_in_rest'      => true,
+            'rewrite'           => array( 'slug' => 'project-type', 'with_front' => false, 'hierarchical' => true ),
+        ) );
+    }
+}
+
+/* ============================================================
+ *  TESTIMONIAL + CLIENT META FIELDS
+ * ============================================================ */
+
+add_action( 'add_meta_boxes', 'cotlas_pf_register_cpt_meta_boxes' );
+
+function cotlas_pf_register_cpt_meta_boxes() {
+    if ( get_option( 'cotlas_testimonials_cpt_enabled' ) ) {
+        add_meta_box(
+            'cotlas_testimonial_meta',
+            __( 'Testimonial Details', 'cotlas-admin' ),
+            'cotlas_pf_render_testimonial_meta_box',
+            'testimonials',
+            'normal',
+            'high'
+        );
+    }
+
+    if ( get_option( 'cotlas_clients_cpt_enabled' ) ) {
+        add_meta_box(
+            'cotlas_client_meta',
+            __( 'Client Details', 'cotlas-admin' ),
+            'cotlas_pf_render_client_meta_box',
+            'clients',
+            'normal',
+            'high'
+        );
+    }
+}
+
+function cotlas_pf_render_testimonial_meta_box( $post ) {
+    wp_nonce_field( 'cotlas_pf_testimonial_meta_save', 'cotlas_pf_testimonial_meta_nonce' );
+
+    $designation  = get_post_meta( $post->ID, '_cotlas_testimonial_designation', true );
+    $company_name = get_post_meta( $post->ID, '_cotlas_testimonial_company_name', true );
+
+    echo '<p><label for="cotlas_testimonial_designation"><strong>' . esc_html__( 'Designation', 'cotlas-admin' ) . '</strong></label></p>';
+    echo '<input type="text" id="cotlas_testimonial_designation" name="cotlas_testimonial_designation" value="' . esc_attr( $designation ) . '" style="width:100%;" />';
+
+    echo '<p style="margin-top:12px;"><label for="cotlas_testimonial_company_name"><strong>' . esc_html__( 'Company Name', 'cotlas-admin' ) . '</strong></label></p>';
+    echo '<input type="text" id="cotlas_testimonial_company_name" name="cotlas_testimonial_company_name" value="' . esc_attr( $company_name ) . '" style="width:100%;" />';
+
+    echo '<p class="description" style="margin-top:10px;">' . esc_html__( 'Name uses Title, feedback uses Content, and photo uses Featured Image.', 'cotlas-admin' ) . '</p>';
+}
+
+function cotlas_pf_render_client_meta_box( $post ) {
+    wp_nonce_field( 'cotlas_pf_client_meta_save', 'cotlas_pf_client_meta_nonce' );
+
+    $website = get_post_meta( $post->ID, '_cotlas_client_website', true );
+
+    echo '<p><label for="cotlas_client_website"><strong>' . esc_html__( 'Client Website URL', 'cotlas-admin' ) . '</strong></label></p>';
+    echo '<input type="url" id="cotlas_client_website" name="cotlas_client_website" value="' . esc_attr( $website ) . '" style="width:100%;" placeholder="https://example.com" />';
+    echo '<p class="description" style="margin-top:10px;">' . esc_html__( 'Client name uses Title, description uses Content, and logo uses Featured Image.', 'cotlas-admin' ) . '</p>';
+}
+
+add_action( 'save_post', 'cotlas_pf_save_custom_cpt_meta', 10, 2 );
+
+function cotlas_pf_save_custom_cpt_meta( $post_id, $post ) {
+    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+        return;
+    }
+
+    if ( wp_is_post_revision( $post_id ) ) {
+        return;
+    }
+
+    if ( ! current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+
+    if ( 'testimonials' === $post->post_type && get_option( 'cotlas_testimonials_cpt_enabled' ) ) {
+        if ( isset( $_POST['cotlas_pf_testimonial_meta_nonce'] ) ) {
+            $nonce = sanitize_text_field( wp_unslash( $_POST['cotlas_pf_testimonial_meta_nonce'] ) );
+            if ( wp_verify_nonce( $nonce, 'cotlas_pf_testimonial_meta_save' ) ) {
+                $designation  = isset( $_POST['cotlas_testimonial_designation'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_testimonial_designation'] ) ) : '';
+                $company_name = isset( $_POST['cotlas_testimonial_company_name'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_testimonial_company_name'] ) ) : '';
+
+                update_post_meta( $post_id, '_cotlas_testimonial_designation', $designation );
+                update_post_meta( $post_id, '_cotlas_testimonial_company_name', $company_name );
+            }
+        }
+    }
+
+    if ( 'clients' === $post->post_type && get_option( 'cotlas_clients_cpt_enabled' ) ) {
+        if ( isset( $_POST['cotlas_pf_client_meta_nonce'] ) ) {
+            $nonce = sanitize_text_field( wp_unslash( $_POST['cotlas_pf_client_meta_nonce'] ) );
+            if ( wp_verify_nonce( $nonce, 'cotlas_pf_client_meta_save' ) ) {
+                $website = isset( $_POST['cotlas_client_website'] ) ? esc_url_raw( wp_unslash( $_POST['cotlas_client_website'] ) ) : '';
+                update_post_meta( $post_id, '_cotlas_client_website', $website );
+            }
+        }
+    }
+}
+
+/* ============================================================
+ *  GENERATEBLOCKS DYNAMIC TAGS FOR CUSTOM CPT DATA
+ * ============================================================ */
+
+add_action( 'init', 'cotlas_pf_register_generateblocks_dynamic_tags', 20 );
+
+function cotlas_pf_register_generateblocks_dynamic_tags() {
+    if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+        return;
+    }
+
+    if ( get_option( 'cotlas_services_cpt_enabled' ) ) {
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Service Type', 'cotlas-admin' ),
+            'tag'         => 'service_type',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns the assigned Services Type term for a Services post.', 'cotlas-admin' ),
+            'options'     => array(
+                'output' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Output', 'cotlas-admin' ),
+                    'default' => 'name',
+                    'options' => cotlas_pf_term_output_options(),
+                ),
+            ),
+            'return'      => 'cotlas_pf_service_type_dynamic_tag',
+        ) );
+    }
+
+    if ( get_option( 'cotlas_testimonials_cpt_enabled' ) ) {
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Testimonial Source', 'cotlas-admin' ),
+            'tag'         => 'testimonial_source',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns the assigned Source term for a Testimonial.', 'cotlas-admin' ),
+            'options'     => array(
+                'output' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Output', 'cotlas-admin' ),
+                    'default' => 'name',
+                    'options' => cotlas_pf_term_output_options(),
+                ),
+            ),
+            'return'      => 'cotlas_pf_testimonial_source_dynamic_tag',
+        ) );
+
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Testimonial Info', 'cotlas-admin' ),
+            'tag'         => 'testimonial_info',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns designation or company name from testimonial meta.', 'cotlas-admin' ),
+            'options'     => array(
+                'field' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Field', 'cotlas-admin' ),
+                    'default' => 'designation',
+                    'options' => array(
+                        array( 'value' => 'designation', 'label' => __( 'Designation', 'cotlas-admin' ) ),
+                        array( 'value' => 'company_name', 'label' => __( 'Company Name', 'cotlas-admin' ) ),
+                    ),
+                ),
+            ),
+            'return'      => 'cotlas_pf_testimonial_info_dynamic_tag',
+        ) );
+    }
+
+    if ( get_option( 'cotlas_clients_cpt_enabled' ) ) {
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Client Type', 'cotlas-admin' ),
+            'tag'         => 'client_type',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns the assigned Clients Type term for a Client.', 'cotlas-admin' ),
+            'options'     => array(
+                'output' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Output', 'cotlas-admin' ),
+                    'default' => 'name',
+                    'options' => cotlas_pf_term_output_options(),
+                ),
+            ),
+            'return'      => 'cotlas_pf_client_type_dynamic_tag',
+        ) );
+
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Client Info', 'cotlas-admin' ),
+            'tag'         => 'client_info',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns website URL from client meta.', 'cotlas-admin' ),
+            'options'     => array(
+                'field' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Field', 'cotlas-admin' ),
+                    'default' => 'website',
+                    'options' => array(
+                        array( 'value' => 'website', 'label' => __( 'Website URL', 'cotlas-admin' ) ),
+                    ),
+                ),
+            ),
+            'return'      => 'cotlas_pf_client_info_dynamic_tag',
+        ) );
+    }
+
+    if ( get_option( 'cotlas_projects_cpt_enabled' ) ) {
+        new GenerateBlocks_Register_Dynamic_Tag( array(
+            'title'       => __( 'Project Type', 'cotlas-admin' ),
+            'tag'         => 'project_type',
+            'type'        => 'post',
+            'supports'    => array( 'source' ),
+            'description' => __( 'Returns the assigned Projects Type term for a Project.', 'cotlas-admin' ),
+            'options'     => array(
+                'output' => array(
+                    'type'    => 'select',
+                    'label'   => __( 'Output', 'cotlas-admin' ),
+                    'default' => 'name',
+                    'options' => cotlas_pf_term_output_options(),
+                ),
+            ),
+            'return'      => 'cotlas_pf_project_type_dynamic_tag',
+        ) );
+    }
+}
+
+function cotlas_pf_term_output_options() {
+    return array(
+        array( 'value' => 'name', 'label' => __( 'Name', 'cotlas-admin' ) ),
+        array( 'value' => 'slug', 'label' => __( 'Slug', 'cotlas-admin' ) ),
+        array( 'value' => 'id',   'label' => __( 'ID', 'cotlas-admin' ) ),
+        array( 'value' => 'url',  'label' => __( 'Archive URL', 'cotlas-admin' ) ),
+    );
+}
+
+function cotlas_pf_dynamic_tag_post_id( $options, $instance ) {
+    if ( class_exists( 'GenerateBlocks_Dynamic_Tags' ) ) {
+        $id = (int) GenerateBlocks_Dynamic_Tags::get_id( $options, 'post', $instance );
+        if ( $id ) {
+            return $id;
+        }
+    }
+
+    return (int) get_the_ID();
+}
+
+function cotlas_pf_get_first_term_value( $post_id, $taxonomy, $output ) {
+    $terms = get_the_terms( $post_id, $taxonomy );
+    if ( empty( $terms ) || is_wp_error( $terms ) ) {
+        return '';
+    }
+
+    $term = reset( $terms );
+    if ( ! $term ) {
+        return '';
+    }
+
+    switch ( $output ) {
+        case 'slug':
+            return esc_html( $term->slug );
+        case 'id':
+            return (string) absint( $term->term_id );
+        case 'url':
+            $link = get_term_link( $term );
+            return is_wp_error( $link ) ? '' : esc_url( $link );
+        case 'name':
+        default:
+            return esc_html( $term->name );
+    }
+}
+
+function cotlas_pf_dynamic_tag_output( $value, $options, $instance ) {
+    if ( class_exists( 'GenerateBlocks_Dynamic_Tag_Callbacks' ) ) {
+        return GenerateBlocks_Dynamic_Tag_Callbacks::output( $value, $options, $instance );
+    }
+
+    return $value;
+}
+
+function cotlas_pf_service_type_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    $output  = isset( $options['output'] ) ? sanitize_key( $options['output'] ) : 'name';
+    $value   = $post_id ? cotlas_pf_get_first_term_value( $post_id, 'service_type', $output ) : '';
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}
+
+function cotlas_pf_testimonial_source_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    $output  = isset( $options['output'] ) ? sanitize_key( $options['output'] ) : 'name';
+    $value   = $post_id ? cotlas_pf_get_first_term_value( $post_id, 'testimonial_source', $output ) : '';
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}
+
+function cotlas_pf_client_type_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    $output  = isset( $options['output'] ) ? sanitize_key( $options['output'] ) : 'name';
+    $value   = $post_id ? cotlas_pf_get_first_term_value( $post_id, 'client_type', $output ) : '';
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}
+
+function cotlas_pf_project_type_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    $output  = isset( $options['output'] ) ? sanitize_key( $options['output'] ) : 'name';
+    $value   = $post_id ? cotlas_pf_get_first_term_value( $post_id, 'project_type', $output ) : '';
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}
+
+function cotlas_pf_testimonial_info_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    if ( ! $post_id ) {
+        return '';
+    }
+
+    $field = isset( $options['field'] ) ? sanitize_key( $options['field'] ) : 'designation';
+    $value = '';
+
+    if ( 'company_name' === $field ) {
+        $value = esc_html( (string) get_post_meta( $post_id, '_cotlas_testimonial_company_name', true ) );
+    } else {
+        $value = esc_html( (string) get_post_meta( $post_id, '_cotlas_testimonial_designation', true ) );
+    }
+
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}
+
+function cotlas_pf_client_info_dynamic_tag( $options, $block, $instance ) {
+    $post_id = cotlas_pf_dynamic_tag_post_id( $options, $instance );
+    if ( ! $post_id ) {
+        return '';
+    }
+
+    $field = isset( $options['field'] ) ? sanitize_key( $options['field'] ) : 'website';
+    $value = '';
+
+    if ( 'website' === $field ) {
+        $value = esc_url( (string) get_post_meta( $post_id, '_cotlas_client_website', true ) );
+    }
+
+    return cotlas_pf_dynamic_tag_output( $value, $options, $instance );
+}

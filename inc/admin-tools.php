@@ -2,12 +2,11 @@
 /**
  * Cotlas Admin Tools
  *
- * Four-module admin toolbox registered under the existing Cotlas Admin menu:
+ * Admin toolbox registered under the existing Cotlas Admin menu:
  *
- *   1. Regenerate Thumbnails  – batch AJAX regeneration with live progress bar.
- *   2. Admin Notice Manager   – per-type toggles that suppress WP admin notices.
- *   3. Maintenance Mode       – toggle with custom message, role & IP whitelist.
- *   4. Database Cleanup       – live stats + individual / bulk cleanup actions.
+ *   1. Admin Notice Manager   – per-type toggles that suppress WP admin notices.
+ *   2. Maintenance Mode       – toggle with custom message, role & IP whitelist.
+ *   3. Database Cleanup       – live stats + individual / bulk cleanup actions.
  *
  * Class:   Cotlas_Admin_Tools
  * Menu:    Cotlas Admin → Admin Tools  (slug: cotlas-tools)
@@ -115,7 +114,6 @@ class Cotlas_Admin_Tools {
 		wp_enqueue_script( 'cotlas-tools' );
 		wp_localize_script( 'cotlas-tools', 'cotlasTools', array(
 			'ajaxurl'    => admin_url( 'admin-ajax.php' ),
-			'regenNonce' => wp_create_nonce( self::NONCE_REGEN ),
 			'dbNonce'    => wp_create_nonce( self::NONCE_DB ),
 			'i18n'       => array(
 				'processing' => __( 'Processing…', 'cotlas-admin' ),
@@ -593,19 +591,14 @@ class Cotlas_Admin_Tools {
 	 * ═══════════════════════════════════════════════════════════════════════ */
 
 	public function render_page() {
-		ctap_page_open( 'Admin Tools', 'dashicons-admin-tools', 'Thumbnails · Admin Notices · Maintenance Mode · Database Cleanup' );
+		ctap_page_open( 'Admin Tools', 'dashicons-admin-tools', 'Admin Notices · Maintenance Mode · Database Cleanup' );
 
 		$tabs = array(
-			array( 'id' => 'thumbnails',  'label' => 'Thumbnails',    'icon' => 'dashicons-format-image' ),
 			array( 'id' => 'notices',     'label' => 'Admin Notices', 'icon' => 'dashicons-megaphone' ),
 			array( 'id' => 'maintenance', 'label' => 'Maintenance',   'icon' => 'dashicons-warning' ),
 			array( 'id' => 'database',    'label' => 'Database',      'icon' => 'dashicons-database' ),
 		);
 		$active = ctap_nav( $tabs );
-
-		ctap_pane_open( 'thumbnails', $active );
-		$this->tab_thumbnails();
-		ctap_pane_close();
 
 		ctap_pane_open( 'notices', $active );
 		$this->tab_notices();
@@ -620,40 +613,6 @@ class Cotlas_Admin_Tools {
 		ctap_pane_close();
 
 		ctap_page_close();
-	}
-
-	/* ─── Tab: Thumbnails ────────────────────────────────────────────────── */
-
-	private function tab_thumbnails() {
-		ctap_card_open( 'Regenerate All Thumbnails', 'dashicons-format-image' );
-		ctap_info(
-			'<strong>Warning:</strong> This re-creates every image size for all uploaded images. ' .
-			'On large media libraries it can take several minutes. ' .
-			'<strong>Do not close this tab</strong> while processing.'
-		);
-		?>
-		<div class="ctap-field-row ctls-regen-wrap" style="flex-direction:column;align-items:flex-start;gap:14px">
-
-			<div id="ctls-regen-progress" style="display:none;width:100%">
-				<p id="ctls-regen-label" style="font-size:13px;color:#555;margin:0 0 6px">Preparing…</p>
-				<div style="background:#e0e7ef;border-radius:6px;height:16px;overflow:hidden;max-width:500px">
-					<div id="ctls-regen-bar" style="background:#2271b1;height:100%;width:0%;border-radius:6px;transition:width .3s ease"></div>
-				</div>
-				<p id="ctls-regen-count" style="font-size:12px;color:#888;margin:4px 0 0">0 / 0</p>
-				<p id="ctls-regen-time"  style="font-size:12px;color:#aaa;margin:2px 0 0"></p>
-			</div>
-
-			<div id="ctls-regen-result" class="notice notice-success inline" style="display:none;margin:0;padding:8px 14px">
-				<p id="ctls-regen-result-msg" style="margin:0"></p>
-			</div>
-
-			<button type="button" id="ctls-regen-btn" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px">
-				<span class="dashicons dashicons-update" style="line-height:28px"></span>
-				<?php esc_html_e( 'Regenerate All Thumbnails', 'cotlas-admin' ); ?>
-			</button>
-		</div>
-		<?php
-		ctap_card_close();
 	}
 
 	/* ─── Tab: Admin Notices ─────────────────────────────────────────────── */
@@ -827,11 +786,11 @@ class Cotlas_Admin_Tools {
 
 		echo '<div class="ctls-db-actions">';
 		echo '<button type="button" id="ctls-db-refresh" class="button button-secondary">'
-			. '<span class="dashicons dashicons-update" style="line-height:26px"></span> '
+			. '<span class="dashicons dashicons-update" style="line-height:36px"></span> '
 			. esc_html__( 'Refresh Stats', 'cotlas-admin' )
 			. '</button>';
 		echo '<button type="button" id="ctls-db-run-all" class="button button-primary" disabled>'
-			. '<span class="dashicons dashicons-database" style="line-height:26px"></span> '
+			. '<span class="dashicons dashicons-database" style="line-height:36px"></span> '
 			. esc_html__( 'Run All Cleanups', 'cotlas-admin' )
 			. '</button>';
 		echo '</div>';
@@ -861,9 +820,6 @@ class Cotlas_Admin_Tools {
 
 /* Database action bar */
 .ctls-db-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-
-/* Regen progress */
-.ctls-regen-wrap{width:100%}
 		';
 	}
 
@@ -886,84 +842,7 @@ class Cotlas_Admin_Tools {
     }
 
     /* ════════════════════════════════════════════════════════════════════════
-     * 1. THUMBNAIL REGENERATION
-     * ════════════════════════════════════════════════════════════════════════ */
-    var regenBtn    = document.getElementById("ctls-regen-btn");
-    var regenProg   = document.getElementById("ctls-regen-progress");
-    var regenBar    = document.getElementById("ctls-regen-bar");
-    var regenLabel  = document.getElementById("ctls-regen-label");
-    var regenCount  = document.getElementById("ctls-regen-count");
-    var regenTime   = document.getElementById("ctls-regen-time");
-    var regenResult = document.getElementById("ctls-regen-result");
-    var regenMsg    = document.getElementById("ctls-regen-result-msg");
-
-    if (regenBtn) {
-        regenBtn.addEventListener("click", function () {
-            if (!confirm("Regenerate thumbnails for ALL images? This may take a while on large sites.")) return;
-
-            regenBtn.disabled     = true;
-            regenProg.style.display = "block";
-            regenResult.style.display = "none";
-            regenLabel.textContent  = "Fetching image count…";
-            regenBar.style.width    = "0%";
-
-            var startTime  = Date.now();
-            var totalErrors = 0;
-
-            ajax("cotlas_regen_init", { _nonce: cfg.regenNonce })
-                .then(function (res) {
-                    if (!res.success) { regenError(res); return; }
-                    var total = res.data.total;
-                    if (total === 0) { regenFinish(0, 0, 0, startTime); return; }
-                    regenBatch(0, total, totalErrors, startTime);
-                })
-                .catch(regenError);
-        });
-    }
-
-    function regenBatch(offset, total, errors, startTime) {
-        ajax("cotlas_regen_batch", { _nonce: cfg.regenNonce, offset: offset })
-            .then(function (res) {
-                if (!res.success) { regenError(res); return; }
-                var d   = res.data;
-                var pct = total > 0 ? Math.round((d.processed / total) * 100) : 100;
-
-                regenBar.style.width    = pct + "%";
-                regenCount.textContent  = d.processed + " / " + total + " (" + pct + "%)";
-                regenLabel.textContent  = d.last ? "Last processed: " + d.last : "Processing…";
-                regenTime.textContent   = "Elapsed: " + ((Date.now() - startTime) / 1000).toFixed(1) + "s";
-
-                if (d.done) {
-                    regenFinish(d.processed, total, errors + (d.errors || 0), startTime);
-                } else {
-                    regenBatch(d.next_offset, total, errors + (d.errors || 0), startTime);
-                }
-            })
-            .catch(regenError);
-    }
-
-    function regenFinish(processed, total, errors, startTime) {
-        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        regenBar.style.width        = "100%";
-        regenProg.style.display     = "none";
-        regenResult.style.display   = "block";
-        regenResult.className       = "notice notice-success inline";
-        regenMsg.textContent        = processed + " of " + total + " thumbnails regenerated in " + elapsed + "s."
-            + (errors > 0 ? " (" + errors + " file error" + (errors > 1 ? "s" : "") + ")" : "");
-        regenBtn.disabled = false;
-    }
-
-    function regenError(res) {
-        regenProg.style.display   = "none";
-        regenResult.style.display = "block";
-        regenResult.className     = "notice notice-error inline";
-        var msg = (res && res.data && res.data.message) ? res.data.message : cfg.i18n.error;
-        regenMsg.textContent = msg;
-        if (regenBtn) regenBtn.disabled = false;
-    }
-
-    /* ════════════════════════════════════════════════════════════════════════
-     * 2. ADMIN NOTICES – Reset button
+	 * 1. ADMIN NOTICES – Reset button
      * ════════════════════════════════════════════════════════════════════════ */
     var resetBtn = document.getElementById("ctls-notices-reset");
     if (resetBtn) {
@@ -977,7 +856,7 @@ class Cotlas_Admin_Tools {
     }
 
     /* ════════════════════════════════════════════════════════════════════════
-     * 3. DATABASE CLEANUP
+		* 2. DATABASE CLEANUP
      * ════════════════════════════════════════════════════════════════════════ */
     var refreshBtn = document.getElementById("ctls-db-refresh");
     var runAllBtn  = document.getElementById("ctls-db-run-all");
@@ -1005,7 +884,7 @@ class Cotlas_Admin_Tools {
                 if (runAllBtn)  runAllBtn.disabled  = false;
                 if (refreshBtn) {
                     refreshBtn.disabled = false;
-                    refreshBtn.innerHTML = '<span class="dashicons dashicons-update" style="line-height:26px"></span> Refresh Stats';
+                    refreshBtn.innerHTML = '<span class="dashicons dashicons-update" style="line-height:36px"></span> Refresh Stats';
                 }
             });
     }

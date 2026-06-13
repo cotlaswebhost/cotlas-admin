@@ -257,7 +257,7 @@ function cotlas_panel_page_cache() {
 	echo '<button type="button" id="cotlas-clear-cache-btn" class="button button-primary" '
 		. 'style="display:inline-flex;align-items:center;gap:6px;font-size:13px;height:36px;padding:0 16px" '
 		. 'data-nonce="' . esc_attr( $nonce ) . '">'
-		. '<span class="dashicons dashicons-trash" style="line-height:36px"></span>'
+		. '<span class="dashicons dashicons-trash" style="line-height:17px"></span>'
 		. esc_html__( 'Clear Cache Now', 'cotlas-admin' )
 		. '</button>';
 	echo '<span id="cotlas-clear-cache-msg" style="margin-left:12px;display:none;font-size:12px"></span>';
@@ -288,7 +288,7 @@ function cotlas_panel_page_cache() {
 			.then(function (r) { return r.json(); })
 			.then(function (res) {
 				btn.disabled = false;
-				btn.innerHTML = '<span class="dashicons dashicons-trash" style="line-height:36px"></span>Clear Cache Now';
+				btn.innerHTML = '<span class="dashicons dashicons-trash" style="line-height:17px"></span>Clear Cache Now';
 				if (res.success) {
 					msg.style.color   = '#00a32a';
 					msg.style.display = 'inline';

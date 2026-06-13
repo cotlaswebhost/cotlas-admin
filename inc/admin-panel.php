@@ -77,6 +77,7 @@ function cotlas_panel_process_saves() {
 			'page' => 'cotlas-gb-tags',
 			'map'  => array(
 				'cotlas_gb_tags_enabled' => 'checkbox',
+				'cotlas_gb_page_hero_enabled' => 'checkbox',
 			),
 		),
 		'ctap_save_turnstile' => array(
@@ -156,6 +157,10 @@ function cotlas_panel_process_saves() {
 			'page' => 'cotlas-post-formats',
 			'map'  => array(
 				'cotlas_rename_post_to_news' => 'checkbox',
+				'cotlas_services_cpt_enabled' => 'checkbox',
+				'cotlas_testimonials_cpt_enabled' => 'checkbox',
+				'cotlas_clients_cpt_enabled' => 'checkbox',
+				'cotlas_projects_cpt_enabled' => 'checkbox',
 			),
 		),
 		'ctap_save_social' => array(
@@ -258,11 +263,11 @@ function cotlas_panel_register_menus() {
 	$subs = array(
 		array( 'cotlas-admin-panel',           __( 'Site Settings', 'cotlas-admin' ),          'cotlas_panel_page_site_settings' ),
 		array( 'cotlas-login-system',          __( 'Login System', 'cotlas-admin' ),            'cotlas_panel_page_login'          ),
-		array( 'cotlas-category-enhancements', __( 'Category Enhancements', 'cotlas-admin' ),   'cotlas_panel_page_categories'     ),
+		array( 'cotlas-category-enhancements', __( 'Category Enhance', 'cotlas-admin' ),   'cotlas_panel_page_categories'     ),
 		array( 'cotlas-comment-system',        __( 'Comment System', 'cotlas-admin' ),           'cotlas_panel_page_comments'       ),
-		array( 'cotlas-gb-tags',               __( 'GenerateBlocks Tags', 'cotlas-admin' ),      'cotlas_panel_page_gb_tags'        ),
-		array( 'cotlas-security-settings',     __( 'Security Settings', 'cotlas-admin' ),        'cotlas_panel_page_security'       ),
-		array( 'cotlas-image-optimization',    __( 'Image Optimization', 'cotlas-admin' ),       'cotlas_panel_page_image_opt'      ),
+		array( 'cotlas-gb-tags',               __( 'Dynamic Tags', 'cotlas-admin' ),      'cotlas_panel_page_gb_tags'        ),
+		array( 'cotlas-security-settings',     __( 'Site Security', 'cotlas-admin' ),        'cotlas_panel_page_security'       ),
+		array( 'cotlas-image-optimization',    __( 'Image Optimize', 'cotlas-admin' ),       'cotlas_panel_page_image_opt'      ),
 		array( 'cotlas-post-formats',          __( 'Post Formats', 'cotlas-admin' ),             'cotlas_panel_page_post_formats'   ),
 		array( 'cotlas-social-media',          __( 'Social Media', 'cotlas-admin' ),             'cotlas_panel_page_social'         ),
 		array( 'cotlas-seo-schema-settings',   __( 'SEO & Schema', 'cotlas-admin' ),    array( '\\CotlasAdmin\\SEO\\Settings', 'render_page' ) ),
@@ -1082,6 +1087,7 @@ function cotlas_panel_page_gb_tags() {
 	ctap_page_open( 'GenerateBlocks Tags', 'dashicons-block-default', 'Custom dynamic tags and query parameters for GenerateBlocks Pro.' );
 	$tabs = array(
 		array( 'id' => 'tags',       'label' => 'Dynamic Tags', 'icon' => 'dashicons-tag' ),
+		array( 'id' => 'page-hero',  'label' => 'Page Hero',    'icon' => 'dashicons-format-image' ),
 		array( 'id' => 'query',      'label' => 'Query Params',  'icon' => 'dashicons-database-view' ),
 		array( 'id' => 'shortcodes', 'label' => 'Shortcodes',    'icon' => 'dashicons-shortcode' ),
 		array( 'id' => 'settings',   'label' => 'Settings',      'icon' => 'dashicons-admin-generic' ),
@@ -1093,6 +1099,7 @@ function cotlas_panel_page_gb_tags() {
 	ctap_info( 'These tags appear in the <strong>Dynamic Content</strong> and <strong>Dynamic Link</strong> dropdowns inside GenerateBlocks. No manual key entry needed.' );
 	$tag_cards = array(
 		array( 'Human Date',          'human_date',       'post',   'Relative date ("3 hours ago"). Falls back to formatted date after 24 h.',             array( 'type: published (default) | modified', 'source: current or specific post' ) ),
+		array( 'Page Hero',           'hero_section',     'post',   'Per-page Hero title, description, and image fields for posts/pages/CPTs.',            array( 'field: title | description | image_url', 'Enable from the Page Hero tab first' ) ),
 		array( 'Post Views',          'post_views',       'post',   'Raw view count for a post. Requires Post Views Counter plugin.',                       array( 'source: current post or pick a specific one' ) ),
 		array( 'Primary Category',    'primary_category', 'post',   'Yoast SEO primary category name. Falls back to first category.',                       array( 'Dynamic Link → Term links to category archive' ) ),
 		array( 'Term Display',        'term_display',     'term',   'Any field from a category: name, desc, image URL, count, or archive URL.',             array( 'key: term_title | term_desc | term_image | term_count | term_url', 'id: explicit term ID (auto-resolved when omitted)', 'tax: taxonomy slug (default: category)' ) ),
@@ -1124,6 +1131,21 @@ function cotlas_panel_page_gb_tags() {
 	}
 	echo '</div>';
 	ctap_card_close();
+	ctap_pane_close();
+
+	ctap_pane_open( 'page-hero', $active );
+	ctap_form_open( 'ctap_save_gbtags', 'page-hero' );
+	ctap_card_open( 'Page Hero Section', 'dashicons-format-image' );
+	ctap_module_status( 'cotlas_gb_page_hero_enabled', 'Enable Page Hero', 'Adds a Hero Section meta box on public post types and registers the {{hero_section}} dynamic tag for GenerateBlocks.' );
+	ctap_info( 'When enabled, you will get Hero fields on post/page edit screens: <strong>Hero Title</strong>, <strong>Hero Description</strong>, and <strong>Hero Image</strong>.' );
+	ctap_section( 'Dynamic Tag Usage' );
+	ctap_ref_table( array(
+		array( '{{hero_section field:title}}', 'Outputs Hero Title from the current post/page.', '<code>field:title</code>' ),
+		array( '{{hero_section field:description}}', 'Outputs Hero Description from the current post/page.', '<code>field:description</code>' ),
+		array( '{{hero_section field:image_url}}', 'Outputs full Hero Image URL from the current post/page.', '<code>field:image_url</code>' ),
+	) );
+	ctap_card_close();
+	ctap_form_close();
 	ctap_pane_close();
 
 	ctap_pane_open( 'query', $active );
@@ -1277,6 +1299,7 @@ function cotlas_panel_page_image_opt() {
 	ctap_page_open( 'Image Optimization', 'dashicons-format-image', 'Custom image sizes, srcset pruning, aspect-ratio helpers, LCP preloads, and WebP/AVIF format conversion.' );
 	$tabs = array(
 		array( 'id' => 'settings',   'label' => 'Settings',          'icon' => 'dashicons-admin-generic' ),
+		array( 'id' => 'regenerate', 'label' => 'Regenerate Images', 'icon' => 'dashicons-update' ),
 		array( 'id' => 'conversion', 'label' => 'Image Conversion',   'icon' => 'dashicons-images-alt2' ),
 	);
 	$active = ctap_nav( $tabs );
@@ -1291,6 +1314,117 @@ function cotlas_panel_page_image_opt() {
 	ctap_info( '<ul style="margin:.5em 0 0 1.4em"><li><strong>Custom image sizes</strong> — registers aspect-ratio-aware sizes (16:9) and disables WordPress default sizes to prevent disk bloat.</li><li><strong>srcset pruning</strong> — limits srcset to the allowed widths [150, 300, 640, 768, 1024, 1200] to keep HTML lean.</li><li><strong>LCP optimisation</strong> — disables lazy-load on the first image, injects critical CSS for the hero section, and preloads the featured image as an AVIF srcset.</li><li><strong>Image conversion</strong> — converts JPEG/PNG uploads to WebP and/or AVIF and serves the best format to each browser. Configure in the <em>Image Conversion</em> tab.</li></ul>' );
 	ctap_card_close();
 	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Regenerate tab ───────────────────────────────────── */
+	ctap_pane_open( 'regenerate', $active );
+	ctap_card_open( 'Regenerate Thumbnails', 'dashicons-update' );
+	ctap_info( '<strong>Warning:</strong> This re-creates all registered image sizes for every uploaded image. On large media libraries it may take several minutes. Keep this page open until complete.' );
+	echo '<div class="ctap-field-row" style="flex-direction:column;align-items:flex-start;gap:14px">';
+	echo '<div id="cimg-regen-progress" style="display:none;width:100%">';
+	echo '<p id="cimg-regen-label" style="font-size:13px;color:#555;margin:0 0 6px">Preparing...</p>';
+	echo '<div style="background:#e0e7ef;border-radius:6px;height:16px;overflow:hidden;max-width:500px"><div id="cimg-regen-bar" style="background:#2271b1;height:100%;width:0%;border-radius:6px;transition:width .3s ease"></div></div>';
+	echo '<p id="cimg-regen-count" style="font-size:12px;color:#888;margin:4px 0 0">0 / 0</p>';
+	echo '<p id="cimg-regen-time"  style="font-size:12px;color:#aaa;margin:2px 0 0"></p>';
+	echo '</div>';
+	echo '<div id="cimg-regen-result" class="notice notice-success inline" style="display:none;margin:0;padding:8px 14px"><p id="cimg-regen-result-msg" style="margin:0"></p></div>';
+	echo '<button type="button" id="cimg-regen-btn" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px"><span class="dashicons dashicons-update" style="line-height:20px"></span>' . esc_html__( 'Regenerate All Images', 'cotlas-admin' ) . '</button>';
+	echo '</div>';
+	?>
+	<script>
+	(function() {
+		'use strict';
+		var regenBtn = document.getElementById('cimg-regen-btn');
+		if (!regenBtn) {
+			return;
+		}
+
+		var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
+		var nonce = <?php echo wp_json_encode( wp_create_nonce( 'cotlas_tools_regen' ) ); ?>;
+		var regenProg = document.getElementById('cimg-regen-progress');
+		var regenBar = document.getElementById('cimg-regen-bar');
+		var regenLabel = document.getElementById('cimg-regen-label');
+		var regenCount = document.getElementById('cimg-regen-count');
+		var regenTime = document.getElementById('cimg-regen-time');
+		var regenResult = document.getElementById('cimg-regen-result');
+		var regenMsg = document.getElementById('cimg-regen-result-msg');
+
+		function ajax(action, data) {
+			var body = new URLSearchParams({ action: action });
+			Object.keys(data).forEach(function(key) { body.append(key, data[key]); });
+			return fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body }).then(function(r) { return r.json(); });
+		}
+
+		regenBtn.addEventListener('click', function() {
+			if (!confirm('Regenerate thumbnails for ALL images? This may take a while on large sites.')) {
+				return;
+			}
+
+			regenBtn.disabled = true;
+			regenProg.style.display = 'block';
+			regenResult.style.display = 'none';
+			regenLabel.textContent = 'Fetching image count...';
+			regenBar.style.width = '0%';
+
+			var startTime = Date.now();
+			ajax('cotlas_regen_init', { _nonce: nonce })
+				.then(function(res) {
+					if (!res.success) {
+						return showError(res);
+					}
+					var total = res.data.total || 0;
+					if (!total) {
+						return finish(0, 0, 0, startTime);
+					}
+					batch(0, total, 0, startTime);
+				})
+				.catch(showError);
+		});
+
+		function batch(offset, total, errors, startTime) {
+			ajax('cotlas_regen_batch', { _nonce: nonce, offset: offset })
+				.then(function(res) {
+					if (!res.success) {
+						return showError(res);
+					}
+					var d = res.data;
+					var pct = total > 0 ? Math.round((d.processed / total) * 100) : 100;
+
+					regenBar.style.width = pct + '%';
+					regenCount.textContent = d.processed + ' / ' + total + ' (' + pct + '%)';
+					regenLabel.textContent = d.last ? 'Last processed: ' + d.last : 'Processing...';
+					regenTime.textContent = 'Elapsed: ' + ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+
+					if (d.done) {
+						finish(d.processed, total, errors + (d.errors || 0), startTime);
+					} else {
+						batch(d.next_offset, total, errors + (d.errors || 0), startTime);
+					}
+				})
+				.catch(showError);
+		}
+
+		function finish(processed, total, errors, startTime) {
+			var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+			regenBar.style.width = '100%';
+			regenProg.style.display = 'none';
+			regenResult.style.display = 'block';
+			regenResult.className = 'notice notice-success inline';
+			regenMsg.textContent = processed + ' of ' + total + ' thumbnails regenerated in ' + elapsed + 's.' + (errors > 0 ? ' (' + errors + ' file error' + (errors > 1 ? 's' : '') + ')' : '');
+			regenBtn.disabled = false;
+		}
+
+		function showError(res) {
+			regenProg.style.display = 'none';
+			regenResult.style.display = 'block';
+			regenResult.className = 'notice notice-error inline';
+			regenMsg.textContent = (res && res.data && res.data.message) ? res.data.message : 'An error occurred. Please try again.';
+			regenBtn.disabled = false;
+		}
+	})();
+	</script>
+	<?php
+	ctap_card_close();
 	ctap_pane_close();
 
 	/* ── Image Conversion tab ──────────────────────────────── */
@@ -1414,7 +1548,14 @@ function cotlas_panel_page_post_formats() {
 	ctap_form_open( 'ctap_save_post_formats_posttype', 'posttype' );
 	ctap_card_open( 'Rename Post Type', 'dashicons-admin-post' );
 	ctap_toggle( 'cotlas_rename_post_to_news', 'Rename "Post" to "News"', 'Replaces all admin labels for the default <em>post</em> type with <em>News</em> — menu name, editor messages, bulk action messages, and the admin bar label.' );
+	ctap_section( 'Custom Post Types' );
+	ctap_toggle( 'cotlas_services_cpt_enabled', 'Services', 'Registers the <code>Services</code> post type with featured image support and a hierarchical <code>Services Type</code> taxonomy.' );
+	ctap_toggle( 'cotlas_testimonials_cpt_enabled', 'Testimonials', 'Registers the <code>Testimonials</code> post type with <code>Source</code> taxonomy and two custom fields: Designation and Company Name.' );
+	ctap_toggle( 'cotlas_clients_cpt_enabled', 'Clients', 'Registers the <code>Clients</code> post type with <code>Clients Type</code> taxonomy and a custom Client Website field.' );
+	ctap_toggle( 'cotlas_projects_cpt_enabled', 'Projects', 'Registers the <code>Projects</code> post type with a hierarchical <code>Projects Type</code> taxonomy.' );
 	ctap_card_close();
+	ctap_info( 'When a custom post type toggle is disabled, its post type, taxonomy, and related GenerateBlocks dynamic tags are not registered.' );
+	ctap_info( 'After enabling or disabling post types/taxonomies, visit <strong>Settings → Permalinks</strong> and click Save to refresh rewrite rules.' );
 	ctap_form_close();
 	ctap_pane_close();
 
@@ -1423,6 +1564,16 @@ function cotlas_panel_page_post_formats() {
 	ctap_ref_table( array(
 		array( 'audio_player', 'Styled HTML5 audio player for Audio-format posts. Requires <code>_audio_file_url</code> post meta.',
 			'<code>style="modern"</code> <code>style="minimal"</code> <code>style="dark"</code><br><code>width="100%"</code> <code>height="54px"</code><br><code>autoplay="0"</code> or <code>autoplay="1"</code><br><code>loop="0"</code> or <code>loop="1"</code>' ),
+	) );
+	ctap_card_close();
+	ctap_card_open( 'GenerateBlocks Dynamic Tags', 'dashicons-tag' );
+	ctap_ref_table( array(
+		array( 'service_type', 'Outputs the assigned Services Type term for a Services post.', '<code>output</code>: <code>name</code> (default), <code>slug</code>, <code>id</code>, <code>url</code>' ),
+		array( 'testimonial_source', 'Outputs the assigned Source term for a Testimonial.', '<code>output</code>: <code>name</code> (default), <code>slug</code>, <code>id</code>, <code>url</code>' ),
+		array( 'testimonial_info', 'Outputs custom testimonial meta values.', '<code>field</code>: <code>designation</code> or <code>company_name</code>' ),
+		array( 'client_type', 'Outputs the assigned Clients Type term for a Client.', '<code>output</code>: <code>name</code> (default), <code>slug</code>, <code>id</code>, <code>url</code>' ),
+		array( 'client_info', 'Outputs custom client meta values.', '<code>field</code>: <code>website</code>' ),
+		array( 'project_type', 'Outputs the assigned Projects Type term for a Project.', '<code>output</code>: <code>name</code> (default), <code>slug</code>, <code>id</code>, <code>url</code>' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
