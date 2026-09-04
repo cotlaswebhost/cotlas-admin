@@ -77,6 +77,11 @@ function cotlas_panel_process_saves() {
 			'page' => 'cotlas-gb-tags',
 			'map'  => array(
 				'cotlas_gb_tags_enabled' => 'checkbox',
+			),
+		),
+		'ctap_save_gbtags_hero' => array(
+			'page' => 'cotlas-gb-tags',
+			'map'  => array(
 				'cotlas_gb_page_hero_enabled' => 'checkbox',
 			),
 		),
@@ -1134,7 +1139,7 @@ function cotlas_panel_page_gb_tags() {
 	ctap_pane_close();
 
 	ctap_pane_open( 'page-hero', $active );
-	ctap_form_open( 'ctap_save_gbtags', 'page-hero' );
+	ctap_form_open( 'ctap_save_gbtags_hero', 'page-hero' );
 	ctap_card_open( 'Page Hero Section', 'dashicons-format-image' );
 	ctap_module_status( 'cotlas_gb_page_hero_enabled', 'Enable Page Hero', 'Adds a Hero Section meta box on public post types and registers the {{hero_section}} dynamic tag for GenerateBlocks.' );
 	ctap_info( 'When enabled, you will get Hero fields on post/page edit screens: <strong>Hero Title</strong>, <strong>Hero Description</strong>, and <strong>Hero Image</strong>.' );

@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.3.7
+- **Version:** 2.3.8
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -87,6 +87,11 @@ A dedicated **Cotlas Admin → Admin Tools** page with four modules:
 
 This plugin supports automatic updates via GitHub releases. Updates are fetched from:
 `https://api.github.com/repos/cotlaswebhost/cotlas-admin/releases/latest`
+
+## Changelog
+
+### 2.3.8
+- Fixed: Saving Page Hero settings no longer disables GenerateBlocks Tags (and vice versa). Each tab now has its own save handler.
 
 ## Requirements
 
