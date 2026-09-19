@@ -512,26 +512,3 @@ function cotlas_render_shortcodes_info_page() {
 
     echo '</div>'; // .cotlas-sc-wrap
 }
-/**
- * Custom GenerateBlocks Dynamic Tag: Post Views Count
- *
- * Returns the raw view count number for the current (or specified) post,
- * from the Post Views Counter plugin. No HTML, no icon — just the number.
- *
- * Usage in a GB Text block:
- *   {{post_views}}            – view count of the current post in a loop
- *   {{post_views id:42}}      – view count of a specific post by ID
- *
- * @package GeneratePress Child
- */
-
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
-
-add_action( 'wp_loaded', 'gpc_register_post_views_tag' );
-/**
- * gpc_register_post_views_tag.
- */
-function gpc_register_post_views_tag() {
-	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {

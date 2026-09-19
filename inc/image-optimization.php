@@ -8,7 +8,40 @@
 
 defined( 'ABSPATH' ) || exit;
 
-if ( ! get_option( 'cotlas_image_optimization_enabled' ) ) { return; }
+/**
+ * Put the core image sizes back to the WordPress defaults.
+ *
+ * The optimisation setup below zeroes the core size options with
+ * update_option(), which is permanent. Turning the module off afterwards leaves
+ * those options at 0, so WordPress stops generating thumbnail/medium/large
+ * sizes for new uploads. Anything that expects an attachment to have a
+ * "thumbnail" size (the media modal, post admin lists, custom galleries) then
+ * breaks, so restore the defaults whenever this module is disabled.
+ */
+function cotlas_restore_core_image_sizes() {
+	$defaults = array(
+		'thumbnail_size_w'    => 150,
+		'thumbnail_size_h'    => 150,
+		'thumbnail_crop'      => 1,
+		'medium_size_w'       => 300,
+		'medium_size_h'       => 300,
+		'medium_large_size_w' => 768,
+		'medium_large_size_h' => 0,
+		'large_size_w'        => 1024,
+		'large_size_h'        => 1024,
+	);
+
+	foreach ( $defaults as $option => $value ) {
+		if ( (string) get_option( $option ) !== (string) $value ) {
+			update_option( $option, $value );
+		}
+	}
+}
+
+if ( ! get_option( 'cotlas_image_optimization_enabled' ) ) {
+	add_action( 'after_setup_theme', 'cotlas_restore_core_image_sizes', 1 );
+	return;
+}
 
 // Complete image size setup for aspect ratio preservation
 function complete_image_size_setup() {
@@ -161,46 +194,6 @@ function remove_plugin_image_sizes($sizes) {
     return $sizes;
 }
 add_filter('intermediate_image_sizes', 'remove_plugin_image_sizes');
-
-
-// Remove lazy loading from the first image on the frontend output
-add_action('template_redirect', function() {
-    ob_start(function($html) {
-        // Match the first image tag with loading="lazy"
-        $html = preg_replace('/<img([^>]+)loading=("|\')lazy("|\')([^>]*)>/i', '<img$1loading="eager"$4 fetchpriority="high">', $html, 1);
-        return $html;
-    });
-});
-
-// Critical CSS to force LCP image to render early
-add_action('wp_head', function() {
-    if (is_home() || is_front_page()) {
-        ?>
-        <style id="critical-lcp-css">
-        /* Force LCP image to render in initial viewport */
-        .gb-query-loop-container .gb-grid-column:first-child,
-        .gb-query-loop-container .gb-grid-column:first-child .style-big-image {
-            content-visibility: auto;
-            contain-intrinsic-size: 768px 402px;
-        }
-        
-        /* Ensure LCP image is in the viewport */
-        .style-big-image {
-            display: block !important;
-            width: 100% !important;
-            height: auto !important;
-            max-width: 768px !important;
-            aspect-ratio: 768/402 !important;
-        }
-        
-        /* Remove any lazy loading for LCP image */
-        .gb-media-b463938c.style-big-image {
-            loading: eager !important;
-        }
-        </style>
-        <?php
-    }
-}, 1);
 
 
 /**

@@ -515,3 +515,36 @@ function cotlas_local_datetime_shortcode( $atts ) {
 }
 add_shortcode( 'local_datetime', 'cotlas_local_datetime_shortcode' );
 
+/**
+ * Simplify excerpts on the home / front page.
+ *
+ * Swaps jargon for plainer words and trims the excerpt to 20 words. Moved here
+ * from the child theme so it is shared across Cotlas sites.
+ *
+ * @param string $excerpt Post excerpt.
+ * @return string
+ */
+function cotlas_simplify_homepage_excerpts( $excerpt ) {
+    if ( ! is_front_page() && ! is_home() ) {
+        return $excerpt;
+    }
+
+    $simple_words = array(
+        '/\bmanagement\b/i'    => 'care',
+        '/\bstrategies\b/i'    => 'plans',
+        '/\bimplementation\b/i' => 'use',
+        '/\bmonitoring\b/i'    => 'checking',
+        '/\boptimization\b/i'  => 'improvement',
+        '/\bcomprehensive\b/i' => 'complete',
+        '/\bfundamental\b/i'   => 'basic',
+        '/\butilize\b/i'       => 'use',
+        '/\bfacilitate\b/i'    => 'help',
+        '/\bapproximately\b/i' => 'about',
+    );
+
+    $excerpt = preg_replace( array_keys( $simple_words ), array_values( $simple_words ), $excerpt );
+
+    return wp_trim_words( $excerpt, 20 );
+}
+add_filter( 'get_the_excerpt', 'cotlas_simplify_homepage_excerpts' );
+
