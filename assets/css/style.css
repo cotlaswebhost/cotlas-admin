@@ -188,7 +188,6 @@ body.cotlas-admin-light #adminmenu li.menu-top.opensub > a.menu-top:after {
 }
 body.cotlas-admin-light #adminmenu .menu-top > a.menu-top {
 	display: flex;
-	align-items: center;
 	gap: 12px;
 	min-height: 42px;
 	padding: 0 14px;
@@ -199,6 +198,9 @@ body.cotlas-admin-light #adminmenu .menu-top > a.menu-top {
 	font-weight: 500;
 	line-height: 1.25;
 	background: transparent;
+	align-items: center;
+	justify-content: flex-start;
+	align-content: center;
 }
 
 body.cotlas-admin-light ul#adminmenu a.wp-has-current-submenu:after,
@@ -237,7 +239,7 @@ body.cotlas-admin-light #adminmenu li.wp-has-current-submenu a.wp-has-current-su
 body.cotlas-admin-light #adminmenu div.wp-menu-image {
 	float: none;
 	width: 20px;
-	height: 20px;
+	height: 23px;
 	min-width: 20px;
 	margin: 0;
 }
@@ -284,11 +286,16 @@ body.cotlas-admin-light #adminmenu .wp-submenu {
 	width: auto;
 	min-width: 0;
 	display: none;
-	background: transparent;
+	background: transparent!important;
 	border: 0;
 	box-shadow: none;
 }
-
+body.cotlas-admin-light #adminmenu .wp-has-current-submenu .wp-submenu, 
+body.cotlas-admin-light #adminmenu .wp-has-current-submenu.opensub .wp-submenu, 
+body.cotlas-admin-light #adminmenu .wp-submenu, 
+body.cotlas-admin-light #adminmenu a.wp-has-current-submenu:focus+.wp-submenu {
+    background: transparent!important;
+}
 body.cotlas-admin-light #adminmenu li.current .wp-submenu,
 body.cotlas-admin-light #adminmenu li.wp-has-current-submenu .wp-submenu,
 body.cotlas-admin-light #adminmenu li.cotlas-menu-open .wp-submenu {
@@ -344,8 +351,39 @@ body.cotlas-admin-light #collapse-menu, body.cotlas-admin-light #adminmenu li#co
 body.cotlas-admin-light #collapse-button,
 body.cotlas-admin-light #collapse-button:hover {
 	color: var(--cotlas-text-soft);
+	background: #d3e3f9;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 42px;
+	padding: 0 14px;
+	border: 0px solid transparent;
+	border-radius: 5px;
+	box-sizing: border-box;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.25;
+	/* background: transparent; */
+	align-content: center;
+	justify-content: center;
 }
-
+body.cotlas-admin-light #collapse-button:focus, body.cotlas-admin-light #collapse-button:hover {
+    box-shadow: inset 0px 0 0 0 currentColor;
+    transition: box-shadow .1s linear;
+}
+body.cotlas-admin-light #collapse-button .collapse-button-icon:after {
+	top:12px;
+}
+body.cotlas-admin-light #collapse-button .collapse-button-label {
+    top: 13px;
+}
+body.cotlas-admin-light #collapse-button .collapse-button-label {
+    padding: 0 0 0 46px;
+}
+body.cotlas-admin-light #collapse-button .collapse-button-icon {
+    width: 46px;
+    height: 46px;
+}
 body.cotlas-admin-light #wpcontent,
 body.cotlas-admin-light #wpfooter,
 body.cotlas-admin-light.folded #wpcontent,
@@ -384,13 +422,13 @@ body.cotlas-admin-light #wpadminbar .quicklinks .menupop.hover ul li a,
 body.cotlas-admin-light #wpadminbar .shortlink-input {
 	color: var(--cotlas-text);
 }
-
+body.cotlas-admin-light #wpadminbar .ab-icon,
 body.cotlas-admin-light #wpadminbar .ab-icon:before,
 body.cotlas-admin-light #wpadminbar .ab-item:before,
 body.cotlas-admin-light #wpadminbar .ab-label:before,
 body.cotlas-admin-light #wpadminbar #adminbarsearch:before,
 body.cotlas-admin-light #wpadminbar .menupop .ab-item:after {
-	color: #878b93;
+	color: #070707;
     vertical-align: middle;
     top: 0px !important;
     padding: 0px 0 !important;
@@ -428,7 +466,7 @@ body.cotlas-admin-light #wpadminbar .shortlink-input {
 
 body.cotlas-admin-light #wpbody-content {
 	padding-bottom: 42px;
-	padding-top: 10px;
+	padding-top: 20px;
 }
 
 body.cotlas-admin-light .wrap {
@@ -624,7 +662,7 @@ body.cotlas-admin-light .tablenav,
 body.cotlas-admin-light .view-switch a,
 body.cotlas-admin-light .page-title-action,
 body.cotlas-admin-light .row-title {
-	color: #ffffff;
+	color: #090808;
 	font-weight: 500;
 }
 

@@ -25,8 +25,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		return window.innerWidth <= 960 && window.innerWidth > 782;
 	}
 
+	function isMobileMenu() {
+		return window.innerWidth <= 782;
+	}
+
 	function isFlyoutMenuMode() {
-		return isFoldedMenu() || isTabletCompactMenu();
+		return !isMobileMenu() && (isFoldedMenu() || isTabletCompactMenu());
 	}
 
 	function normalizeDesktopBodyClasses() {
