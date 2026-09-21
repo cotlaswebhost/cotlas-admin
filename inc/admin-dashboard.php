@@ -408,7 +408,7 @@ function cotlas_register_default_site_setup_menu() {
 
     // Register the page with no parent so it has no sidebar entry,
     // but is still accessible via admin.php?page=cotlas-default-site-setup
-    add_submenu_page(
+    $hook = add_submenu_page(
         null,
         __('Default Site Setup', 'cotlas-news'),
         __('Default Site Setup', 'cotlas-news'),
@@ -416,6 +416,15 @@ function cotlas_register_default_site_setup_menu() {
         'cotlas-default-site-setup',
         'cotlas_render_default_site_setup_page'
     );
+
+    // A page without a parent has no menu entry, so get_admin_page_title() cannot
+    // resolve a title and admin-header.php ends up calling strip_tags( null ),
+    // which is deprecated on PHP 8.1+. Prime the title on this page's load hook.
+    if ($hook) {
+        add_action('load-' . $hook, function () {
+            $GLOBALS['title'] = __('Default Site Setup', 'cotlas-news');
+        });
+    }
 }
 
 /**
