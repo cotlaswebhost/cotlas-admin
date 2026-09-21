@@ -16,6 +16,9 @@ if ( is_admin() ) {
 
 class Cotlas_GitHub_Updater {
 
+    /** Option that stores a detected release-tag / plugin-header version mismatch. */
+    const VERSION_MISMATCH_OPTION = 'cotlas_admin_release_version_mismatch';
+
     private $file;
     private $plugin_slug;
     private $plugin_data = array();
@@ -31,6 +34,8 @@ class Cotlas_GitHub_Updater {
         add_filter( 'plugins_api', array( $this, 'plugin_popup' ), 10, 3 );
         add_filter( 'upgrader_post_install', array( $this, 'after_install' ), 10, 3 );
         add_filter( 'http_request_args', array( $this, 'add_auth_header' ), 10, 2 );
+        add_action( 'upgrader_process_complete', array( $this, 'detect_release_version_drift' ), 10, 2 );
+        add_action( 'admin_notices', array( $this, 'render_release_version_drift_notice' ) );
     }
 
     private function load_plugin_data() {
@@ -160,6 +165,103 @@ class Cotlas_GitHub_Updater {
                 'changelog'   => nl2br( isset( $release['body'] ) ? esc_html( $release['body'] ) : '' ),
             ),
             'download_link' => isset( $release['zipball_url'] ) ? $release['zipball_url'] : '',
+        );
+    }
+
+    /**
+     * Detect a release whose tag does not match the version in the plugin header.
+     *
+     * GitHub builds a release from a tag, so the header inside the package is
+     * expected to carry that same version. When it does not, WordPress offers the
+     * update forever: the files install correctly, but the freshly read header
+     * still reports the old version, so version_compare() keeps matching.
+     * Record the mismatch so it becomes a visible admin warning instead.
+     *
+     * @param WP_Upgrader $upgrader   Upgrader instance that ran the update.
+     * @param array       $hook_extra Update context passed by the upgrader.
+     */
+    public function detect_release_version_drift( $upgrader, $hook_extra ) {
+        if ( empty( $hook_extra['type'] ) || 'plugin' !== $hook_extra['type'] ) {
+            return;
+        }
+
+        // Only judge a completed install: a failed upgrade leaves the old files
+        // (and their correct version header) in place.
+        if ( ! isset( $upgrader->result ) || ! is_array( $upgrader->result ) ) {
+            return;
+        }
+
+        if ( ! empty( $hook_extra['plugins'] ) ) {
+            $updated = (array) $hook_extra['plugins'];
+        } elseif ( ! empty( $hook_extra['plugin'] ) ) {
+            $updated = array( $hook_extra['plugin'] );
+        } else {
+            return;
+        }
+
+        if ( ! in_array( $this->plugin_slug, $updated, true ) ) {
+            return;
+        }
+
+        $release = $this->get_release_info();
+        if ( ! $release || empty( $release['tag_name'] ) ) {
+            return;
+        }
+
+        $target = ltrim( $release['tag_name'], 'v' );
+
+        // Read the header straight off disk: this is the file just installed.
+        $installed = get_plugin_data( $this->file, false, false );
+
+        if ( ! empty( $installed['Version'] ) && version_compare( $installed['Version'], $target, '<' ) ) {
+            update_option(
+                self::VERSION_MISMATCH_OPTION,
+                array(
+                    'tag'       => $release['tag_name'],
+                    'version'   => $target,
+                    'installed' => $installed['Version'],
+                ),
+                false
+            );
+            return;
+        }
+
+        delete_option( self::VERSION_MISMATCH_OPTION );
+    }
+
+    /**
+     * Surface a detected release/header version mismatch to administrators.
+     */
+    public function render_release_version_drift_notice() {
+        $mismatch = get_option( self::VERSION_MISMATCH_OPTION );
+        if ( ! is_array( $mismatch ) || empty( $mismatch['version'] ) ) {
+            return;
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        // Self-heal: once the header catches up, the warning is stale.
+        $this->load_plugin_data();
+        if ( version_compare( $this->plugin_data['Version'], $mismatch['version'], '>=' ) ) {
+            delete_option( self::VERSION_MISMATCH_OPTION );
+            return;
+        }
+
+        $message = sprintf(
+            /* translators: 1: release tag, 2: version reported by the installed plugin header, 3: version the tag expects, 4: plugin main file. */
+            __( 'Release %1$s was installed, but its plugin header still reports version %2$s. WordPress will keep offering this update until they match. Bump "Version:" in %4$s to %3$s, commit, and re-tag the release.', 'cotlas-admin' ),
+            '<code>' . esc_html( $mismatch['tag'] ) . '</code>',
+            '<code>' . esc_html( $mismatch['installed'] ) . '</code>',
+            '<code>' . esc_html( $mismatch['version'] ) . '</code>',
+            '<code>' . esc_html( plugin_basename( $this->file ) ) . '</code>'
+        );
+
+        echo wp_kses_post(
+            '<div class="notice notice-error"><p><strong>' .
+            esc_html__( 'Cotlas Admin updater:', 'cotlas-admin' ) .
+            '</strong> ' . $message . '</p></div>'
         );
     }
 
