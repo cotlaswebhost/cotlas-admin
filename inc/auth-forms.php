@@ -86,6 +86,12 @@ function cotlas_auth_enqueue_assets() {
     if ( $ts_key && ( 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_login' ) || 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) ) {
         wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', [], null, true );
     }
+
+    // hCaptcha – only load if it is the active challenge on a custom auth form.
+    $hc_key = get_option( 'hcaptcha_site_key' );
+    if ( $hc_key && ( 'hcaptcha' === cotlas_challenge_provider_for_form( 'cotlas_login' ) || 'hcaptcha' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) ) {
+        wp_enqueue_script( 'hcaptcha', 'https://js.hcaptcha.com/1/api.js', [], null, true );
+    }
 }
 
 // ---------------------------------------------------------------------------

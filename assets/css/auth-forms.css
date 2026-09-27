@@ -239,3 +239,8 @@
 .cotlas-auth-form .cf-turnstile {
     margin-top: 4px;
 }
+
+/* ── hCaptcha alignment ───────────────────────────────────────────────── */
+.cotlas-auth-form .h-captcha {
+    margin-top: 4px;
+}

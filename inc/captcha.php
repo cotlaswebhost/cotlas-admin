@@ -46,6 +46,16 @@ function cotlas_challenge_provider_for_form( $form ) {
 				'cotlas_register' => 'cotlas_auth_recaptcha_register',
 			),
 		),
+		'hcaptcha'   => array(
+			'site_key' => 'hcaptcha_site_key',
+			'forms'    => array(
+				'wp_login'        => 'hcaptcha_enable_login',
+				'wp_register'     => 'hcaptcha_enable_register',
+				'comments'        => 'hcaptcha_enable_comments',
+				'cotlas_login'    => 'cotlas_auth_hcaptcha_login',
+				'cotlas_register' => 'cotlas_auth_hcaptcha_register',
+			),
+		),
 		'math'       => array(
 			'forms' => array(
 				'wp_login'        => 'math_captcha_enable_login',
@@ -107,6 +117,33 @@ function cotlas_enqueue_recaptcha_v3_if_needed() {
 add_action( 'login_enqueue_scripts', 'cotlas_enqueue_recaptcha_v3_if_needed' );
 add_action( 'wp_enqueue_scripts', 'cotlas_enqueue_recaptcha_v3_if_needed' );
 
+function cotlas_enqueue_hcaptcha_if_needed() {
+	$site_key = get_option( 'hcaptcha_site_key' );
+	if ( ! $site_key ) {
+		return;
+	}
+
+	$enabled = get_option( 'hcaptcha_enable_login' )
+		|| get_option( 'hcaptcha_enable_register' )
+		|| get_option( 'hcaptcha_enable_comments' )
+		|| get_option( 'cotlas_auth_hcaptcha_login' )
+		|| get_option( 'cotlas_auth_hcaptcha_register' );
+
+	if ( ! $enabled ) {
+		return;
+	}
+
+	wp_enqueue_script(
+		'hcaptcha',
+		'https://js.hcaptcha.com/1/api.js?render=explicit',
+		array(),
+		null,
+		true
+	);
+}
+add_action( 'login_enqueue_scripts', 'cotlas_enqueue_hcaptcha_if_needed' );
+add_action( 'wp_enqueue_scripts', 'cotlas_enqueue_hcaptcha_if_needed' );
+
 function cotlas_render_recaptcha_v3_field( $action ) {
 	echo '<input type="hidden" name="g-recaptcha-response" class="cotlas-recaptcha-v3-response" data-recaptcha-action="' . esc_attr( $action ) . '" value="">';
 }
@@ -165,21 +202,118 @@ function cotlas_verify_recaptcha_v3( $expected_action = '' ) {
 	return true;
 }
 
-function cotlas_math_captcha_hash( $answer, $nonce ) {
-	return wp_hash( absint( $answer ) . '|' . sanitize_text_field( $nonce ) . '|cotlas_math_captcha' );
+function cotlas_verify_hcaptcha() {
+	static $verification_result = null;
+
+	if ( $verification_result !== null ) {
+		return $verification_result;
+	}
+
+	$secret_key = get_option( 'hcaptcha_secret_key' );
+	if ( empty( $secret_key ) ) {
+		$verification_result = true;
+		return $verification_result;
+	}
+
+	if ( ! isset( $_POST['h-captcha-response'] ) || empty( $_POST['h-captcha-response'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$verification_result = new WP_Error( 'hcaptcha_missing', __( '<strong>ERROR</strong>: Please complete the hCaptcha challenge.', 'cotlas-admin' ) );
+		return $verification_result;
+	}
+
+	$response = wp_remote_post(
+		'https://api.hcaptcha.com/siteverify',
+		array(
+			'body' => array(
+				'secret'   => $secret_key,
+				'response' => sanitize_text_field( wp_unslash( $_POST['h-captcha-response'] ) ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				'remoteip' => cotlas_captcha_remote_ip(),
+			),
+		)
+	);
+
+	if ( is_wp_error( $response ) ) {
+		$verification_result = new WP_Error( 'hcaptcha_error', __( '<strong>ERROR</strong>: Unable to verify hCaptcha.', 'cotlas-admin' ) );
+		return $verification_result;
+	}
+
+	$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	if ( empty( $data['success'] ) ) {
+		$verification_result = new WP_Error( 'hcaptcha_invalid', __( '<strong>ERROR</strong>: hCaptcha verification failed.', 'cotlas-admin' ) );
+		return $verification_result;
+	}
+
+	$verification_result = true;
+	return true;
+}
+
+function cotlas_math_captcha_hash( $answer, $nonce, $op = '+' ) {
+	return wp_hash( (int) $answer . '|' . sanitize_text_field( $nonce ) . '|' . $op . '|cotlas_math_captcha' );
+}
+
+function cotlas_math_captcha_generate() {
+	$difficulty = get_option( 'math_captcha_difficulty', 'easy' );
+
+	switch ( $difficulty ) {
+		case 'advanced':
+			$ops = array( '+', '-', '×' );
+			$op  = $ops[ wp_rand( 0, 2 ) ];
+			if ( '×' === $op ) {
+				$a = wp_rand( 2, 12 );
+				$b = wp_rand( 2, 12 );
+			} else {
+				$a = wp_rand( 10, 99 );
+				$b = wp_rand( 10, 99 );
+				if ( '-' === $op && $a < $b ) {
+					$tmp = $a;
+					$a   = $b;
+					$b   = $tmp;
+				}
+			}
+			break;
+
+		case 'moderate':
+			$op = wp_rand( 0, 1 ) ? '+' : '-';
+			$a  = wp_rand( 5, 30 );
+			$b  = wp_rand( 2, 20 );
+			if ( '-' === $op && $a < $b ) {
+				$tmp = $a;
+				$a   = $b;
+				$b   = $tmp;
+			}
+			break;
+
+		default: // easy
+			$op = '+';
+			$a  = wp_rand( 1, 15 );
+			$b  = wp_rand( 1, 15 );
+			break;
+	}
+
+	switch ( $op ) {
+		case '-':
+			$answer = $a - $b;
+			break;
+		case '×':
+			$answer = $a * $b;
+			break;
+		default:
+			$answer = $a + $b;
+			break;
+	}
+
+	return array( $a, $b, $op, $answer );
 }
 
 function cotlas_math_captcha_field() {
-	$a      = wp_rand( 2, 9 );
-	$b      = wp_rand( 1, 9 );
-	$nonce  = wp_create_nonce( 'cotlas_math_captcha_' . $a . '_' . $b );
-	$answer = $a + $b;
+	list( $a, $b, $op, $answer ) = cotlas_math_captcha_generate();
+	$nonce = wp_create_nonce( 'cotlas_math_captcha_' . $a . $op . $b );
 
 	return '<div class="cotlas-math-captcha">'
-		. '<label>' . esc_html( sprintf( __( 'Security question: %1$d + %2$d = ?', 'cotlas-admin' ), $a, $b ) ) . '</label>'
+		. '<label>' . esc_html( sprintf( __( 'Security question: %1$d %2$s %3$d = ?', 'cotlas-admin' ), $a, $op, $b ) ) . '</label>'
 		. '<input type="number" name="cotlas_math_answer" required autocomplete="off" inputmode="numeric">'
 		. '<input type="hidden" name="cotlas_math_nonce" value="' . esc_attr( $nonce ) . '">'
-		. '<input type="hidden" name="cotlas_math_hash" value="' . esc_attr( cotlas_math_captcha_hash( $answer, $nonce ) ) . '">'
+		. '<input type="hidden" name="cotlas_math_hash" value="' . esc_attr( cotlas_math_captcha_hash( $answer, $nonce, $op ) ) . '">'
 		. '</div>';
 }
 
@@ -192,15 +326,18 @@ function cotlas_verify_math_captcha() {
 		return new WP_Error( 'math_captcha_missing', __( '<strong>ERROR</strong>: Please answer the security question.', 'cotlas-admin' ) );
 	}
 
-	$answer = absint( wp_unslash( $_POST['cotlas_math_answer'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	$answer = (int) wp_unslash( $_POST['cotlas_math_answer'] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$nonce  = sanitize_text_field( wp_unslash( $_POST['cotlas_math_nonce'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 	$hash   = sanitize_text_field( wp_unslash( $_POST['cotlas_math_hash'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
-	if ( ! hash_equals( cotlas_math_captcha_hash( $answer, $nonce ), $hash ) ) {
-		return new WP_Error( 'math_captcha_invalid', __( '<strong>ERROR</strong>: The security question answer is incorrect.', 'cotlas-admin' ) );
+	// Try each operation since we don't store which one was used in the form.
+	foreach ( array( '+', '-', '×' ) as $op ) {
+		if ( hash_equals( cotlas_math_captcha_hash( $answer, $nonce, $op ), $hash ) ) {
+			return true;
+		}
 	}
 
-	return true;
+	return new WP_Error( 'math_captcha_invalid', __( '<strong>ERROR</strong>: The security question answer is incorrect.', 'cotlas-admin' ) );
 }
 
 function cotlas_verify_challenge_for_form( $form, $recaptcha_action = '' ) {
@@ -212,11 +349,22 @@ function cotlas_verify_challenge_for_form( $form, $recaptcha_action = '' ) {
 	if ( 'recaptcha' === $provider ) {
 		return cotlas_verify_recaptcha_v3( $recaptcha_action ?: $form );
 	}
+	if ( 'hcaptcha' === $provider ) {
+		return cotlas_verify_hcaptcha();
+	}
 	if ( 'math' === $provider ) {
 		return cotlas_verify_math_captcha();
 	}
 
 	return true;
+}
+
+function cotlas_display_hcaptcha_field() {
+	$site_key = get_option( 'hcaptcha_site_key' );
+	if ( ! $site_key ) {
+		return;
+	}
+	echo '<div class="h-captcha" data-sitekey="' . esc_attr( $site_key ) . '"></div>';
 }
 
 function cotlas_render_challenge_for_form( $form, $recaptcha_action = '' ) {
@@ -227,6 +375,8 @@ function cotlas_render_challenge_for_form( $form, $recaptcha_action = '' ) {
 		echo '<div class="cf-turnstile" data-sitekey="' . esc_attr( $site_key ) . '"></div>';
 	} elseif ( 'recaptcha' === $provider ) {
 		cotlas_render_recaptcha_v3_field( $recaptcha_action ?: $form );
+	} elseif ( 'hcaptcha' === $provider ) {
+		cotlas_display_hcaptcha_field();
 	} elseif ( 'math' === $provider ) {
 		cotlas_display_math_captcha_field();
 	}
@@ -247,6 +397,13 @@ function cotlas_disable_other_captcha_providers( $active_provider ) {
 			'recaptcha_v3_enable_comments',
 			'cotlas_auth_recaptcha_login',
 			'cotlas_auth_recaptcha_register',
+		),
+		'hcaptcha'  => array(
+			'hcaptcha_enable_login',
+			'hcaptcha_enable_register',
+			'hcaptcha_enable_comments',
+			'cotlas_auth_hcaptcha_login',
+			'cotlas_auth_hcaptcha_register',
 		),
 		'math'      => array(
 			'math_captcha_enable_login',
@@ -272,6 +429,7 @@ function cotlas_request_enables_provider( $provider ) {
 	$provider_fields = array(
 		'turnstile' => array( 'turnstile_enable_login', 'turnstile_enable_register', 'turnstile_enable_comments', 'cotlas_auth_turnstile_login', 'cotlas_auth_turnstile_register' ),
 		'recaptcha' => array( 'recaptcha_v3_enable_login', 'recaptcha_v3_enable_register', 'recaptcha_v3_enable_comments', 'cotlas_auth_recaptcha_login', 'cotlas_auth_recaptcha_register' ),
+		'hcaptcha'  => array( 'hcaptcha_enable_login', 'hcaptcha_enable_register', 'hcaptcha_enable_comments', 'cotlas_auth_hcaptcha_login', 'cotlas_auth_hcaptcha_register' ),
 		'math'      => array( 'math_captcha_enable_login', 'math_captcha_enable_register', 'math_captcha_enable_comments', 'cotlas_auth_math_captcha_login', 'cotlas_auth_math_captcha_register' ),
 	);
 

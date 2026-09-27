@@ -49,18 +49,6 @@ function cotlas_panel_process_saves() {
 				'cotlas_auth_rate_limit'          => 'absint',
 			),
 		),
-		'ctap_save_login_spam' => array(
-			'page' => 'cotlas-login-system',
-			'map'  => array(
-				'cotlas_auth_honeypot'           => 'checkbox',
-				'cotlas_auth_turnstile_login'    => 'checkbox',
-				'cotlas_auth_turnstile_register' => 'checkbox',
-				'cotlas_auth_recaptcha_login'    => 'checkbox',
-				'cotlas_auth_recaptcha_register' => 'checkbox',
-				'cotlas_auth_math_captcha_login' => 'checkbox',
-				'cotlas_auth_math_captcha_register' => 'checkbox',
-			),
-		),
 		'ctap_save_categories' => array(
 			'page' => 'cotlas-category-enhancements',
 			'map'  => array(
@@ -110,9 +98,22 @@ function cotlas_panel_process_saves() {
 				'cotlas_auth_recaptcha_register' => 'checkbox',
 			),
 		),
+		'ctap_save_hcaptcha' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'hcaptcha_site_key'            => 'sanitize_text_field',
+				'hcaptcha_secret_key'          => 'sanitize_text_field',
+				'hcaptcha_enable_login'        => 'checkbox',
+				'hcaptcha_enable_register'     => 'checkbox',
+				'hcaptcha_enable_comments'     => 'checkbox',
+				'cotlas_auth_hcaptcha_login'   => 'checkbox',
+				'cotlas_auth_hcaptcha_register' => 'checkbox',
+			),
+		),
 		'ctap_save_math_captcha' => array(
 			'page' => 'cotlas-security-settings',
 			'map'  => array(
+				'math_captcha_difficulty'       => 'sanitize_text_field',
 				'math_captcha_enable_login'    => 'checkbox',
 				'math_captcha_enable_register' => 'checkbox',
 				'math_captcha_enable_comments' => 'checkbox',
@@ -127,6 +128,40 @@ function cotlas_panel_process_saves() {
 				'cotlas_honeypot_wp_register'     => 'checkbox',
 				'cotlas_auth_honeypot'            => 'checkbox',
 				'cotlas_honeypot_cotlas_comments' => 'checkbox',
+			),
+		),
+		'ctap_save_sec_login_protection' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'cotlas_sec_account_lockout'    => 'checkbox',
+				'cotlas_sec_user_enumeration'   => 'checkbox',
+				'cotlas_sec_login_redirect'     => 'checkbox',
+				'cotlas_sec_rightclick_guard'   => 'checkbox',
+				'cotlas_sec_single_session'     => 'checkbox',
+				'cotlas_sec_session_timeout'    => 'checkbox',
+			),
+		),
+		'ctap_save_sec_form_hardening' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'cotlas_sec_autocomplete'       => 'checkbox',
+				'cotlas_sec_password_policy'    => 'checkbox',
+			),
+		),
+		'ctap_save_sec_data_access' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'cotlas_sec_rest_user_block'    => 'checkbox',
+				'cotlas_sec_disable_feeds'      => 'checkbox',
+				'cotlas_sec_jquery_hardening'   => 'checkbox',
+			),
+		),
+		'ctap_save_sec_network' => array(
+			'page' => 'cotlas-security-settings',
+			'map'  => array(
+				'cotlas_sec_cors_hardening'     => 'checkbox',
+				'cotlas_sec_cors_origins'       => 'sanitize_textarea_field',
+				'cotlas_sec_email_obfuscation'  => 'checkbox',
 			),
 		),
 		'ctap_save_image_opt' => array(
@@ -228,8 +263,8 @@ function cotlas_panel_process_saves() {
 
 	foreach ( $maps as $nonce_action => $cfg ) {
 		if ( wp_verify_nonce( $nonce, $nonce_action ) ) {
-			if ( in_array( $nonce_action, array( 'ctap_save_turnstile', 'ctap_save_recaptcha_v3', 'ctap_save_math_captcha', 'ctap_save_login_spam' ), true ) ) {
-				foreach ( array( 'turnstile', 'recaptcha', 'math' ) as $provider ) {
+			if ( in_array( $nonce_action, array( 'ctap_save_turnstile', 'ctap_save_recaptcha_v3', 'ctap_save_hcaptcha', 'ctap_save_math_captcha' ), true ) ) {
+				foreach ( array( 'turnstile', 'recaptcha', 'hcaptcha', 'math' ) as $provider ) {
 					if ( cotlas_request_enables_provider( $provider ) ) {
 						cotlas_disable_other_captcha_providers( $provider );
 						break;
@@ -468,7 +503,8 @@ function cotlas_panel_css() {
 .ctap-field-input input[type="url"],
 .ctap-field-input input[type="email"],
 .ctap-field-input input[type="number"],
-.ctap-field-input textarea {
+.ctap-field-input textarea,
+.ctap-field-input select {
   width: 100%; max-width: 460px;
   padding: 8px 12px;
   border: 1px solid #dcdcde; border-radius: 4px;
@@ -477,7 +513,8 @@ function cotlas_panel_css() {
   transition: border-color .15s, box-shadow .15s;
 }
 .ctap-field-input input:focus,
-.ctap-field-input textarea:focus {
+.ctap-field-input textarea:focus,
+.ctap-field-input select:focus {
   outline: none; border-color: #2271b1;
   box-shadow: 0 0 0 3px rgba(34,113,177,.12);
 }
@@ -837,6 +874,18 @@ function ctap_textarea( $name, $placeholder = '', $rows = 4 ) {
 	);
 }
 
+/** Return a <select> HTML string. $options: [ value => label, ... ] */
+function ctap_select( $name, array $options, $default = '' ) {
+	$current = get_option( $name, $default );
+	$html    = '<select name="' . esc_attr( $name ) . '">';
+	foreach ( $options as $value => $label ) {
+		$sel = selected( $current, $value, false );
+		$html .= '<option value="' . esc_attr( $value ) . '"' . $sel . '>' . esc_html( $label ) . '</option>';
+	}
+	$html .= '</select>';
+	return $html;
+}
+
 /** Render a toggle row (checkbox-as-switch). */
 function ctap_toggle( $name, $label, $desc = '', $default = 0 ) {
 	$checked = get_option( $name, $default ) ? 'checked' : '';
@@ -947,9 +996,8 @@ function cotlas_panel_page_site_settings() {
 function cotlas_panel_page_login() {
 	ctap_page_open( 'Login System', 'dashicons-lock', 'Frontend login, register and forgot-password system using shortcodes.' );
 	$tabs = array(
-		array( 'id' => 'settings', 'label' => 'Settings',       'icon' => 'dashicons-admin-generic' ),
-		array( 'id' => 'spam',     'label' => 'Spam Protection', 'icon' => 'dashicons-shield' ),
-		array( 'id' => 'codes',    'label' => 'Shortcodes',      'icon' => 'dashicons-shortcode' ),
+		array( 'id' => 'settings', 'label' => 'Settings',  'icon' => 'dashicons-admin-generic' ),
+		array( 'id' => 'codes',    'label' => 'Shortcodes', 'icon' => 'dashicons-shortcode' ),
 	);
 	$active = ctap_nav( $tabs );
 
@@ -968,26 +1016,6 @@ function cotlas_panel_page_login() {
 	ctap_field( 'Redirect URL', ctap_input( 'cotlas_auth_redirect_register', '/' ), 'Relative path or full URL, e.g. <code>/welcome/</code> or <code>https://example.com/login/</code>. Empty means no redirect.' );
 	ctap_section( 'Rate Limiting' );
 	ctap_field( 'Max Login Attempts', ctap_input( 'cotlas_auth_rate_limit', '5', 'number' ), 'Failed attempts before a 15-minute lockout. Default: 5.' );
-	ctap_card_close();
-	ctap_form_close();
-	ctap_pane_close();
-
-	ctap_pane_open( 'spam', $active );
-	ctap_form_open( 'ctap_save_login_spam', 'spam' );
-	ctap_card_open( 'Spam Protection', 'dashicons-shield' );
-	ctap_toggle( 'cotlas_auth_honeypot', 'Honeypot on Custom Auth Forms', 'Adds a hidden field to login, register, and forgot-password forms. Bots that fill it are silently blocked.' );
-	if ( get_option( 'turnstile_site_key' ) ) {
-		ctap_toggle( 'cotlas_auth_turnstile_login',    'Cloudflare Turnstile on Login Form' );
-		ctap_toggle( 'cotlas_auth_turnstile_register', 'Cloudflare Turnstile on Register Form' );
-	} else {
-		ctap_info( 'Cloudflare Turnstile keys are not configured yet. Set them in <a href="' . esc_url( admin_url( 'admin.php?page=cotlas-security-settings' ) ) . '">Security Settings</a> to enable CAPTCHA protection.' );
-	}
-	if ( get_option( 'recaptcha_v3_site_key' ) ) {
-		ctap_toggle( 'cotlas_auth_recaptcha_login',    'Google reCAPTCHA v3 on Login Form', 'Enabling this disables Turnstile and Math CAPTCHA toggles.' );
-		ctap_toggle( 'cotlas_auth_recaptcha_register', 'Google reCAPTCHA v3 on Register Form', 'Enabling this disables Turnstile and Math CAPTCHA toggles.' );
-	}
-	ctap_toggle( 'cotlas_auth_math_captcha_login',    'Math CAPTCHA on Login Form', 'Simple question for sites without third-party CAPTCHA keys. Enabling this disables Turnstile and reCAPTCHA toggles.', 0 );
-	ctap_toggle( 'cotlas_auth_math_captcha_register', 'Math CAPTCHA on Register Form', 'Simple question for sites without third-party CAPTCHA keys. Enabling this disables Turnstile and reCAPTCHA toggles.', 0 );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();
@@ -1217,12 +1245,17 @@ function cotlas_panel_page_gb_tags() {
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 function cotlas_panel_page_security() {
-	ctap_page_open( 'Security Settings', 'dashicons-shield', 'CAPTCHA and honeypot spam protection per form.' );
+	ctap_page_open( 'Site Security', 'dashicons-shield', 'CAPTCHA, honeypot, and security hardening controls.' );
 	$tabs = array(
-		array( 'id' => 'turnstile',  'label' => 'Turnstile',     'icon' => 'dashicons-shield-alt' ),
-		array( 'id' => 'recaptcha',  'label' => 'reCAPTCHA v3',  'icon' => 'dashicons-search' ),
-		array( 'id' => 'math',       'label' => 'Math CAPTCHA',  'icon' => 'dashicons-editor-help' ),
-		array( 'id' => 'honeypot',   'label' => 'Honeypot',      'icon' => 'dashicons-hidden' ),
+		array( 'id' => 'turnstile',         'label' => 'Turnstile',          'icon' => 'dashicons-shield-alt' ),
+		array( 'id' => 'recaptcha',         'label' => 'reCAPTCHA v3',       'icon' => 'dashicons-search' ),
+		array( 'id' => 'hcaptcha',          'label' => 'hCaptcha',           'icon' => 'dashicons-yes-alt' ),
+		array( 'id' => 'math',              'label' => 'Math CAPTCHA',       'icon' => 'dashicons-editor-help' ),
+		array( 'id' => 'honeypot',          'label' => 'Honeypot',           'icon' => 'dashicons-hidden' ),
+		array( 'id' => 'login-protection',  'label' => 'Login Protection',   'icon' => 'dashicons-lock' ),
+		array( 'id' => 'form-hardening',    'label' => 'Form Hardening',     'icon' => 'dashicons-forms' ),
+		array( 'id' => 'data-access',       'label' => 'Data & Access',      'icon' => 'dashicons-database' ),
+		array( 'id' => 'network',           'label' => 'Network',            'icon' => 'dashicons-networking' ),
 	);
 	$active = ctap_nav( $tabs );
 
@@ -1263,10 +1296,34 @@ function cotlas_panel_page_security() {
 	ctap_form_close();
 	ctap_pane_close();
 
+	ctap_pane_open( 'hcaptcha', $active );
+	ctap_form_open( 'ctap_save_hcaptcha', 'hcaptcha' );
+	ctap_card_open( 'hCaptcha', 'dashicons-yes-alt' );
+	ctap_info( 'Get your keys from <a href="https://dashboard.hcaptcha.com/signup" target="_blank" rel="noopener">hCaptcha Dashboard</a>. hCaptcha is a privacy-focused CAPTCHA alternative that works similarly to reCAPTCHA. Enabling hCaptcha disables Turnstile, reCAPTCHA, and Math CAPTCHA form toggles.' );
+	ctap_section( 'API Keys' );
+	ctap_field( 'Site Key',   ctap_input( 'hcaptcha_site_key',   'Paste your hCaptcha site key' ) );
+	ctap_field( 'Secret Key', ctap_input( 'hcaptcha_secret_key', 'Paste your hCaptcha secret key' ) );
+	ctap_section( 'WordPress Default Forms' );
+	ctap_toggle( 'hcaptcha_enable_login',    'WP Default Login Form',        'Adds hCaptcha to the standard wp-login.php login form.', 0 );
+	ctap_toggle( 'hcaptcha_enable_register', 'WP Default Registration Form', 'Adds hCaptcha to the standard wp-login.php registration form.', 0 );
+	ctap_toggle( 'hcaptcha_enable_comments', 'WP Default & Cotlas Comment Forms', 'Adds hCaptcha to native WordPress comments and the [cotlas_comments] form (guest users only).', 0 );
+	ctap_section( 'Cotlas Forms' );
+	ctap_toggle( 'cotlas_auth_hcaptcha_login',    'Cotlas Login Form',    'Adds hCaptcha to the [cotlas_login] and login panel forms.', 0 );
+	ctap_toggle( 'cotlas_auth_hcaptcha_register', 'Cotlas Register Form', 'Adds hCaptcha to the [cotlas_register] and register panel forms.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
 	ctap_pane_open( 'math', $active );
 	ctap_form_open( 'ctap_save_math_captcha', 'math' );
 	ctap_card_open( 'Math CAPTCHA', 'dashicons-editor-help' );
-	ctap_info( 'Adds a simple addition question to selected forms. This is useful when you do not have Cloudflare Turnstile or Google reCAPTCHA keys. Enabling Math CAPTCHA disables Turnstile and reCAPTCHA form toggles.' );
+	ctap_info( 'Adds a math question to selected forms. Choose a difficulty level to control the complexity of the problems. Enabling Math CAPTCHA disables Turnstile, reCAPTCHA, and hCaptcha form toggles.' );
+	ctap_section( 'Difficulty' );
+	ctap_field( 'Difficulty Level', ctap_select( 'math_captcha_difficulty', array(
+		'easy'      => 'Easy — Addition only (e.g. 7 + 5 = ?)',
+		'moderate'  => 'Moderate — Addition & subtraction with larger numbers (e.g. 23 - 11 = ?)',
+		'advanced'  => 'Advanced — Addition, subtraction & multiplication (e.g. 8 × 6 = ?)',
+	), 'easy' ), 'Controls the type and range of math problems shown across all forms.' );
 	ctap_section( 'WordPress Default Forms' );
 	ctap_toggle( 'math_captcha_enable_login',    'WP Default Login Form',        'Adds a math question to the standard wp-login.php login form.', 0 );
 	ctap_toggle( 'math_captcha_enable_register', 'WP Default Registration Form', 'Adds a math question to the standard wp-login.php registration form.', 0 );
@@ -1293,12 +1350,60 @@ function cotlas_panel_page_security() {
 	ctap_form_close();
 	ctap_pane_close();
 
+	/* ── Login Protection tab ─────────────────────────────────────────── */
+	ctap_pane_open( 'login-protection', $active );
+	ctap_form_open( 'ctap_save_sec_login_protection', 'login-protection' );
+	ctap_card_open( 'Login Protection', 'dashicons-lock' );
+	ctap_info( 'Harden the WordPress login flow against brute-force, enumeration, session hijacking and other common attack vectors.' );
+	ctap_toggle( 'cotlas_sec_account_lockout', 'Account Lockout', 'Locks an account (and its IP) for 15 minutes after 5 consecutive failed login attempts. Uses transients — works without custom database tables.', 0 );
+	ctap_toggle( 'cotlas_sec_user_enumeration', 'User Enumeration Prevention', 'Replaces all login/registration error messages with a generic "Invalid login credentials" to prevent username disclosure.', 0 );
+	ctap_toggle( 'cotlas_sec_login_redirect', 'Login Redirect Hardening', 'Validates and sanitises the redirect_to parameter on wp-login.php to prevent open-redirect attacks. Only same-origin destinations are allowed.', 0 );
+	ctap_toggle( 'cotlas_sec_rightclick_guard', 'Right-Click Guard on Login', 'Disables the browser context menu (right-click) on wp-login.php and on frontend pages containing Cotlas login/register forms.', 0 );
+	ctap_toggle( 'cotlas_sec_single_session', 'Single Session per User', 'Automatically destroys all other active sessions when a user logs in. Each user can only have one active session at a time.', 0 );
+	ctap_toggle( 'cotlas_sec_session_timeout', 'Session Timeout', 'Enforces an absolute 8-hour session lifetime and a 30-minute idle timeout. Background requests (Heartbeat, AJAX) do not extend idle time.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Form Hardening tab ───────────────────────────────────────────── */
+	ctap_pane_open( 'form-hardening', $active );
+	ctap_form_open( 'ctap_save_sec_form_hardening', 'form-hardening' );
+	ctap_card_open( 'Form Hardening', 'dashicons-forms' );
+	ctap_info( 'Reduce form-level attack surface by disabling autocomplete on sensitive forms and enforcing strong password policy server-side.' );
+	ctap_toggle( 'cotlas_sec_autocomplete', 'Disable Autocomplete on Auth Forms', 'Sets autocomplete="off" on login, register, password-reset, comment, Cotlas auth, and popular form-builder forms. Applies to frontend and wp-login.php.', 0 );
+	ctap_toggle( 'cotlas_sec_password_policy', 'Password Policy Enforcement', 'Enforces minimum 12 characters with uppercase, lowercase, number, and special character. Requires current-password re-authentication for profile password changes.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Data & Access tab ────────────────────────────────────────────── */
+	ctap_pane_open( 'data-access', $active );
+	ctap_form_open( 'ctap_save_sec_data_access', 'data-access' );
+	ctap_card_open( 'Data & Access Control', 'dashicons-database' );
+	ctap_info( 'Control what information WordPress exposes publicly through REST API, RSS feeds, and script version strings.' );
+	ctap_toggle( 'cotlas_sec_rest_user_block', 'Block REST User Endpoint', 'Returns a 403 for unauthenticated requests to /wp/v2/users, preventing public enumeration of usernames, roles, and profile data.', 0 );
+	ctap_toggle( 'cotlas_sec_disable_feeds', 'Disable RSS/Atom Feeds', 'Terminates all feed endpoints (RSS2, Atom, RDF, comment feeds) with a 410 Gone response. Prevents content scraping and metadata leakage via feeds.', 0 );
+	ctap_toggle( 'cotlas_sec_jquery_hardening', 'jQuery Hardening', 'Removes jQuery Migrate dependency and strips version query strings from jQuery-family handles to reduce front-end version fingerprinting.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Network tab ──────────────────────────────────────────────────── */
+	ctap_pane_open( 'network', $active );
+	ctap_form_open( 'ctap_save_sec_network', 'network' );
+	ctap_card_open( 'Network Hardening', 'dashicons-networking' );
+	ctap_info( 'Control CORS policy for the REST API and protect email addresses from harvesters on the public site.' );
+	ctap_section( 'CORS Allowlist' );
+	ctap_toggle( 'cotlas_sec_cors_hardening', 'Strict CORS for REST API', 'Replaces WordPress default CORS origin reflection with a strict allowlist. Only origins listed below will receive CORS headers.', 0 );
+	ctap_field( 'Allowed Origins', ctap_textarea( 'cotlas_sec_cors_origins', "https://www.example.com\nhttps://app.example.com", 4 ), 'One origin per line (e.g. <code>https://www.example.com</code>). Only these origins will receive Access-Control-Allow-Origin headers.' );
+	ctap_section( 'Email Protection' );
+	ctap_toggle( 'cotlas_sec_email_obfuscation', 'Email Obfuscation', 'Scans the rendered HTML output and encodes any plain email addresses as hex entities to prevent harvesting. Also strips accidental mailto: links.', 0 );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
 	ctap_page_close();
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * 12. PAGE: IMAGE OPTIMIZATION
- * ═══════════════════════════════════════════════════════════════════════════ */
 
 function cotlas_panel_page_image_opt() {
 	ctap_page_open( 'Image Optimization', 'dashicons-format-image', 'Custom image sizes, srcset pruning, aspect-ratio helpers, LCP preloads, and WebP/AVIF format conversion.' );

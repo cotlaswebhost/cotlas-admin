@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.4.2
+ * Version:     2.5.0
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -56,6 +56,9 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'recaptcha_v3_enable_login'                     => 0,
 		'recaptcha_v3_enable_register'                  => 0,
 		'recaptcha_v3_enable_comments'                  => 0,
+		'hcaptcha_enable_login'                         => 0,
+		'hcaptcha_enable_register'                      => 0,
+		'hcaptcha_enable_comments'                      => 0,
 		'math_captcha_enable_login'                     => 0,
 		'math_captcha_enable_register'                  => 0,
 		'math_captcha_enable_comments'                  => 0,
@@ -69,6 +72,8 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_auth_turnstile_register'                => 0,
 		'cotlas_auth_recaptcha_login'                   => 0,
 		'cotlas_auth_recaptcha_register'                => 0,
+		'cotlas_auth_hcaptcha_login'                    => 0,
+		'cotlas_auth_hcaptcha_register'                 => 0,
 		'cotlas_auth_math_captcha_login'                => 0,
 		'cotlas_auth_math_captcha_register'             => 0,
 
@@ -95,6 +100,21 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_seo_enable_breadcrumb_shortcode'       => 0,
 		'cotlas_seo_use_seo_plugin_title'              => 0,
 		'cotlas_seo_use_seo_plugin_description'        => 0,
+
+		// Security hardening toggles.
+		'cotlas_sec_account_lockout'                   => 0,
+		'cotlas_sec_user_enumeration'                  => 0,
+		'cotlas_sec_login_redirect'                    => 0,
+		'cotlas_sec_rightclick_guard'                  => 0,
+		'cotlas_sec_single_session'                    => 0,
+		'cotlas_sec_session_timeout'                   => 0,
+		'cotlas_sec_autocomplete'                      => 0,
+		'cotlas_sec_password_policy'                   => 0,
+		'cotlas_sec_rest_user_block'                   => 0,
+		'cotlas_sec_disable_feeds'                     => 0,
+		'cotlas_sec_jquery_hardening'                  => 0,
+		'cotlas_sec_cors_hardening'                    => 0,
+		'cotlas_sec_email_obfuscation'                 => 0,
 	);
 
 	/**
@@ -109,6 +129,9 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 			add_option( $option_key, absint( $default_value ) );
 		}
 	}
+
+	// String defaults (not toggles).
+	add_option( 'math_captcha_difficulty', 'easy' );
 }
 register_activation_hook( __FILE__, 'cotlas_admin_activate_seed_toggle_defaults' );
 // ---------------------------------------------------------------------------
@@ -125,6 +148,7 @@ define( 'COTLAS_ADMIN_FILE', __FILE__ );
 require_once plugin_dir_path( __FILE__ ) . 'inc/github-updater.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/security.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/security-hardening.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/wp-login-branding.php';
 
 // Admin Dashboard – widgets, welcome notice, starter-kit installer, feed widget
@@ -133,6 +157,7 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/admin-dashboard.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/honeypot.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/turnstile.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/hcaptcha.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/tracking-codes.php';
 
