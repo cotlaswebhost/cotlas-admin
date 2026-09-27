@@ -114,35 +114,38 @@ function cotlas_enqueue_recaptcha_v3_if_needed() {
 		'after'
 	);
 }
-add_action( 'login_enqueue_scripts', 'cotlas_enqueue_recaptcha_v3_if_needed' );
-add_action( 'wp_enqueue_scripts', 'cotlas_enqueue_recaptcha_v3_if_needed' );
 
-function cotlas_enqueue_hcaptcha_if_needed() {
-	$site_key = get_option( 'hcaptcha_site_key' );
-	if ( ! $site_key ) {
-		return;
+/**
+ * Enqueue the script for whichever CAPTCHA provider is active.
+ *
+ * The one place that decides which third-party script to load: only a single
+ * provider can be active at a time (see cotlas_disable_other_captcha_providers())
+ * and the forms only emit markup, so each script is enqueued from exactly here.
+ */
+function cotlas_enqueue_challenge_scripts() {
+	$active = array();
+	foreach ( array( 'wp_login', 'wp_register', 'comments', 'cotlas_login', 'cotlas_register' ) as $form ) {
+		$provider = cotlas_challenge_provider_for_form( $form );
+		if ( $provider ) {
+			$active[ $provider ] = true;
+		}
 	}
 
-	$enabled = get_option( 'hcaptcha_enable_login' )
-		|| get_option( 'hcaptcha_enable_register' )
-		|| get_option( 'hcaptcha_enable_comments' )
-		|| get_option( 'cotlas_auth_hcaptcha_login' )
-		|| get_option( 'cotlas_auth_hcaptcha_register' );
-
-	if ( ! $enabled ) {
-		return;
+	if ( isset( $active['recaptcha'] ) ) {
+		cotlas_enqueue_recaptcha_v3_if_needed();
 	}
 
-	wp_enqueue_script(
-		'hcaptcha',
-		'https://js.hcaptcha.com/1/api.js?render=explicit',
-		array(),
-		null,
-		true
-	);
+	if ( isset( $active['turnstile'] ) ) {
+		wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', array(), null, true );
+	}
+
+	if ( isset( $active['hcaptcha'] ) ) {
+		// Auto-render mode: hCaptcha scans for .h-captcha divs on load, so no hcaptcha.render() call is needed.
+		wp_enqueue_script( 'hcaptcha', 'https://js.hcaptcha.com/1/api.js', array(), null, true );
+	}
 }
-add_action( 'login_enqueue_scripts', 'cotlas_enqueue_hcaptcha_if_needed' );
-add_action( 'wp_enqueue_scripts', 'cotlas_enqueue_hcaptcha_if_needed' );
+add_action( 'login_enqueue_scripts', 'cotlas_enqueue_challenge_scripts' );
+add_action( 'wp_enqueue_scripts', 'cotlas_enqueue_challenge_scripts' );
 
 function cotlas_render_recaptcha_v3_field( $action ) {
 	echo '<input type="hidden" name="g-recaptcha-response" class="cotlas-recaptcha-v3-response" data-recaptcha-action="' . esc_attr( $action ) . '" value="">';
@@ -381,6 +384,111 @@ function cotlas_render_challenge_for_form( $form, $recaptcha_action = '' ) {
 		cotlas_display_math_captcha_field();
 	}
 }
+
+/**
+ * Render the active challenge inside the core login, registration and comment forms.
+ *
+ * Kept in one place on purpose: cotlas_render_challenge_for_form() already picks
+ * whichever provider is enabled for the form, so a hook per provider integration
+ * echoes the active provider once per integration and duplicates the widget on
+ * wp-login.php and the default forms.
+ */
+function cotlas_display_challenge() {
+	$form_by_filter = array(
+		'login_form'    => 'wp_login',
+		'register_form' => 'wp_register',
+		'comment_form'  => 'comments',
+	);
+
+	$filter = current_filter();
+	$form   = isset( $form_by_filter[ $filter ] ) ? $form_by_filter[ $filter ] : '';
+
+	if ( '' === $form ) {
+		return;
+	}
+
+	if ( 'comments' === $form && ( is_user_logged_in() || get_option( 'comment_registration' ) ) ) {
+		return;
+	}
+
+	cotlas_render_challenge_for_form( $form, $form );
+}
+add_action( 'login_form', 'cotlas_display_challenge' );
+add_action( 'register_form', 'cotlas_display_challenge' );
+add_action( 'comment_form', 'cotlas_display_challenge' );
+
+/**
+ * Detect Cotlas custom auth AJAX requests.
+ *
+ * Custom login/register already verify the active challenge in auth-ajax.php.
+ * Running the default form hooks again during wp_signon/register_new_user causes
+ * duplicate verification and action mismatches (wp_login vs cotlas_login).
+ *
+ * @return bool
+ */
+function cotlas_is_custom_auth_ajax_request() {
+	if ( ! wp_doing_ajax() ) {
+		return false;
+	}
+
+	$action = isset( $_POST['action'] ) ? sanitize_text_field( wp_unslash( $_POST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+	return in_array( $action, array( 'cotlas_login', 'cotlas_register', 'cotlas_forgot_password' ), true );
+}
+
+/**
+ * Verify the challenge on the login form.
+ *
+ * Registered once, here, for the same reason as cotlas_display_challenge():
+ * cotlas_verify_challenge_for_form() resolves whichever provider is active, so
+ * a copy per provider integration ran the check twice and, on registration,
+ * added the identical error to the same WP_Error twice.
+ */
+add_filter( 'wp_authenticate_user', function ( $user, $password ) {
+	if ( cotlas_is_custom_auth_ajax_request() ) {
+		return $user;
+	}
+	if ( ! cotlas_challenge_provider_for_form( 'wp_login' ) ) {
+		return $user;
+	}
+	if ( is_wp_error( $user ) ) {
+		return $user;
+	}
+	$check = cotlas_verify_challenge_for_form( 'wp_login', 'wp_login' );
+	if ( is_wp_error( $check ) ) {
+		return $check;
+	}
+	return $user;
+}, 10, 2 );
+
+/** Verify the challenge on the registration form. */
+add_filter( 'registration_errors', function ( $errors, $sanitized_user_login, $user_email ) {
+	if ( cotlas_is_custom_auth_ajax_request() ) {
+		return $errors;
+	}
+	if ( ! cotlas_challenge_provider_for_form( 'wp_register' ) ) {
+		return $errors;
+	}
+	$check = cotlas_verify_challenge_for_form( 'wp_register', 'wp_register' );
+	if ( is_wp_error( $check ) ) {
+		$errors->add( $check->get_error_code(), $check->get_error_message() );
+	}
+	return $errors;
+}, 10, 3 );
+
+/** Verify the challenge on comment submission. */
+add_filter( 'preprocess_comment', function ( $commentdata ) {
+	if ( is_user_logged_in() ) {
+		return $commentdata;
+	}
+	if ( ! cotlas_challenge_provider_for_form( 'comments' ) ) {
+		return $commentdata;
+	}
+	$check = cotlas_verify_challenge_for_form( 'comments', 'comments' );
+	if ( is_wp_error( $check ) ) {
+		wp_die( $check->get_error_message() );
+	}
+	return $commentdata;
+} );
 
 function cotlas_disable_other_captcha_providers( $active_provider ) {
 	$options = array(

@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.5.0
+ * Version:     2.5.1
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -65,6 +65,7 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_honeypot_wp_login'                      => 0,
 		'cotlas_honeypot_wp_register'                   => 0,
 		'cotlas_honeypot_cotlas_comments'               => 0,
+		'cotlas_honeypot_houzez'                        => 0,
 
 		// Custom auth anti-spam toggles.
 		'cotlas_auth_honeypot'                          => 0,
@@ -157,7 +158,6 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/admin-dashboard.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/honeypot.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/turnstile.php';
-require_once plugin_dir_path( __FILE__ ) . 'inc/hcaptcha.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/tracking-codes.php';
 

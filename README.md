@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.5.0
+- **Version:** 2.5.1
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -90,7 +90,7 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 
 ## Changelog
 
-### 2.5.0
+### 2.5.1
 - New: hCaptcha integration with site key/secret key configuration and per-form toggles (login, register, comments, Cotlas forms).
 - New: Math CAPTCHA difficulty levels — Easy (addition), Moderate (addition & subtraction), Advanced (addition, subtraction & multiplication).
 - New: Security hardening module with 13 toggleable features migrated from mu-plugins — account lockout, user enumeration prevention, login redirect hardening, right-click guard, single session enforcement, session timeout, autocomplete hardening, password policy, REST user endpoint block, RSS feed disable, jQuery hardening, CORS allowlist, and email obfuscation.

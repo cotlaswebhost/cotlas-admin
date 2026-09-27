@@ -41,25 +41,11 @@ function cotlas_auth_enqueue_assets() {
     );
 
     $script_deps = [];
-    $recaptcha_site_key = get_option( 'recaptcha_v3_site_key' );
-    $recaptcha_on_custom_forms = $recaptcha_site_key && (
-        'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_login' )
-        || 'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_register' )
-    );
 
-    if ( $recaptcha_on_custom_forms ) {
-        wp_enqueue_script(
-            'google-recaptcha-v3',
-            'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( $recaptcha_site_key ),
-            [],
-            null,
-            true
-        );
-        wp_add_inline_script(
-            'google-recaptcha-v3',
-            'window.cotlasRecaptchaV3SiteKey=' . wp_json_encode( $recaptcha_site_key ) . ';',
-            'before'
-        );
+    // captcha.php enqueues and configures google-recaptcha-v3; here we only make
+    // auth-forms.js depend on it so grecaptcha is ready before it runs.
+    if ( 'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_login' )
+        || 'recaptcha' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) {
         $script_deps[] = 'google-recaptcha-v3';
     }
 
@@ -81,17 +67,8 @@ function cotlas_auth_enqueue_assets() {
         ],
     ] );
 
-    // Cloudflare Turnstile – only load if it is the active challenge on a custom auth form.
-    $ts_key = get_option( 'turnstile_site_key' );
-    if ( $ts_key && ( 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_login' ) || 'turnstile' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) ) {
-        wp_enqueue_script( 'cf-turnstile', 'https://challenges.cloudflare.com/turnstile/v0/api.js', [], null, true );
-    }
-
-    // hCaptcha – only load if it is the active challenge on a custom auth form.
-    $hc_key = get_option( 'hcaptcha_site_key' );
-    if ( $hc_key && ( 'hcaptcha' === cotlas_challenge_provider_for_form( 'cotlas_login' ) || 'hcaptcha' === cotlas_challenge_provider_for_form( 'cotlas_register' ) ) ) {
-        wp_enqueue_script( 'hcaptcha', 'https://js.hcaptcha.com/1/api.js', [], null, true );
-    }
+    // Cloudflare Turnstile and hCaptcha scripts are enqueued by
+    // cotlas_enqueue_challenge_scripts() in captcha.php.
 }
 
 // ---------------------------------------------------------------------------

@@ -128,6 +128,7 @@ function cotlas_panel_process_saves() {
 				'cotlas_honeypot_wp_register'     => 'checkbox',
 				'cotlas_auth_honeypot'            => 'checkbox',
 				'cotlas_honeypot_cotlas_comments' => 'checkbox',
+				'cotlas_honeypot_houzez'          => 'checkbox',
 			),
 		),
 		'ctap_save_sec_login_protection' => array(
@@ -1344,6 +1345,8 @@ function cotlas_panel_page_security() {
 	ctap_toggle( 'cotlas_honeypot_wp_register', 'WP Register Form', 'Adds a hidden field to the default WP registration form.', 0 );
 	ctap_section( 'Custom Auth Forms' );
 	ctap_toggle( 'cotlas_auth_honeypot', 'Custom Login & Register Forms', 'Honeypot on the [cotlas_login] and [cotlas_register] shortcode forms.', 0 );
+	ctap_section( 'Houzez Theme Forms' );
+	ctap_toggle( 'cotlas_honeypot_houzez', 'Houzez Front-End Forms', 'Honeypot on the Houzez theme front-end login and registration forms.', 0 );
 	ctap_section( 'Comment Form' );
 	ctap_toggle( 'cotlas_honeypot_cotlas_comments', 'Cotlas Comment Form', 'Honeypot on the [cotlas_comments] comment submission form (guest users only).', 0 );
 	ctap_card_close();
