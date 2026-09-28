@@ -543,6 +543,17 @@ html.cotlas-delete-modal-open {
 .cotlas-social-share a.print svg {
     fill: #555555
 }
+.cotlas-social-share a.copy-link svg, .cotlas-social-share-aside a.copy-link svg, .cotlas-social-share-aside-mobile a.copy-link svg {
+    fill: #1d2327
+}
+.cotlas-social-share-footer a.copy-link {
+    border-color: #1d2327;
+    color: #1d2327
+}
+.cotlas-social-share-footer a.copy-link:hover {
+    background: #1d2327;
+    color: #fff
+}
 .cotlas-social-share-aside a:hover svg, .cotlas-social-share-aside-mobile a:hover svg, .cotlas-social-share-top a:hover svg {
     fill: #000000 !important;
     transform: scale(1.1);

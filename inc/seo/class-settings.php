@@ -58,6 +58,16 @@ class Settings {
 			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_absint' ),
 			'default'           => 0,
 		) );
+		register_setting( self::OPTION_GROUP, 'cotlas_seo_company_logo_id_url', array(
+			'type'              => 'string',
+			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_url' ),
+			'default'           => '',
+		) );
+		register_setting( self::OPTION_GROUP, 'cotlas_seo_default_image_id_url', array(
+			'type'              => 'string',
+			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_url' ),
+			'default'           => '',
+		) );
 		register_setting( self::OPTION_GROUP, 'cotlas_seo_localbusiness_type', array(
 			'type'              => 'string',
 			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_text' ),
@@ -206,8 +216,19 @@ class Settings {
 	private static function open_images_tab( $active ) {
 		ctap_pane_open( 'images', $active );
 		ctap_card_open( 'Default Images', 'dashicons-format-image' );
-		self::image_field( 'cotlas_seo_company_logo_id', 'Company Logo', 'Used for Organization, LocalBusiness, and OpenGraph fallbacks.' );
-		self::image_field( 'cotlas_seo_default_image_id', 'Default Image', 'Used when a post has no featured image and no company logo is available.' );
+
+		// Company Logo — show customizer fallback if no plugin logo is set.
+		$plugin_logo_id = absint( get_option( 'cotlas_seo_company_logo_id', 0 ) );
+		$custom_logo_id = absint( get_theme_mod( 'custom_logo', 0 ) );
+		$fallback_url   = '';
+		$fallback_label = '';
+		if ( ! $plugin_logo_id && $custom_logo_id ) {
+			$fallback_url   = wp_get_attachment_image_url( $custom_logo_id, 'medium' );
+			$fallback_label = 'Using logo from Appearance → Customize → Site Identity.';
+		}
+		self::image_upload_field( 'cotlas_seo_company_logo_id', 'Company Logo', 'Used for Organization, LocalBusiness, and OpenGraph fallbacks.', $fallback_url, $fallback_label );
+		self::image_upload_field( 'cotlas_seo_default_image_id', 'Default Image', 'Used when a post has no featured image and no company logo is available.' );
+
 		ctap_card_close();
 		ctap_pane_close();
 	}
@@ -316,19 +337,48 @@ class Settings {
 		echo '</select></div></div>';
 	}
 
-	private static function image_field( $name, $label, $desc ) {
+	private static function image_upload_field( $name, $label, $desc, $fallback_url = '', $fallback_label = '' ) {
 		$attachment_id = absint( get_option( $name, 0 ) );
 		$url           = $attachment_id ? wp_get_attachment_image_url( $attachment_id, 'medium' ) : '';
+		$direct_url    = $attachment_id ? wp_get_attachment_url( $attachment_id ) : '';
+
 		echo '<div class="ctap-field-row">';
 		echo '<div class="ctap-field-label">' . esc_html( $label ) . '</div>';
 		echo '<div class="ctap-field-input">';
-		echo '<input type="number" min="0" name="' . esc_attr( $name ) . '" value="' . esc_attr( $attachment_id ) . '" data-cotlas-seo-image-input style="max-width:110px;margin-right:8px;">';
+
+		// Hidden ID field (set by media picker JS).
+		echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="' . esc_attr( $attachment_id ) . '" data-cotlas-seo-image-id="' . esc_attr( $name ) . '">';
+
+		// Media picker button + remove button.
+		echo '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">';
 		echo '<button type="button" class="button" data-cotlas-seo-pick-image="' . esc_attr( $name ) . '">Select Image</button>';
-		echo '<div class="cotlas-seo-image-preview" style="margin-top:10px;">';
+		echo '<button type="button" class="button" data-cotlas-seo-remove-image="' . esc_attr( $name ) . '" style="color:#b91c1c;' . ( $attachment_id ? '' : 'display:none;' ) . '">Remove</button>';
+		echo '</div>';
+
+		// Thumbnail preview.
+		echo '<div class="cotlas-seo-image-preview" style="margin-bottom:8px;">';
 		if ( $url ) {
-			echo '<img src="' . esc_url( $url ) . '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">';
+			echo '<div style="display:inline-flex;align-items:center;gap:10px;padding:8px;border:1px solid #dcdcde;border-radius:8px;background:#fff;">';
+			echo '<img src="' . esc_url( $url ) . '" alt="" style="max-width:120px;max-height:80px;height:auto;border-radius:4px;">';
+			echo '<span style="font-size:12px;color:#646970;">ID: ' . esc_html( $attachment_id ) . '</span>';
+			echo '</div>';
+		} elseif ( $fallback_url ) {
+			echo '<div style="display:inline-flex;align-items:center;gap:10px;padding:8px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;">';
+			echo '<img src="' . esc_url( $fallback_url ) . '" alt="" style="max-width:120px;max-height:80px;height:auto;border-radius:4px;opacity:.8;">';
+			echo '<div><span style="font-size:12px;color:#2271b1;font-weight:600;">Customizer Logo (Fallback)</span>';
+			if ( $fallback_label ) {
+				echo '<br><span style="font-size:11px;color:#646970;">' . esc_html( $fallback_label ) . '</span>';
+			}
+			echo '</div></div>';
 		}
 		echo '</div>';
+
+		// Direct URL input.
+		echo '<div style="margin-bottom:8px;">';
+		echo '<label style="font-size:12px;color:#50575e;display:block;margin-bottom:3px;">Or paste an image URL:</label>';
+		echo '<input type="url" name="' . esc_attr( $name ) . '_url" value="' . esc_url( $direct_url ) . '" placeholder="https://example.com/image.jpg" class="regular-text" data-cotlas-seo-image-url="' . esc_attr( $name ) . '" style="max-width:400px;">';
+		echo '</div>';
+
 		echo '<p class="ctap-field-desc">' . wp_kses_post( $desc ) . '</p>';
 		echo '</div></div>';
 	}
@@ -339,19 +389,43 @@ class Settings {
 	$(document).on('click','[data-cotlas-seo-pick-image]',function(e){
 		e.preventDefault();
 		var targetName = $(this).data('cotlas-seo-pick-image');
-		var field = $('input[name="' + targetName + '"]');
-		var preview = field.closest('.ctap-field-input').find('.cotlas-seo-image-preview');
+		var idField = $('[data-cotlas-seo-image-id="' + targetName + '"]');
+		var urlField = $('[data-cotlas-seo-image-url="' + targetName + '"]');
+		var preview = idField.closest('.ctap-field-input').find('.cotlas-seo-image-preview');
+		var removeBtn = $('[data-cotlas-seo-remove-image="' + targetName + '"]');
 		var frame = wp.media({ title: 'Select image', button: { text: 'Use image' }, multiple: false });
 		frame.on('select', function(){
 			var attachment = frame.state().get('selection').first().toJSON();
-			field.val(attachment.id).trigger('change');
-			if ( attachment.sizes && attachment.sizes.medium ) {
-				preview.html('<img src="' + attachment.sizes.medium.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
-			} else if ( attachment.url ) {
-				preview.html('<img src="' + attachment.url + '" alt="" style="max-width:180px;height:auto;border:1px solid #dcdcde;border-radius:8px;padding:4px;background:#fff;">');
-			}
+			idField.val(attachment.id);
+			if (urlField.length) urlField.val(attachment.url);
+			var imgUrl = (attachment.sizes && attachment.sizes.medium) ? attachment.sizes.medium.url : attachment.url;
+			preview.html('<div style="display:inline-flex;align-items:center;gap:10px;padding:8px;border:1px solid #dcdcde;border-radius:8px;background:#fff;">' +
+				'<img src="' + imgUrl + '" alt="" style="max-width:120px;max-height:80px;height:auto;border-radius:4px;">' +
+				'<span style="font-size:12px;color:#646970;">ID: ' + attachment.id + '</span></div>');
+			removeBtn.show();
 		});
 		frame.open();
+	});
+
+	$(document).on('click','[data-cotlas-seo-remove-image]',function(e){
+		e.preventDefault();
+		var targetName = $(this).data('cotlas-seo-remove-image');
+		var idField = $('[data-cotlas-seo-image-id="' + targetName + '"]');
+		var urlField = $('[data-cotlas-seo-image-url="' + targetName + '"]');
+		var preview = idField.closest('.ctap-field-input').find('.cotlas-seo-image-preview');
+		idField.val(0);
+		if (urlField.length) urlField.val('');
+		preview.html('');
+		$(this).hide();
+	});
+
+	// When URL field changes, clear the ID field so URL takes precedence.
+	$(document).on('input','[data-cotlas-seo-image-url]',function(){
+		var targetName = $(this).data('cotlas-seo-image-url');
+		var idField = $('[data-cotlas-seo-image-id="' + targetName + '"]');
+		if ($(this).val().trim()) {
+			idField.val(0);
+		}
 	});
 })(jQuery);
 JS;

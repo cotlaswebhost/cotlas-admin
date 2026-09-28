@@ -23,6 +23,48 @@ function cotlas_panel_process_saves() {
 
 	$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
 
+	// Handle auth page creation before the regular save handler runs.
+	if ( isset( $_POST['cotlas_create_auth_pages'] ) && wp_verify_nonce( $nonce, 'ctap_save_login_settings' ) ) {
+		if ( current_user_can( 'manage_options' ) ) {
+			$login_slug    = sanitize_text_field( get_option( 'cotlas_auth_login_slug', 'login' ) );
+			$register_slug = sanitize_text_field( get_option( 'cotlas_auth_register_slug', 'register' ) );
+			$forgot_slug   = sanitize_text_field( get_option( 'cotlas_auth_forgot_slug', 'reset-password' ) );
+
+			$pages_to_create = array(
+				array( 'slug' => $login_slug,    'title' => 'Login',          'shortcode' => '[cotlas_login]' ),
+				array( 'slug' => $register_slug, 'title' => 'Register',       'shortcode' => '[cotlas_register]' ),
+				array( 'slug' => $forgot_slug,   'title' => 'Reset Password', 'shortcode' => '[cotlas_forgot_password]' ),
+			);
+
+			$results = array();
+			foreach ( $pages_to_create as $page_data ) {
+				$existing = get_page_by_path( $page_data['slug'] );
+				if ( $existing ) {
+					$results[] = $page_data['title'] . ':exists:' . $existing->ID;
+					continue;
+				}
+				$page_id = wp_insert_post( array(
+					'post_title'     => $page_data['title'],
+					'post_name'      => $page_data['slug'],
+					'post_content'   => $page_data['shortcode'],
+					'post_status'    => 'publish',
+					'post_type'      => 'page',
+					'comment_status' => 'closed',
+					'ping_status'    => 'closed',
+				) );
+				if ( $page_id && ! is_wp_error( $page_id ) ) {
+					$results[] = $page_data['title'] . ':created:' . $page_id;
+				} else {
+					$results[] = $page_data['title'] . ':error:0';
+				}
+			}
+
+			$encoded = urlencode( implode( '|', $results ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=cotlas-login-system&pages_created=' . $encoded ) );
+			exit;
+		}
+	}
+
 	$maps = array(
 		'ctap_save_site' => array(
 			'page' => 'cotlas-admin-panel',
@@ -152,9 +194,10 @@ function cotlas_panel_process_saves() {
 		'ctap_save_sec_data_access' => array(
 			'page' => 'cotlas-security-settings',
 			'map'  => array(
-				'cotlas_sec_rest_user_block'    => 'checkbox',
-				'cotlas_sec_disable_feeds'      => 'checkbox',
-				'cotlas_sec_jquery_hardening'   => 'checkbox',
+				'cotlas_sec_rest_user_block'         => 'checkbox',
+				'cotlas_sec_disable_feeds'           => 'checkbox',
+				'cotlas_sec_disable_feeds_secret'    => 'sanitize_text_field',
+				'cotlas_sec_jquery_hardening'        => 'checkbox',
 			),
 		),
 		'ctap_save_sec_network' => array(
@@ -345,6 +388,8 @@ function cotlas_panel_assets( $hook ) {
 		'cotlas-admin_page_cotlas-user-settings',
 		'cotlas-admin_page_cotlas-reading-list',
 		'cotlas-admin_page_cotlas-cache',
+		'cotlas-admin_page_cotlas-content-protect',
+		'cotlas-admin_page_cotlas-export-import',
 		'cotlas-admin_page_cotlas-tools',
 	);
 	if ( ! in_array( $hook, $hooks, true ) ) {
@@ -1018,6 +1063,75 @@ function cotlas_panel_page_login() {
 	ctap_section( 'Rate Limiting' );
 	ctap_field( 'Max Login Attempts', ctap_input( 'cotlas_auth_rate_limit', '5', 'number' ), 'Failed attempts before a 15-minute lockout. Default: 5.' );
 	ctap_card_close();
+
+	ctap_card_open( 'Create Auth Pages', 'dashicons-admin-page' );
+	ctap_info( 'Automatically create the three authentication pages with the correct shortcodes. If a page with the configured slug already exists, it will be skipped. <strong>Save your slug settings above first</strong> before creating pages.' );
+
+	// Show page status.
+	$login_slug    = get_option( 'cotlas_auth_login_slug', 'login' );
+	$register_slug = get_option( 'cotlas_auth_register_slug', 'register' );
+	$forgot_slug   = get_option( 'cotlas_auth_forgot_slug', 'reset-password' );
+	$pages_status  = array(
+		array( 'Login',           $login_slug,    '[cotlas_login]' ),
+		array( 'Register',        $register_slug, '[cotlas_register]' ),
+		array( 'Reset Password',  $forgot_slug,   '[cotlas_forgot_password]' ),
+	);
+
+	echo '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px;">';
+	echo '<thead><tr>';
+	echo '<th style="text-align:left;padding:8px 12px;background:#f6f7f7;border-bottom:1px solid #dcdcde;color:#50575e;font-size:11px;text-transform:uppercase;">Page</th>';
+	echo '<th style="text-align:left;padding:8px 12px;background:#f6f7f7;border-bottom:1px solid #dcdcde;color:#50575e;font-size:11px;text-transform:uppercase;">Slug</th>';
+	echo '<th style="text-align:left;padding:8px 12px;background:#f6f7f7;border-bottom:1px solid #dcdcde;color:#50575e;font-size:11px;text-transform:uppercase;">Shortcode</th>';
+	echo '<th style="text-align:left;padding:8px 12px;background:#f6f7f7;border-bottom:1px solid #dcdcde;color:#50575e;font-size:11px;text-transform:uppercase;">Status</th>';
+	echo '</tr></thead><tbody>';
+
+	foreach ( $pages_status as $i => $ps ) {
+		$bg     = $i % 2 ? '#fafafa' : '#fff';
+		$exists = get_page_by_path( $ps[1] );
+		if ( $exists ) {
+			$status_html = '<span style="color:#166534;font-weight:600;">&#10003; Exists</span> <a href="' . get_edit_post_link( $exists->ID ) . '" style="font-size:11px;">Edit</a>';
+		} else {
+			$status_html = '<span style="color:#991b1b;">&#10007; Not created</span>';
+		}
+		echo '<tr style="background:' . esc_attr( $bg ) . '">';
+		echo '<td style="padding:8px 12px;border-bottom:1px solid #f0f0f1;font-weight:600;">' . esc_html( $ps[0] ) . '</td>';
+		echo '<td style="padding:8px 12px;border-bottom:1px solid #f0f0f1;"><code>' . esc_html( $ps[1] ) . '</code></td>';
+		echo '<td style="padding:8px 12px;border-bottom:1px solid #f0f0f1;"><code>' . esc_html( $ps[2] ) . '</code></td>';
+		echo '<td style="padding:8px 12px;border-bottom:1px solid #f0f0f1;">' . $status_html . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput
+		echo '</tr>';
+	}
+	echo '</tbody></table>';
+
+	// Show creation results from redirect.
+	if ( ! empty( $_GET['pages_created'] ) ) {
+		$raw_results = urldecode( sanitize_text_field( wp_unslash( $_GET['pages_created'] ) ) );
+		$parts       = explode( '|', $raw_results );
+		echo '<div class="ctap-notice ctap-notice-success" style="margin-bottom:16px;">';
+		echo '<span class="dashicons dashicons-yes-alt"></span><div>';
+		foreach ( $parts as $part ) {
+			$p = explode( ':', $part );
+			if ( count( $p ) < 3 ) {
+				continue;
+			}
+			$title  = esc_html( $p[0] );
+			$status = $p[1];
+			$id     = absint( $p[2] );
+			if ( 'created' === $status ) {
+				echo '<div>&#10003; <strong>' . $title . '</strong> page created. <a href="' . get_edit_post_link( $id ) . '">Edit</a> | <a href="' . get_permalink( $id ) . '">View</a></div>';
+			} elseif ( 'exists' === $status ) {
+				echo '<div>&#8212; <strong>' . $title . '</strong> page already exists (ID: ' . $id . ').</div>';
+			} else {
+				echo '<div>&#10007; <strong>' . $title . '</strong> — error creating page.</div>';
+			}
+		}
+		echo '</div></div>';
+	}
+
+	echo '<button type="submit" name="cotlas_create_auth_pages" value="1" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;">';
+	echo '<span class="dashicons dashicons-admin-page" style="line-height:20px;"></span> Create All Pages';
+	echo '</button>';
+
+	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();
 
@@ -1385,7 +1499,9 @@ function cotlas_panel_page_security() {
 	ctap_card_open( 'Data & Access Control', 'dashicons-database' );
 	ctap_info( 'Control what information WordPress exposes publicly through REST API, RSS feeds, and script version strings.' );
 	ctap_toggle( 'cotlas_sec_rest_user_block', 'Block REST User Endpoint', 'Returns a 403 for unauthenticated requests to /wp/v2/users, preventing public enumeration of usernames, roles, and profile data.', 0 );
-	ctap_toggle( 'cotlas_sec_disable_feeds', 'Disable RSS/Atom Feeds', 'Terminates all feed endpoints (RSS2, Atom, RDF, comment feeds) with a 410 Gone response. Prevents content scraping and metadata leakage via feeds.', 0 );
+	ctap_toggle( 'cotlas_sec_disable_feeds', 'Disable RSS/Atom Feeds', 'Terminates all feed endpoints (RSS2, Atom, RDF, comment feeds). When enabled without a secret slug, returns 410 Gone. With a secret slug, normal /feed URLs redirect to the parent page while the secret URL serves the actual feed.', 0 );
+	$secret_val = get_option( 'cotlas_sec_disable_feeds_secret', '' );
+	ctap_field( 'Secret Feed Slug', '<input type="text" name="cotlas_sec_disable_feeds_secret" value="' . esc_attr( $secret_val ) . '" class="regular-text" placeholder="e.g. dailyhunt-feed">', 'Optional. Only works when <strong>Disable RSS/Atom Feeds</strong> is enabled above. If set, normal <code>/feed</code> URLs redirect to the parent page, but <code>/' . ( $secret_val ? esc_html( $secret_val ) : 'your-secret' ) . '/</code> serves the actual RSS feed. Give this secret URL to trusted services like news aggregators. Works for category/tag feeds too (e.g. <code>/category/politics/' . ( $secret_val ? esc_html( $secret_val ) : 'your-secret' ) . '/</code>). Leave empty to completely disable all feeds.' );
 	ctap_toggle( 'cotlas_sec_jquery_hardening', 'jQuery Hardening', 'Removes jQuery Migrate dependency and strips version query strings from jQuery-family handles to reduce front-end version fingerprinting.', 0 );
 	ctap_card_close();
 	ctap_form_close();
@@ -1727,7 +1843,7 @@ function cotlas_panel_page_social() {
 		array( 'cotlas_social',       'Site social icons. Only platforms with a saved URL are rendered.',
 			'<code>class="my-class"</code><br><code>size="24"</code> — icon size in px<br><code>show_names="1"</code> — show platform names beside icons<br><code>networks="facebook,twitter,youtube,instagram,linkedin,threads"</code>' ),
 		array( 'social_share',        'Share buttons for the current post.',
-			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,print"</code>' ),
+			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print"</code>' ),
 		array( 'author_social_links', "Post author's social links from their user profile.",
 			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,youtube,instagram,linkedin,pinterest"</code>' ),
 		array( 'social_facebook',     'Facebook URL shortcode — returns the saved URL.',

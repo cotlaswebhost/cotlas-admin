@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.5.1
+ * Version:     2.6.0
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -116,6 +116,17 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_sec_jquery_hardening'                  => 0,
 		'cotlas_sec_cors_hardening'                    => 0,
 		'cotlas_sec_email_obfuscation'                 => 0,
+
+		// Content protect toggles.
+		'cotlas_cp_copy_protection'                    => 0,
+		'cotlas_cp_disable_rightclick'                 => 1,
+		'cotlas_cp_disable_text_select'                => 1,
+		'cotlas_cp_disable_drag'                       => 1,
+		'cotlas_cp_disable_keyboard'                   => 1,
+		'cotlas_cp_disable_devtools'                   => 1,
+		'cotlas_cp_watermark_enabled'                  => 0,
+		'cotlas_cp_watermark_delete_originals'         => 0,
+		'cotlas_cp_hotlink_enabled'                    => 0,
 	);
 
 	/**
@@ -184,4 +195,6 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/image-conversion.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/reading-list.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/wishlist.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/cache-settings.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/content-protect.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/settings-export.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/admin-tools.php';

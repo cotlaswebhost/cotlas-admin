@@ -147,6 +147,11 @@ class Schema_Generator {
 			}
 		}
 
+		$direct_url = esc_url_raw( get_option( 'cotlas_seo_company_logo_id_url', '' ) );
+		if ( $direct_url ) {
+			return $direct_url;
+		}
+
 		$site_logo = get_theme_mod( 'custom_logo' );
 		if ( $site_logo ) {
 			$url = wp_get_attachment_image_url( absint( $site_logo ), 'full' );
@@ -165,6 +170,11 @@ class Schema_Generator {
 			if ( $url ) {
 				return $url;
 			}
+		}
+
+		$direct_url = esc_url_raw( get_option( 'cotlas_seo_default_image_id_url', '' ) );
+		if ( $direct_url ) {
+			return $direct_url;
 		}
 
 		return '';

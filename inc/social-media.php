@@ -123,13 +123,12 @@ class CotlasSocialMedia {
     }
 }
 add_action('plugins_loaded', function() { new CotlasSocialMedia(); });
-add_action('plugins_loaded', function() { new CotlasSocialMedia(); });
 
 // Social Share Shortcode - FIXED VERSION
 function cotlas_social_share_shortcode($atts) {
     $atts = shortcode_atts(array(
         'class'   => 'cotlas-social-share,cotlas-social-share-top,cotlas-social-share-aside,cotlas-social-share-footer',
-        'networks' => 'facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,print',
+        'networks' => 'facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print',
         'size' => '24',
         'show_names' => 'false'
     ), $atts, 'social_share');
@@ -210,6 +209,14 @@ function cotlas_social_share_shortcode($atts) {
             </a>
         <?php endif; ?>
 
+        <?php if (in_array('copy', $networks)) : ?>
+            <a href="javascript:void(0)" class="copy-link" data-cotlas-copy-url="<?php echo esc_url(urldecode($post_url)); ?>" aria-label="Copy link to clipboard">
+                <svg width="<?php echo $size; ?>" height="<?php echo $size; ?>" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path opacity="0.4" d="M17.0998 2H12.8998C9.44976 2 8.04977 3.37 8.00977 6.75H11.0998C15.2998 6.75 17.2498 8.7 17.2498 12.9V15.99C20.6298 15.95 21.9998 14.55 21.9998 11.1V6.9C21.9998 3.4 20.5998 2 17.0998 2Z" fill="currentColor"></path><path d="M11.1 8H6.9C3.4 8 2 9.4 2 12.9V17.1C2 20.6 3.4 22 6.9 22H11.1C14.6 22 16 20.6 16 17.1V12.9C16 9.4 14.6 8 11.1 8ZM12.29 13.65L8.58 17.36C8.44 17.5 8.26 17.57 8.07 17.57C7.88 17.57 7.7 17.5 7.56 17.36L5.7 15.5C5.42 15.22 5.42 14.77 5.7 14.49C5.98 14.21 6.43 14.21 6.71 14.49L8.06 15.84L11.27 12.63C11.55 12.35 12 12.35 12.28 12.63C12.56 12.91 12.57 13.37 12.29 13.65Z" fill="currentColor"></path></svg>
+                <span class="screen-reader-text">Copy Link</span>
+                <?php if ($show_names): ?><span class="social-platform-name">Copy Link</span><?php endif; ?>
+            </a>
+        <?php endif; ?>
+
         <?php if (in_array('print', $networks)) : ?>
             <a href="javascript:window.print()" class="print" aria-label="Print this page">
                 <svg width="<?php echo $size; ?>" height="<?php echo $size; ?>" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
@@ -219,6 +226,55 @@ function cotlas_social_share_shortcode($atts) {
         <?php endif; ?>
     </div>
     <?php
+    // Toast popup (rendered once per page).
+    static $cotlas_copy_toast_rendered = false;
+    if ( ! $cotlas_copy_toast_rendered ) {
+        $cotlas_copy_toast_rendered = true;
+        ?>
+        <div id="cotlas-copy-toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999999;background:#1d2327;color:#fff;padding:10px 18px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:13px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;display:none;align-items:center;gap:10px;max-width:340px;white-space:nowrap;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 12.9V17.1C16 20.6 14.6 22 11.1 22H6.9C3.4 22 2 20.6 2 17.1V12.9C2 9.4 3.4 8 6.9 8H11.1C14.6 8 16 9.4 16 12.9Z" fill="#22c55e"></path><path d="M17.0998 2H12.8998C9.81668 2 8.37074 3.09409 8.06951 5.73901C8.00649 6.29235 8.46476 6.75 9.02167 6.75H11.0998C15.2998 6.75 17.2498 8.7 17.2498 12.9V14.9781C17.2498 15.535 17.7074 15.9933 18.2608 15.9303C20.9057 15.629 21.9998 14.1831 21.9998 11.1V6.9C21.9998 3.4 20.5998 2 17.0998 2Z" fill="#22c55e"></path></svg>
+            <span>Link copied to clipboard</span>
+            <button type="button" id="cotlas-copy-toast-close" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:0 0 0 4px;line-height:1;" aria-label="Close">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <style>#cotlas-copy-toast.cotlas-toast-show{display:flex !important;}</style>
+        <script>
+        (function(){
+            'use strict';
+            var toast=document.getElementById('cotlas-copy-toast');
+            var timer=null;
+            function showToast(){
+                if(!toast)return;
+                toast.classList.add('cotlas-toast-show');
+                clearTimeout(timer);
+                timer=setTimeout(hideToast,3000);
+            }
+            function hideToast(){
+                if(!toast)return;
+                toast.classList.remove('cotlas-toast-show');
+            }
+            document.getElementById('cotlas-copy-toast-close').addEventListener('click',hideToast);
+            document.addEventListener('click',function(e){
+                var btn=e.target.closest('[data-cotlas-copy-url]');
+                if(!btn)return;
+                e.preventDefault();
+                var url=btn.getAttribute('data-cotlas-copy-url');
+                if(navigator.clipboard&&navigator.clipboard.writeText){
+                    navigator.clipboard.writeText(url).then(showToast).catch(function(){fallbackCopy(url);});
+                }else{fallbackCopy(url);}
+            });
+            function fallbackCopy(text){
+                var ta=document.createElement('textarea');
+                ta.value=text;ta.style.cssText='position:fixed;left:-9999px;top:-9999px;';
+                document.body.appendChild(ta);ta.select();
+                try{document.execCommand('copy');showToast();}catch(e){}
+                document.body.removeChild(ta);
+            }
+        })();
+        </script>
+        <?php
+    }
     return ob_get_clean();
 }
 add_shortcode('social_share', 'cotlas_social_share_shortcode');

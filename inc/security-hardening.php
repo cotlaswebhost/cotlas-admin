@@ -871,13 +871,39 @@ function cotlas_sec_hook_rest_user_block() {
 
 /* ── Disable RSS Feeds ──────────────────────────────────────────────────── */
 
+// Tracks the original REQUEST_URI before secret-feed rewriting.
+$cotlas_secret_feed_original_uri = '';
+
 if ( ! function_exists( 'cotlas_sensitive_disclosure_disable_all_feeds' ) ) {
 	function cotlas_sensitive_disclosure_disable_all_feeds() {
+		global $cotlas_secret_feed_original_uri;
+		$secret = sanitize_title( get_option( 'cotlas_sec_disable_feeds_secret', '' ) );
+
+		if ( $secret ) {
+			// Check the ORIGINAL uri (saved before rewriting), not the current one.
+			$check_uri = $cotlas_secret_feed_original_uri ?: ( isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+			if ( preg_match( '#/' . preg_quote( $secret, '#' ) . '/?$#', $check_uri ) ) {
+				return; // Secret slug matches — let the feed load normally.
+			}
+			// Normal /feed URL with secret enabled — redirect to parent page.
+			$redirect = home_url( preg_replace( '#/feed/?$#', '/', $check_uri ) );
+			wp_safe_redirect( $redirect, 301 );
+			exit;
+		}
+
+		// No secret slug — completely disable with 410 Gone.
 		wp_die( esc_html__( 'Feed access is disabled.', 'cotlas-admin' ), '', array( 'response' => 410 ) );
 	}
 }
 
 function cotlas_sec_hook_disable_feeds() {
+	$secret = sanitize_title( get_option( 'cotlas_sec_disable_feeds_secret', '' ) );
+
+	if ( $secret ) {
+		// Intercept requests containing the secret slug before WordPress parses them.
+		add_filter( 'request', 'cotlas_secret_feed_request', 0 );
+	}
+
 	add_action( 'do_feed', 'cotlas_sensitive_disclosure_disable_all_feeds', 1 );
 	add_action( 'do_feed_rdf', 'cotlas_sensitive_disclosure_disable_all_feeds', 1 );
 	add_action( 'do_feed_rss', 'cotlas_sensitive_disclosure_disable_all_feeds', 1 );
@@ -886,6 +912,51 @@ function cotlas_sec_hook_disable_feeds() {
 	add_action( 'do_feed_rss2_comments', 'cotlas_sensitive_disclosure_disable_all_feeds', 1 );
 	add_action( 'do_feed_atom_comments', 'cotlas_sensitive_disclosure_disable_all_feeds', 1 );
 }
+
+/**
+ * Rewrite secret-slug feed requests to normal feed requests.
+ *
+ * Saves the original URI, strips the secret slug, appends /feed/,
+ * then re-triggers WordPress rewrite matching so it resolves as a feed.
+ */
+function cotlas_secret_feed_request( $request ) {
+	global $cotlas_secret_feed_original_uri;
+	$secret = sanitize_title( get_option( 'cotlas_sec_disable_feeds_secret', '' ) );
+	if ( ! $secret ) {
+		return $request;
+	}
+
+	$uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+	if ( ! preg_match( '#/' . preg_quote( $secret, '#' ) . '/?$#', $uri ) ) {
+		return $request;
+	}
+
+	// Save the original URI so the do_feed handler can detect the secret slug.
+	$cotlas_secret_feed_original_uri = $uri;
+
+	// Strip the secret slug and append /feed/ so WordPress re-resolves as a feed.
+	$clean = preg_replace( '#/' . preg_quote( $secret, '#' ) . '/?$#', '/feed/', $uri );
+	$_SERVER['REQUEST_URI'] = $clean;
+
+	// Re-trigger WordPress rewrite matching with the cleaned URI.
+	$wp = new WP();
+	$wp->parse_request();
+
+	return $wp->matched_rule ? $wp->query_vars : array( 'feed' => 'rss2' );
+}
+
+/**
+ * Flush rewrite rules when the secret feed slug changes.
+ */
+function cotlas_sec_flush_feed_rewrite() {
+	$old = get_option( 'cotlas_sec_disable_feeds_secret_old', '' );
+	$new = get_option( 'cotlas_sec_disable_feeds_secret', '' );
+	if ( $old !== $new ) {
+		update_option( 'cotlas_sec_disable_feeds_secret_old', $new );
+		flush_rewrite_rules();
+	}
+}
+add_action( 'admin_init', 'cotlas_sec_flush_feed_rewrite' );
 
 /* ── jQuery Hardening ───────────────────────────────────────────────────── */
 

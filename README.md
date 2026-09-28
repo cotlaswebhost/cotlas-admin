@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.5.1
+- **Version:** 2.6.0
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -81,6 +81,8 @@ A dedicated **Cotlas Admin → Admin Tools** page with four modules:
 | User Settings | `cotlas-user-settings` | Profile, avatar, and social link options |
 | Reading List | `cotlas-reading-list` | Reading list and wishlist toggles |
 | Browser Cache | `cotlas-cache` | Cache headers, lifetimes, and purge button |
+| Content Protect | `cotlas-content-protect` | Copy protection, image watermark, hotlink protection |
+| Export / Import | `cotlas-export-import` | Export/import plugin settings as JSON |
 | Admin Tools | `cotlas-tools` | Thumbnails · Notices · Maintenance · Database |
 
 ## Auto-Updates
@@ -89,6 +91,19 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 `https://api.github.com/repos/cotlaswebhost/cotlas-admin/releases/latest`
 
 ## Changelog
+
+### 2.6.0
+- New: **Content Protect** module — Content Copy Protection, Image Watermark, and Hotlink Protection under a single menu.
+  - Copy Protection with granular controls: disable right-click, text selection, image dragging, copy shortcuts, and dev tools shortcuts — each individually toggleable.
+  - Image Watermark at upload time — supports text and image (PNG) watermarks with 9-position grid, font size, color, opacity, and scale controls. Integrates with Image Conversion module: watermark is applied before WebP/AVIF conversion so converted files also contain the watermark. AVIF support via GD with Imagick fallback.
+  - Hotlink Protection blocks external domains from directly linking to your images with an allowed-domains whitelist.
+- New: **Export / Import** settings — Export all plugin settings to a JSON file and import on another site for fast setup replication.
+- New: **Auto-Create Auth Pages** — One-click button in Login System settings to automatically create Login, Register, and Reset Password pages with the correct shortcodes.
+- New: **Copy Link** button in `[social_share]` shortcode — copies the current page URL to clipboard with a custom toast notification popup.
+- Improved: SEO & Schema **Images** tab now shows the Customizer logo as a fallback preview when no plugin logo is set. Added direct URL input fields and thumbnail previews for image selection.
+- Improved: RSS/Atom Feed Disable now supports a **Secret Feed Slug** — set a secret word (e.g. `dailyhunt-feed`) and the normal `/feed` URLs redirect to the parent page, while the secret URL (`/dailyhunt-feed/`) serves the actual RSS feed. Works for category/tag feeds too (`/category/politics/dailyhunt-feed/`). Completely invisible to scrapers and hackers.
+- Improved: Image Conversion module now serves converted AVIF images to browsers that support it (previously only served WebP).
+- Fixed: Login System page creation and Content Protect save handlers no longer conflict with each other.
 
 ### 2.5.1
 - New: hCaptcha integration with site key/secret key configuration and per-form toggles (login, register, comments, Cotlas forms).
