@@ -958,6 +958,37 @@ function cotlas_sec_flush_feed_rewrite() {
 }
 add_action( 'admin_init', 'cotlas_sec_flush_feed_rewrite' );
 
+/* ── Featured Images in Feed ───────────────────────────────────────────── */
+
+function cotlas_sec_hook_feed_images() {
+	add_filter( 'the_excerpt_rss', 'cotlas_sec_add_image_to_feed' );
+	add_filter( 'the_content_feed', 'cotlas_sec_add_image_to_feed' );
+	add_filter( 'rss2_ns', 'cotlas_sec_feed_media_namespace' );
+}
+
+function cotlas_sec_feed_media_namespace() {
+	echo 'xmlns:media="http://search.yahoo.com/mrss/"';
+}
+
+function cotlas_sec_add_image_to_feed( $content ) {
+	global $post;
+	if ( ! $post || ! has_post_thumbnail( $post->ID ) ) {
+		return $content;
+	}
+
+	$thumbnail_url = get_the_post_thumbnail_url( $post->ID, 'large' );
+	if ( ! $thumbnail_url ) {
+		return $content;
+	}
+
+	$thumb_id  = get_post_thumbnail_id( $post->ID );
+	$mime_type = get_post_mime_type( $thumb_id );
+
+	$image_element = '<media:content url="' . esc_url( $thumbnail_url ) . '" medium="image" type="' . esc_attr( $mime_type ) . '" />';
+
+	return $content . $image_element;
+}
+
 /* ── jQuery Hardening ───────────────────────────────────────────────────── */
 
 if ( ! function_exists( 'cotlas_jquery_hardening_remove_migrate_dependency' ) ) {
@@ -1138,6 +1169,9 @@ function cotlas_security_hardening_boot() {
 	}
 	if ( get_option( 'cotlas_sec_jquery_hardening' ) ) {
 		cotlas_sec_hook_jquery_hardening();
+	}
+	if ( get_option( 'cotlas_sec_feed_images' ) ) {
+		cotlas_sec_hook_feed_images();
 	}
 
 	// Network.

@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.6.0
+ * Version:     2.7.0
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -146,6 +146,12 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 	add_option( 'math_captcha_difficulty', 'easy' );
 }
 register_activation_hook( __FILE__, 'cotlas_admin_activate_seed_toggle_defaults' );
+// Ensure cricket cache table exists on activation and admin visits.
+add_action( 'admin_init', function () {
+	if ( get_option( 'cotlas_cricket_enabled' ) && function_exists( 'cotlas_cricket_ensure_cache_table' ) ) {
+		cotlas_cricket_ensure_cache_table();
+	}
+} );
 // ---------------------------------------------------------------------------
 // Custom Auth System (login / register / forgot-password shortcodes)
 // ---------------------------------------------------------------------------
@@ -184,6 +190,7 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/trending-widgets.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/comment-system.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/generateblocks-tags.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/cricket-widget.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/user-profile.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/shortcodes.php';
@@ -198,3 +205,5 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/cache-settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/content-protect.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/settings-export.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/admin-tools.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/custom-template.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/custom-patterns.php';

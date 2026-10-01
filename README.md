@@ -92,7 +92,7 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 
 ## Changelog
 
-### 2.6.0
+### 2.7.0
 - New: **Content Protect** module — Content Copy Protection, Image Watermark, and Hotlink Protection under a single menu.
   - Copy Protection with granular controls: disable right-click, text selection, image dragging, copy shortcuts, and dev tools shortcuts — each individually toggleable.
   - Image Watermark at upload time — supports text and image (PNG) watermarks with 9-position grid, font size, color, opacity, and scale controls. Integrates with Image Conversion module: watermark is applied before WebP/AVIF conversion so converted files also contain the watermark. AVIF support via GD with Imagick fallback.
@@ -105,7 +105,7 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 - Improved: Image Conversion module now serves converted AVIF images to browsers that support it (previously only served WebP).
 - Fixed: Login System page creation and Content Protect save handlers no longer conflict with each other.
 
-### 2.5.1
+### 2.7.0
 - New: hCaptcha integration with site key/secret key configuration and per-form toggles (login, register, comments, Cotlas forms).
 - New: Math CAPTCHA difficulty levels — Easy (addition), Moderate (addition & subtraction), Advanced (addition, subtraction & multiplication).
 - New: Security hardening module with 13 toggleable features migrated from mu-plugins — account lockout, user enumeration prevention, login redirect hardening, right-click guard, single session enforcement, session timeout, autocomplete hardening, password policy, REST user endpoint block, RSS feed disable, jQuery hardening, CORS allowlist, and email obfuscation.

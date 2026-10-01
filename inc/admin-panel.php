@@ -115,6 +115,16 @@ function cotlas_panel_process_saves() {
 				'cotlas_gb_page_hero_enabled' => 'checkbox',
 			),
 		),
+		'ctap_save_gbtags_cricket' => array(
+			'page' => 'cotlas-gb-tags',
+			'map'  => array(
+				'cotlas_cricket_enabled'          => 'checkbox',
+				'cotlas_cricapi_key'              => 'sanitize_text_field',
+				'cotlas_cricapi_keys_extra'       => 'sanitize_textarea_field',
+				'cotlas_cricket_filter_countries' => 'sanitize_text_field',
+				'cotlas_cricket_series_ids'       => 'sanitize_textarea_field',
+			),
+		),
 		'ctap_save_turnstile' => array(
 			'page' => 'cotlas-security-settings',
 			'map'  => array(
@@ -197,6 +207,7 @@ function cotlas_panel_process_saves() {
 				'cotlas_sec_rest_user_block'         => 'checkbox',
 				'cotlas_sec_disable_feeds'           => 'checkbox',
 				'cotlas_sec_disable_feeds_secret'    => 'sanitize_text_field',
+				'cotlas_sec_feed_images'             => 'checkbox',
 				'cotlas_sec_jquery_hardening'        => 'checkbox',
 			),
 		),
@@ -1236,6 +1247,7 @@ function cotlas_panel_page_gb_tags() {
 	$tabs = array(
 		array( 'id' => 'tags',       'label' => 'Dynamic Tags', 'icon' => 'dashicons-tag' ),
 		array( 'id' => 'page-hero',  'label' => 'Page Hero',    'icon' => 'dashicons-format-image' ),
+		array( 'id' => 'cricket',    'label' => 'Cricket',      'icon' => 'dashicons-calendar-alt' ),
 		array( 'id' => 'query',      'label' => 'Query Params',  'icon' => 'dashicons-database-view' ),
 		array( 'id' => 'shortcodes', 'label' => 'Shortcodes',    'icon' => 'dashicons-shortcode' ),
 		array( 'id' => 'settings',   'label' => 'Settings',      'icon' => 'dashicons-admin-generic' ),
@@ -1296,6 +1308,102 @@ function cotlas_panel_page_gb_tags() {
 	ctap_form_close();
 	ctap_pane_close();
 
+	/* ── Cricket tab ────────────────────────────────────────────────────── */
+	ctap_pane_open( 'cricket', $active );
+	ctap_form_open( 'ctap_save_gbtags_cricket', 'cricket' );
+	ctap_card_open( 'Cricket Widget', 'dashicons-calendar-alt' );
+	ctap_module_status( 'cotlas_cricket_enabled', 'Enable Cricket Widget', 'Registers the <code>[cricket_widget]</code> and <code>[cricket_points_table]</code> shortcodes for displaying live cricket match data and series points tables using the CricAPI service.' );
+	$cric_key = get_option( 'cotlas_cricapi_key', '' );
+	ctap_field( 'CricAPI Key', '<input type="text" name="cotlas_cricapi_key" value="' . esc_attr( $cric_key ) . '" class="regular-text" placeholder="your-cricapi-key">', 'Primary API key from <a href="https://www.cricapi.com/" target="_blank" rel="noopener">cricapi.com</a> (100 calls/day on free plan).' );
+	$extra_keys = get_option( 'cotlas_cricapi_keys_extra', '' );
+	ctap_field( 'Additional API Keys', '<textarea name="cotlas_cricapi_keys_extra" rows="3" class="large-text" placeholder="One key per line...">' . esc_textarea( $extra_keys ) . '</textarea>', 'One key per line. The plugin rotates through all keys automatically to stay within the daily API limit.' );
+
+	ctap_section( 'Match Filter' );
+	$filter_countries = get_option( 'cotlas_cricket_filter_countries', 'India' );
+	ctap_field( 'Filter Countries', '<input type="text" name="cotlas_cricket_filter_countries" value="' . esc_attr( $filter_countries ) . '" class="regular-text" placeholder="e.g. India, Australia, England">', 'Comma-separated country names. The <code>[cricket_widget]</code> only shows matches related to these countries. Set to <code>all</code> to show all matches. Default: <code>India</code>.' );
+
+	ctap_section( 'Points Table Series' );
+	$series_ids = get_option( 'cotlas_cricket_series_ids', '' );
+	ctap_field( 'Series IDs', '<textarea name="cotlas_cricket_series_ids" rows="3" class="large-text" placeholder="series_id | Title (one per line)...">' . esc_textarea( $series_ids ) . '</textarea>', 'One series per line. Format: <code>series_id</code> or <code>series_id | Title</code>. Example: <code>99bdc653-7f47-4466-8d5e-5d43686c3c5a | Vijay Hazare Trophy 2026</code>. Multiple series rotate every 2 hours. Leave empty to auto-detect. Points data is fetched immediately when you save. The <code>title</code> shortcode attribute overrides this. Find series IDs at <a href="https://www.cricapi.com/" target="_blank" rel="noopener">cricapi.com</a> dashboard.' );
+
+	// TODO: Uncomment below when CricAPI provides points table series IDs via API.
+	// Currently the /v1/series endpoint doesn't include tournament series (TNPL, Ranji, etc.)
+	// that have points data. Uncomment when CricAPI adds this capability.
+	/*
+	$series_list = array();
+	if ( function_exists( 'cotlas_cricket_fetch_series_list' ) ) {
+		if ( isset( $_GET['cricket_refresh_series'] ) && current_user_can( 'manage_options' ) ) {
+			check_admin_referer( 'cotlas_cricket_refresh_series' );
+			$series_list = cotlas_cricket_fetch_series_list( true );
+		} else {
+			$series_list = cotlas_cricket_fetch_series_list();
+		}
+	}
+	if ( ! empty( $series_list ) ) {
+		$refresh_url = wp_nonce_url( add_query_arg( 'cricket_refresh_series', '1' ), 'cotlas_cricket_refresh_series' );
+		echo '<p style="margin:8px 0;"><a href="' . esc_url( $refresh_url ) . '" class="button button-secondary" style="font-size:12px;">🔄 Refresh Series List Now</a></p>';
+		$today = gmdate( 'Y-m-d' );
+		$admin_ids = array_filter( array_map( 'trim', explode( "\n", $series_ids ) ) );
+		echo '<div class="ctap-series-wrap">';
+		echo '<input type="text" class="ctap-series-search" placeholder="Search series..." style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:4px;font-size:12px;margin-bottom:8px;">';
+		echo '<div style="max-height:350px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:6px;">';
+		echo '<table class="ctap-series-table" style="width:100%;border-collapse:collapse;font-size:12px;">';
+		echo '<thead><tr style="background:#f9fafb;position:sticky;top:0;z-index:1;">';
+		echo '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">Series Name</th>';
+		echo '<th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e5e7eb;">ID</th>';
+		echo '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">Dates</th>';
+		echo '<th style="padding:6px 8px;text-align:center;border-bottom:1px solid #e5e7eb;">Status</th>';
+		echo '</tr></thead><tbody>';
+		foreach ( $series_list as $s ) {
+			if ( empty( $s['id'] ) ) { continue; }
+			$selected = in_array( $s['id'], $admin_ids, true );
+			$expired  = $s['endDate'] && $s['endDate'] < $today;
+			$started  = $s['startDate'] && $s['startDate'] <= $today;
+			if ( $selected ) { $status = '<span style="color:#16a34a;font-weight:600;">Selected</span>'; }
+			elseif ( $expired ) { $status = '<span style="color:#dc2626;">Ended</span>'; }
+			elseif ( $started ) { $status = '<span style="color:#2563eb;">Running</span>'; }
+			else { $status = '<span style="color:#9ca3af;">Upcoming</span>'; }
+			$dates = $s['startDate'] ? $s['startDate'] . ( $s['endDate'] ? ' — ' . $s['endDate'] : '' ) : '';
+			$types = array();
+			if ( $s['odi'] ) { $types[] = 'ODI'; }
+			if ( $s['t20'] ) { $types[] = 'T20'; }
+			if ( $s['test'] ) { $types[] = 'Test'; }
+			$type_str = $types ? ' <span style="color:#9ca3af;">(' . implode( ', ', $types ) . ')</span>' : '';
+			echo '<tr style="' . ( $expired ? 'opacity:0.5' : '' ) . '">';
+			echo '<td style="padding:4px 8px;border-bottom:1px solid #f3f4f6;">' . esc_html( $s['name'] ) . $type_str . '</td>';
+			echo '<td style="padding:4px 8px;border-bottom:1px solid #f3f4f6;font-family:monospace;font-size:11px;">' . esc_html( $s['id'] ) . '</td>';
+			echo '<td style="padding:4px 8px;border-bottom:1px solid #f3f4f6;text-align:center;font-size:11px;color:#9ca3af;">' . esc_html( $dates ) . '</td>';
+			echo '<td style="padding:4px 8px;border-bottom:1px solid #f3f4f6;text-align:center;">' . $status . '</td>';
+			echo '</tr>';
+		}
+		echo '</tbody></table></div></div>';
+		echo '<script>document.querySelector(".ctap-series-search").addEventListener("input",function(){var q=this.value.toLowerCase();this.parentNode.querySelectorAll(".ctap-series-table tbody tr").forEach(function(r){r.style.display=r.textContent.toLowerCase().indexOf(q)!==-1?"":"none"});});</script>';
+		echo '<p style="font-size:11px;color:#9ca3af;">Search to filter. Copy a Series ID into the field above.</p>';
+	}
+	*/
+
+	ctap_section( 'Cache & API' );
+	echo '<div style="margin:8px 0;padding:10px;background:#f9fafb;border-radius:6px;font-size:12px;line-height:1.6;">';
+	echo '<strong>Caching Strategy:</strong><br>';
+	echo '• <strong>Live matches:</strong> Data refreshed every <strong>1 hour</strong> (auto-detected)<br>';
+	echo '• <strong>Upcoming/Previous:</strong> Data cached for <strong>24 hours</strong> (refreshed at midnight)<br>';
+	echo '• <strong>Points table:</strong> Cached for <strong>4 hours</strong> per series<br>';
+	echo '• <strong>Series list:</strong> Cached for <strong>24 hours</strong>, auto-cleaned at midnight<br>';
+	echo '• <strong>Countries:</strong> Cached for <strong>30 days</strong><br>';
+	echo '• All cached data is stored in the database (not transients) for persistence.';
+	echo '</div>';
+
+	ctap_section( 'Shortcode Usage' );
+	ctap_ref_table( array(
+		array( '[cricket_widget]', 'Tabbed cricket match widget with LIVE, PREVIOUS, and UPCOMING tabs.',
+			'<code>title="क्रिकेट"</code> — widget heading<br><code>filter="india"</code> — filter by country (default) or <code>filter="all"</code><br><code>limit="5"</code> — max matches per tab<br><code>link="/schedule"</code> — button URL<br><code>link_label="Full Schedule"</code> — button text' ),
+		array( '[cricket_points_table]', 'Series points table. Uses admin-configured series or auto-detects current series.',
+			'<code>series_id="..."</code> — override admin series (auto-detected if omitted)<br><code>title="Points Table"</code> — heading (auto-set to series name if omitted)<br><code>limit="10"</code> — max rows<br><code>link="/points"</code> — arrow link URL' ),
+	) );
+	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
 	ctap_pane_open( 'query', $active );
 	ctap_card_open( 'GB Query Loop Parameters', 'dashicons-database-view' );
 	ctap_info( 'Add these in the <strong>Query Parameters</strong> panel of a GenerateBlocks Query Loop block in the editor.' );
@@ -1340,6 +1448,12 @@ function cotlas_panel_page_gb_tags() {
 			'<code>size="34"</code> — button size px<br><code>show_count="false"</code> — hide the count<br><code>class="my-class"</code> — extra CSS class' ),
 		array( 'cotlas_wishlist_count',  'Standalone wish count for the current post (Wishlist module).',
 			'<em style="color:#999">none</em>' ),
+		array( 'cricket_widget',         'Tabbed cricket match widget with LIVE, PREVIOUS, and UPCOMING tabs (Cricket module).',
+			'<code>title="क्रिकेट"</code> — heading<br><code>filter="india"</code> <code>filter="all"</code><br><code>limit="5"</code> — matches per tab<br><code>link="/schedule"</code> — button URL<br><code>link_label="Full Schedule"</code> — button text' ),
+		array( 'cricket_points_table',   'Series points table — uses admin-configured series or auto-detects (Cricket module).',
+			'<code>series_id="..."</code> — override admin setting<br><code>title="..."</code> — heading (auto-set to series name)<br><code>limit="10"</code> — max rows<br><code>link="/points"</code> — arrow link' ),
+		array( 'ipl_points_table',       'Alias for [cricket_points_table] (backward compatibility).',
+			'<em style="color:#999">same as cricket_points_table</em>' ),
 	) );
 	ctap_card_close();
 	ctap_pane_close();
@@ -1502,6 +1616,7 @@ function cotlas_panel_page_security() {
 	ctap_toggle( 'cotlas_sec_disable_feeds', 'Disable RSS/Atom Feeds', 'Terminates all feed endpoints (RSS2, Atom, RDF, comment feeds). When enabled without a secret slug, returns 410 Gone. With a secret slug, normal /feed URLs redirect to the parent page while the secret URL serves the actual feed.', 0 );
 	$secret_val = get_option( 'cotlas_sec_disable_feeds_secret', '' );
 	ctap_field( 'Secret Feed Slug', '<input type="text" name="cotlas_sec_disable_feeds_secret" value="' . esc_attr( $secret_val ) . '" class="regular-text" placeholder="e.g. dailyhunt-feed">', 'Optional. Only works when <strong>Disable RSS/Atom Feeds</strong> is enabled above. If set, normal <code>/feed</code> URLs redirect to the parent page, but <code>/' . ( $secret_val ? esc_html( $secret_val ) : 'your-secret' ) . '/</code> serves the actual RSS feed. Give this secret URL to trusted services like news aggregators. Works for category/tag feeds too (e.g. <code>/category/politics/' . ( $secret_val ? esc_html( $secret_val ) : 'your-secret' ) . '/</code>). Leave empty to completely disable all feeds.' );
+	ctap_toggle( 'cotlas_sec_feed_images', 'Featured Images in Feed', 'Appends the post featured image as a <code>&lt;media:content&gt;</code> element to each RSS/Atom feed item. Helps news aggregators and feed readers display thumbnails with your articles.', 0 );
 	ctap_toggle( 'cotlas_sec_jquery_hardening', 'jQuery Hardening', 'Removes jQuery Migrate dependency and strips version query strings from jQuery-family handles to reduce front-end version fingerprinting.', 0 );
 	ctap_card_close();
 	ctap_form_close();

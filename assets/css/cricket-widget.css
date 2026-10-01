@@ -1,0 +1,483 @@
+/* ── Cricket Widget ──────────────────────────────────────────────────── */
+.cotlas-cricket-widget{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;font-family:inherit}
+.ccw-header{padding:12px 16px;border-bottom:1px solid #f0f0f0}
+.ccw-header__title{margin:0;font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.ccw-header__link{margin-left:auto;font-size:12px;font-weight:500;color:#2563eb;text-decoration:none}
+.ccw-header__link:hover{text-decoration:underline}
+
+/* Tabs */
+.ccw-tabs{display:flex;border-bottom:1px solid #f0f0f0;padding:0 12px;gap:4px}
+.ccw-tab{background:none;border:none;padding:10px 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:4px}
+.ccw-tab:hover{color:#374151}
+.ccw-tab--active{color:#111;border-bottom-color:#111}
+.ccw-tab-count{background:#2563eb;color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;font-weight:700}
+.ccw-live-dot{width:6px;height:6px;background:#ef4444;border-radius:50%;display:inline-block;animation:ccw-pulse 1.5s infinite}
+@keyframes ccw-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Panels */
+.ccw-panels{padding:12px}
+.ccw-panel--hidden{display:none}
+.ccw-empty{text-align:center;color:#9ca3af;font-size:13px;padding:20px 0;margin:0}
+
+/* Carousel */
+.ccw-carousel{position:relative;overflow:hidden}
+.ccw-carousel__track{display:flex;transition:transform .3s ease}
+.ccw-carousel__dots{display:flex;justify-content:center;gap:6px;padding-top:8px}
+.ccw-dot{width:6px;height:6px;background:#d1d5db;border-radius:50%;cursor:pointer;transition:background .2s}
+.ccw-dot--active{background:#111}
+
+/* Card */
+.ccw-card{min-width:100%;padding:12px;box-sizing:border-box}
+.ccw-card__top{margin-bottom:10px}
+.ccw-card__badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px}
+.ccw-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.3px}
+.ccw-badge--live{background:#fef2f2;color:#dc2626;display:flex;align-items:center;gap:4px}
+.ccw-badge__dot{width:5px;height:5px;background:#dc2626;border-radius:50%;animation:ccw-pulse 1.5s infinite}
+.ccw-badge--result{background:#f0fdf4;color:#16a34a}
+.ccw-badge--upcoming{background:#eff6ff;color:#2563eb}
+.ccw-badge--type{background:#f3f4f6;color:#6b7280;font-weight:600}
+.ccw-card__series{font-size:11px;color:#6b7280;line-height:1.3}
+
+/* Teams */
+.ccw-card__teams{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.ccw-card__team{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.ccw-card__logo{border-radius:50%;object-fit:cover}
+.ccw-card__team-name{font-size:12px;font-weight:600;color:#1f2937;line-height:1.2}
+.ccw-card__score{font-size:16px;font-weight:800;color:#111}
+.ccw-card__vs{font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase}
+
+/* Footer */
+.ccw-card__footer{text-align:center}
+.ccw-card__status{font-size:12px;font-weight:600;color:#059669;line-height:1.3}
+.ccw-card__venue{font-size:11px;color:#9ca3af;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccw-card__datetime{font-size:11px;color:#6b7280;margin-top:2px}
+
+/* ── IPL Points Table ───────────────────────────────────────────────── */
+.ipl-pts{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden;font-family:inherit}
+.ipl-pts__header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0}
+.ipl-pts__title{font-size:16px;font-weight:700}
+.ipl-pts__series{font-size:12px;color:#6b7280;margin-top:2px;line-height:1.3}
+.ipl-pts__more{font-size:18px;color:#2563eb;text-decoration:none}
+.ipl-pts__table-wrap{overflow-x:auto}
+.ipl-pts__table{width:100%;border-collapse:collapse;font-size:13px}
+.ipl-pts__th{padding:8px 10px;text-align:center;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid #f0f0f0}
+.ipl-pts__th--team{text-align:left}
+.ipl-pts__td{padding:8px 10px;text-align:center;border-bottom:1px solid #f9fafb}
+.ipl-pts__td--team{display:flex;align-items:center;gap:8px;text-align:left}
+.ipl-pts__row--top4{background: #0576f3;}
+.ipl-pts__pos{font-size:11px;font-weight:700;color:#9ca3af;min-width:16px}
+.ipl-pts__logo-wrap{width:24px;height:24px;flex-shrink:0}
+.ipl-pts__logo{border-radius:50%;object-fit:cover}
+.ipl-pts__name{font-weight:600;white-space:nowrap}
+.ipl-pts__td--pts{font-weight:800;color:#111}
+.ipl-pts__empty{text-align:center;color:#9ca3af;font-size:13px;padding:20px}
+/* Custom CSS for Cotlas Travel Child Theme */
+
+/* ==========================================================================
+   Cricket Widget [cricket_widget] shortcode
+   ========================================================================== */
+
+.cotlas-cricket-widget {
+    border: 1px solid #dde3ee;
+    border-radius: 35px;
+    overflow: hidden;
+    font-size: 0.88rem;
+    background: #0d2c6e;
+    font-family: inherit;
+    width: 100%;
+}
+
+/* Header */
+.ccw-header {
+    background: #0d2c6e;
+    padding: 13px 16px;
+}
+.ccw-header__title {
+    margin: 0;
+    font-size: 1.7rem;
+    line-height: 35px;
+    font-family: var(--gp-font--nunito);
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ccw-header__link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.75rem;
+    opacity: 0.85;
+    margin-left: auto;
+    white-space: nowrap;
+}
+.ccw-header__link:hover { opacity: 1; }
+
+/* Tabs */
+.ccw-tabs {
+    display: flex;
+    border-bottom: 1px solid #e8edf5;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    background: #fff;
+    padding: 0 12px;
+}
+.ccw-tab {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 20px 17px;
+    color: #151313;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #3b82f600;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ccw-tab--active {
+    color: #0576f3;
+    border-bottom-color: #0576f3;
+}
+.ccw-tab--active:hover {
+    color: #0576f3;
+    background-color: #f7f7f7!important;
+    border-bottom-color: #0576f3;
+}
+.ccw-tab--active:focus {
+    color: #0576f3;
+    background-color: #f7f7f7!important;
+    border-bottom-color: #0576f3;
+}
+.ccw-tab:not(.ccw-tab--active):hover {color: #333;background-color: #e5e8ff!important;}
+
+/* Count badge on LIVE tab */
+.ccw-tab-count {
+    background: #c0392b;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    padding: 1px 5px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+/* Pulsing dot in LIVE tab label */
+.ccw-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e00;
+    display: inline-block;
+    animation: ccw-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ccw-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* Panels */
+.ccw-panels {
+    background:#ffffff;
+}
+.ccw-panel         { display: block; }
+.ccw-panel--hidden { display: none; }
+.ccw-carousel {
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+.ccw-carousel__track {
+    display: flex;
+    transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+.ccw-carousel .ccw-card {
+    min-width: 100%;
+    width: 100%;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+.ccw-carousel__dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0 10px;
+    border-top: 1px solid #f0f3f9;
+}
+.ccw-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d4dae8;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s;
+    flex-shrink: 0;
+}
+.ccw-dot--active {
+    background: #c0392b;
+    transform: scale(1.4);
+}
+
+.ccw-card {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid #f0f3f9;
+}
+.ccw-card:last-child { border-bottom: none; }
+
+/* Top row: status/type badges + series name */
+.ccw-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-direction: column;
+}
+.ccw-card__badges {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    flex-direction: row;
+}
+.ccw-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.ccw-badge--live     { background: #fee2e2; color: #b91c1c; }
+.ccw-badge--result   { background: #dbeafe; color: #1d4ed8; }
+.ccw-badge--upcoming { background: #dcfce7; color: #15803d; }
+.ccw-badge--type     { background: #e8edf7; color: #0d2c6e; }
+
+/* Animated dot inside LIVE badge */
+.ccw-badge__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #e00;
+    animation: ccw-pulse 1.2s ease-in-out infinite;
+}
+
+.ccw-card__series {
+    color: #131212;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.3;
+    max-width: 100%;
+}
+
+/* Team rows */
+.ccw-card__teams {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+.ccw-card__team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    flex-direction: row;
+}
+.ccw-card__logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid #eee;
+}
+.ccw-card__team-name {
+    flex: 1;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #111;
+}
+.ccw-card__score {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #0d2c6e;
+    white-space: nowrap;
+}
+
+/* VS divider between the two team rows */
+.ccw-card__vs {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #020202;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding-left: 40px;
+}
+
+/* Footer: result / time */
+.ccw-card__footer { margin-top: 4px; }
+.ccw-card__status {
+    font-size: 1rem;
+    color: #0d2c6e;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.ccw-card__datetime {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #666;
+}
+
+.ccw-empty {
+    padding: 18px 16px;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 0;
+    text-align: center;
+}
+
+
+/* ==========================================================================
+   IPL Points Table [ipl_points_table] shortcode
+   ========================================================================== */
+.ipl-pts {
+    background: #0d2c6e;
+    border-radius: 10px;
+    overflow: hidden;
+    font-family: inherit;
+    width: 100%;
+}
+.ipl-pts__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px 10px;
+}
+.ipl-pts__title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+}
+.ipl-pts__more {
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.1rem;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+}
+.ipl-pts__more:hover { opacity: 1; }
+
+.ipl-pts__table-wrap {
+    overflow-y: auto;
+    max-height: 360px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+.ipl-pts__table-wrap::-webkit-scrollbar {
+    width: 5px;
+}
+.ipl-pts__table-wrap::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ipl-pts__table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.536);
+    border-radius: 10px;
+}
+.ipl-pts__table-wrap::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.45);
+}
+.ipl-pts__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+.ipl-pts__th {
+    background: #1a3a82;
+    color: #a8bcdf;
+    font-weight: 700;
+    text-align: center;
+    padding: 7px 6px;
+    letter-spacing: 0.04em;
+    font-size: 0.72rem;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+.ipl-pts__th--team { text-align: left; padding-left: 12px; min-width: 110px; }
+.ipl-pts__th--pts  { color: #ffd700; }
+
+.ipl-pts__row {
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    transition: background 0.15s;
+}
+.ipl-pts__row:hover         { background: rgba(255,255,255,0.05); }
+.ipl-pts__row--top4 .ipl-pts__td--team { border-left: 3px solid #4ade80; }
+
+.ipl-pts__td {
+    color: #d4e0f5;
+    text-align: center;
+    padding: 8px 6px;
+    font-weight: 600;
+}
+.ipl-pts__td--team {
+    text-align: left;
+    padding-left: 10px;
+}
+.ipl-pts__td--pts {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.ipl-pts__td--team {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+.ipl-pts__pos {
+    color: #6b8cc7;
+    font-size: 0.72rem;
+    font-weight: 700;
+    min-width: 14px;
+    text-align: right;
+}
+.ipl-pts__logo-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 3px;
+    box-sizing: border-box;
+}
+.ipl-pts__logo {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    object-fit: contain;
+    display: block;
+}
+.ipl-pts__name {
+    font-weight: 700;
+    color: #fff;
+    font-size: 0.82rem;
+}
+.ipl-pts__empty {
+    color: #a8bcdf;
+    text-align: center;
+    padding: 20px;
+    font-size: 0.85rem;
+}
