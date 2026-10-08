@@ -135,7 +135,8 @@ function cotlas_social_share_shortcode($atts) {
     ), $atts, 'social_share');
 
     if ($atts['urlstructure'] === 'short') {
-        $post_url = urlencode(wp_get_shortlink());
+        $short_link = apply_filters('get_shortlink', '', get_the_ID(), 'query', false);
+        $post_url   = $short_link ? urlencode($short_link) : urlencode(home_url('?p=' . get_the_ID()));
     } else {
         $post_url = urlencode(get_permalink());
     }
