@@ -130,10 +130,15 @@ function cotlas_social_share_shortcode($atts) {
         'class'   => 'cotlas-social-share,cotlas-social-share-top,cotlas-social-share-aside,cotlas-social-share-footer',
         'networks' => 'facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print',
         'size' => '24',
-        'show_names' => 'false'
+        'show_names' => 'false',
+        'urlstructure' => 'long'
     ), $atts, 'social_share');
 
-    $post_url   = urlencode(get_permalink());
+    if ($atts['urlstructure'] === 'short') {
+        $post_url = urlencode(wp_get_shortlink());
+    } else {
+        $post_url = urlencode(get_permalink());
+    }
     $post_title = urlencode(get_the_title());
     $post_image = has_post_thumbnail() ? wp_get_attachment_url(get_post_thumbnail_id()) : '';
 
