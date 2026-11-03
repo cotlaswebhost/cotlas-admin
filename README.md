@@ -2,7 +2,8 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.7.4
+- **Version:** 3.0.0
+
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -127,3 +128,19 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 - Obfuscation caused image urls having @ to be hexed, we fixed it. 
 - Password policy fixed.
 - OG addittions Crawler exemptions.
+
+
+### 3.0.0
+
+- New: **Whitelabel** module (Admin Tools → Whitelabel tab) — replace all Cotlas branding: login/auth background images & logos, wp-admin sidebar logos (expanded + collapsed), dashboard footer credits (HTML), dashboard promo widget, and the "Latest Articles" RSS feed URL. Empty options fall back to bundled defaults; nothing changes on activation.
+- New: **Social Share Box** on the post edit screen — "Share this now" box with network icons and a copy button, shown below the title in the classic editor and in the publish-confirmation panel in the block editor. Configurable under Social Media → Social share box (enable toggle, short-link toggle, per-network toggles, custom CSS box; 24px icons with per-network colors).
+- New: **Social Share** shortcode gained a `urlstructure="short"` attribute to share the short URL (WP shortlink / `?p=ID`) instead of the full permalink. Documented in the Social Media → Codes tab and Shortcodes Info page.
+- Improved: **Email Obfuscation** now only obfuscates text nodes (image filenames containing `@` are no longer mangled) and fully hex-encodes `mailto:` links so they still work.
+- Improved: **Password Policy** current-password field is now rendered server-side and always visible; re-authentication is gated to profile/user-edit screens (fixes password changes on sites without GeneratePress).
+- Improved: **OpenGraph / SEO** additions — `fb:app_id`, `theme-color`, `og:locale`, `og:site_name`, `og:logo`, `article:publisher`, `article:published_time`, `article:modified_time`, plus `og:image:alt`/width/height/type. Added Facebook App ID and Theme Color options.
+- Improved: **Image Conversion** no longer serves WebP to social crawlers (WhatsApp, Facebook, Twitter, etc.) — `og:image` keeps the original JPEG/PNG so thumbnails render correctly.
+- Improved: **Hotlink Protection** never blocks social/SEO crawlers, and ships with 16 built-in allowed domains (Facebook, WhatsApp, Twitter/X, LinkedIn, Pinterest, Telegram, Slack, Discord, Google, Bing, Threads, Tumblr, Reddit, Quora, Skype) merged with the custom whitelist.
+- Improved: **Auth page creation** now sets the Authentication Page template automatically and auto-fills all empty option fields (slugs, redirects, rate limit) with defaults.
+- Fixed: `[social_share]` default `class` attribute used commas instead of spaces, which broke all share-button CSS matching.
+- Fixed: **WhatsApp og:image** thumbnail failure traced to CloudPanel nginx `pagespeed EnableFilters remove_quotes;` stripping attribute quotes — documented as a server-side fix (remove that line, reload nginx, purge caches).
+- Fixed: **Latest Articles** widget now consumes the whitelabel feed URL and feed note; "Read more" follows the custom feed origin.

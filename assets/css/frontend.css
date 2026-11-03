@@ -494,7 +494,7 @@ html.cotlas-delete-modal-open {
     display: flex;
     align-items: center;
     padding-left: 15px;
-    gap: 10px;
+    gap: 12px;
 }
 .cotlas-social-share-top {
     justify-content: flex-start;

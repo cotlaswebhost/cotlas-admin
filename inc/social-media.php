@@ -127,7 +127,7 @@ add_action('plugins_loaded', function() { new CotlasSocialMedia(); });
 // Social Share Shortcode - FIXED VERSION
 function cotlas_social_share_shortcode($atts) {
     $atts = shortcode_atts(array(
-        'class'   => 'cotlas-social-share,cotlas-social-share-top,cotlas-social-share-aside,cotlas-social-share-footer',
+        'class'   => 'cotlas-social-share cotlas-social-share-top cotlas-social-share-aside cotlas-social-share-footer',
         'networks' => 'facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print',
         'size' => '24',
         'show_names' => 'false',
@@ -144,7 +144,7 @@ function cotlas_social_share_shortcode($atts) {
     $post_image = has_post_thumbnail() ? wp_get_attachment_url(get_post_thumbnail_id()) : '';
 
     $networks = explode(',', $atts['networks']);
-    $class    = esc_attr($atts['class']);
+    $class    = esc_attr( str_replace( ',', ' ', $atts['class'] ) );
     $size = intval($atts['size']) > 0 ? intval($atts['size']) : 24;
     $show_names = filter_var($atts['show_names'], FILTER_VALIDATE_BOOLEAN);
 

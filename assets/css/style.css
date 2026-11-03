@@ -521,9 +521,12 @@ body.cotlas-admin-light .welcome-panel {
 body.cotlas-admin-light .postbox-header,
 body.cotlas-admin-light .stuffbox > h3,
 body.cotlas-admin-light .widget-top {
-	padding: 18px 20px;
+	
 	border-bottom: 1px solid #edf1f6;
 	background: transparent;
+}
+body.cotlas-admin-light .edit-post-meta-boxes-area #poststuff h2.hndle {
+	padding: 0 18px;
 }
 
 body.cotlas-admin-light .postbox .hndle,

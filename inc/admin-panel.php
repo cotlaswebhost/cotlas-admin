@@ -26,6 +26,22 @@ function cotlas_panel_process_saves() {
 	// Handle auth page creation before the regular save handler runs.
 	if ( isset( $_POST['cotlas_create_auth_pages'] ) && wp_verify_nonce( $nonce, 'ctap_save_login_settings' ) ) {
 		if ( current_user_can( 'manage_options' ) ) {
+			// Auto-fill option defaults so the settings form is populated.
+			$defaults = array(
+				'cotlas_auth_login_slug'          => 'login',
+				'cotlas_auth_register_slug'       => 'register',
+				'cotlas_auth_forgot_slug'         => 'reset-password',
+				'cotlas_auth_redirect_privileged' => '/wp-admin/',
+				'cotlas_auth_redirect_default'    => '/',
+				'cotlas_auth_redirect_register'   => '/',
+				'cotlas_auth_rate_limit'          => '5',
+			);
+			foreach ( $defaults as $key => $value ) {
+				if ( '' === (string) get_option( $key, '' ) ) {
+					update_option( $key, $value );
+				}
+			}
+
 			$login_slug    = sanitize_text_field( get_option( 'cotlas_auth_login_slug', 'login' ) );
 			$register_slug = sanitize_text_field( get_option( 'cotlas_auth_register_slug', 'register' ) );
 			$forgot_slug   = sanitize_text_field( get_option( 'cotlas_auth_forgot_slug', 'reset-password' ) );
@@ -41,6 +57,8 @@ function cotlas_panel_process_saves() {
 				$existing = get_page_by_path( $page_data['slug'] );
 				if ( $existing ) {
 					$results[] = $page_data['title'] . ':exists:' . $existing->ID;
+					// Ensure existing pages also use the auth template.
+					update_post_meta( $existing->ID, '_wp_page_template', 'auth-template.php' );
 					continue;
 				}
 				$page_id = wp_insert_post( array(
@@ -51,8 +69,12 @@ function cotlas_panel_process_saves() {
 					'post_type'      => 'page',
 					'comment_status' => 'closed',
 					'ping_status'    => 'closed',
+					'meta_input'     => array(
+						'_wp_page_template' => 'auth-template.php',
+					),
 				) );
 				if ( $page_id && ! is_wp_error( $page_id ) ) {
+					update_post_meta( $page_id, '_wp_page_template', 'auth-template.php' );
 					$results[] = $page_data['title'] . ':created:' . $page_id;
 				} else {
 					$results[] = $page_data['title'] . ':error:0';
@@ -1058,40 +1080,6 @@ function cotlas_panel_page_site_settings() {
 	ctap_form_close();
 	ctap_pane_close();
 
-	/* ── Share Box tab ────────────────────────────────────────────────────── */
-	ctap_pane_open( 'share-box', $active );
-	ctap_form_open( 'ctap_save_social_share_box', 'share-box' );
-
-	ctap_card_open( 'Post Edit Screen Share Box', 'dashicons-share-alt2' );
-	ctap_info( 'Adds a "Share this now" box to the post edit screen — just below the title in the classic editor, and in the right sidebar meta box in the block editor (published posts only). Icons are rendered by the <code>[social_share]</code> shortcode at 24px.' );
-	ctap_toggle( 'cotlas_share_box_enabled', 'Enable Share Box on Post Edit Screen', 'Shows the share box with icons and the post URL on the edit screen. Turn off to remove it everywhere.', 0 );
-	ctap_toggle( 'cotlas_share_box_shortlink', 'Use Short Link', 'Shares the short URL (WP shortlink / <code>?p=ID</code>, or a shortlink plugin&rsquo;s URL via the <code>get_shortlink</code> filter) instead of the full permalink.', 0 );
-
-	ctap_section( 'Networks' );
-	ctap_toggle( 'cotlas_share_box_facebook',  'Facebook',  '', 1 );
-	ctap_toggle( 'cotlas_share_box_twitter',   'X (Twitter)', '', 1 );
-	ctap_toggle( 'cotlas_share_box_linkedin',  'LinkedIn', '', 1 );
-	ctap_toggle( 'cotlas_share_box_whatsapp',  'WhatsApp', '', 1 );
-	ctap_toggle( 'cotlas_share_box_telegram',  'Telegram', '', 1 );
-	ctap_toggle( 'cotlas_share_box_pinterest', 'Pinterest', '', 1 );
-	ctap_toggle( 'cotlas_share_box_reddit',    'Reddit', '', 1 );
-	ctap_toggle( 'cotlas_share_box_threads',   'Threads', '', 1 );
-	ctap_toggle( 'cotlas_share_box_copy',      'Copy Link', 'Copy-to-clipboard button with a toast notification.', 1 );
-	ctap_toggle( 'cotlas_share_box_print',     'Print', '', 1 );
-	ctap_card_close();
-
-	ctap_card_open( 'Share Box CSS', 'dashicons-editor-custom' );
-	ctap_info( 'Default styles are hardcoded (one-line flex layout, 24px icons, compact URL row). Paste additional CSS below to override — it is printed after the defaults, so your rules win. Example: <code>.cotlas-share-box-icons svg{width:32px;height:32px}</code>' );
-	ctap_field(
-		'Custom CSS',
-		'<textarea name="cotlas_share_box_css" rows="6" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( get_option( 'cotlas_share_box_css', '' ) ) . '</textarea>',
-		'Plain CSS only (no <code>&lt;style&gt;</code> tags). Target <code>.cotlas-share-box</code>, <code>.cotlas-share-box-label</code>, <code>.cotlas-share-box-icons</code>, and <code>.cotlas-share-box-url</code>.'
-	);
-	ctap_card_close();
-
-	ctap_form_close();
-	ctap_pane_close();
-
 	ctap_pane_open( 'codes', $active );
 	ctap_card_open( 'Available Shortcodes', 'dashicons-shortcode' );
 	ctap_info( 'These shortcodes output the values saved above. No attributes — they simply return the saved value. Also available as <strong>GenerateBlocks Dynamic Tags</strong> (company_info tag).' );
@@ -1140,7 +1128,7 @@ function cotlas_panel_page_login() {
 	ctap_card_close();
 
 	ctap_card_open( 'Create Auth Pages', 'dashicons-admin-page' );
-	ctap_info( 'Automatically create the three authentication pages with the correct shortcodes. If a page with the configured slug already exists, it will be skipped. <strong>Save your slug settings above first</strong> before creating pages.' );
+	ctap_info( 'Automatically create the three authentication pages with the correct shortcodes and the <strong>Authentication Page</strong> template. Empty option fields below are auto-filled with their defaults. If a page with the configured slug already exists, it will be skipped (but its template will be set to Authentication Page). <strong>Save your slug settings above first</strong> before creating pages.' );
 
 	// Show page status.
 	$login_slug    = get_option( 'cotlas_auth_login_slug', 'login' );
@@ -2013,6 +2001,40 @@ function cotlas_panel_page_social() {
 	ctap_field( 'Threads Profile',   ctap_url( 'cotlas_social_threads',   'https://threads.net/...' ) );
 	ctap_field( 'WhatsApp Number',   ctap_input( 'cotlas_company_whatsapp' ), 'International format without + or spaces, e.g. <code>15551234567</code>.' );
 	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Share Box tab ────────────────────────────────────────────────────── */
+	ctap_pane_open( 'share-box', $active );
+	ctap_form_open( 'ctap_save_social_share_box', 'share-box' );
+
+	ctap_card_open( 'Post Edit Screen Share Box', 'dashicons-share-alt2' );
+	ctap_info( 'Adds a "Share this now" box to the post edit screen — just below the title in the classic editor, and in the right sidebar meta box in the block editor (published posts only). Icons are rendered by the <code>[social_share]</code> shortcode at 24px.' );
+	ctap_toggle( 'cotlas_share_box_enabled', 'Enable Share Box on Post Edit Screen', 'Shows the share box with icons and the post URL on the edit screen. Turn off to remove it everywhere.', 0 );
+	ctap_toggle( 'cotlas_share_box_shortlink', 'Use Short Link', 'Shares the short URL (WP shortlink / <code>?p=ID</code>, or a shortlink plugin&rsquo;s URL via the <code>get_shortlink</code> filter) instead of the full permalink.', 0 );
+
+	ctap_section( 'Networks' );
+	ctap_toggle( 'cotlas_share_box_facebook',  'Facebook',  '', 1 );
+	ctap_toggle( 'cotlas_share_box_twitter',   'X (Twitter)', '', 1 );
+	ctap_toggle( 'cotlas_share_box_linkedin',  'LinkedIn', '', 1 );
+	ctap_toggle( 'cotlas_share_box_whatsapp',  'WhatsApp', '', 1 );
+	ctap_toggle( 'cotlas_share_box_telegram',  'Telegram', '', 1 );
+	ctap_toggle( 'cotlas_share_box_pinterest', 'Pinterest', '', 1 );
+	ctap_toggle( 'cotlas_share_box_reddit',    'Reddit', '', 1 );
+	ctap_toggle( 'cotlas_share_box_threads',   'Threads', '', 1 );
+	ctap_toggle( 'cotlas_share_box_copy',      'Copy Link', 'Copy-to-clipboard button with a toast notification.', 1 );
+	ctap_toggle( 'cotlas_share_box_print',     'Print', '', 1 );
+	ctap_card_close();
+
+	ctap_card_open( 'Share Box CSS', 'dashicons-editor-custom' );
+	ctap_info( 'Default styles are hardcoded (one-line flex layout, 24px icons, compact URL row). Paste additional CSS below to override — it is printed after the defaults, so your rules win. Example: <code>.cotlas-share-box-icons svg{width:32px;height:32px}</code>' );
+	ctap_field(
+		'Custom CSS',
+		'<textarea name="cotlas_share_box_css" rows="6" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( get_option( 'cotlas_share_box_css', '' ) ) . '</textarea>',
+		'Plain CSS only (no <code>&lt;style&gt;</code> tags). Target <code>.cotlas-share-box</code>, <code>.cotlas-share-box-label</code>, <code>.cotlas-share-box-icons</code>, and <code>.cotlas-share-box-url</code>.'
+	);
+	ctap_card_close();
+
 	ctap_form_close();
 	ctap_pane_close();
 
