@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.7.3
+ * Version:     2.7.4
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -132,6 +132,20 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_whitelabel_login_branding'             => 1,
 		'cotlas_whitelabel_dashboard_ad'               => 1,
 		'cotlas_whitelabel_hide_sidebar_logo'          => 0,
+
+		// Social share box toggles.
+		'cotlas_share_box_enabled'                     => 0,
+		'cotlas_share_box_shortlink'                   => 0,
+		'cotlas_share_box_facebook'                    => 1,
+		'cotlas_share_box_twitter'                     => 1,
+		'cotlas_share_box_linkedin'                    => 1,
+		'cotlas_share_box_whatsapp'                    => 1,
+		'cotlas_share_box_telegram'                    => 1,
+		'cotlas_share_box_pinterest'                   => 1,
+		'cotlas_share_box_reddit'                      => 1,
+		'cotlas_share_box_threads'                     => 1,
+		'cotlas_share_box_copy'                        => 1,
+		'cotlas_share_box_print'                       => 1,
 	);
 
 	/**
@@ -190,6 +204,7 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/admin-panel.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/seo/bootstrap.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/social-media.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/social-share-box.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/migration-helper.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/trending-widgets.php';

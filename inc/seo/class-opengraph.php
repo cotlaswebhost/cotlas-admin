@@ -32,6 +32,7 @@ class OpenGraph {
 		$type    = $this->get_type();
 
 		echo "\n";
+		$this->print_meta( 'og:locale', str_replace( '_', '-', get_locale() ) );
 		$this->print_meta( 'og:title', $title );
 		$this->print_meta( 'og:description', $desc );
 		$this->print_meta( 'og:image', $image );
@@ -43,6 +44,28 @@ class OpenGraph {
 		$this->print_meta( 'og:image:alt', $image_meta['alt'] );
 		$this->print_meta( 'og:url', $url );
 		$this->print_meta( 'og:type', $type );
+		$this->print_meta( 'og:site_name', get_bloginfo( 'name' ) );
+		$this->print_meta( 'og:logo', Schema_Generator::get_company_logo_url() );
+
+		$facebook_app_id = trim( (string) get_option( 'cotlas_seo_facebook_app_id', '' ) );
+		if ( '' !== $facebook_app_id ) {
+			$this->print_meta( 'fb:app_id', $facebook_app_id );
+		}
+
+		$facebook_page = trim( (string) get_option( 'cotlas_social_facebook', '' ) );
+		if ( '' !== $facebook_page ) {
+			$this->print_meta( 'article:publisher', $facebook_page );
+		}
+
+		if ( 'article' === $type && $post_id ) {
+			$this->print_meta( 'article:published_time', get_the_date( 'c', $post_id ) );
+			$this->print_meta( 'article:modified_time', get_the_modified_date( 'c', $post_id ) );
+		}
+
+		$theme_color = trim( (string) get_option( 'cotlas_seo_theme_color', '' ) );
+		if ( '' !== $theme_color ) {
+			echo '<meta name="theme-color" content="' . esc_attr( $theme_color ) . '">' . "\n";
+		}
 
 		if ( get_option( 'cotlas_seo_enable_twitter_cards', 0 ) ) {
 			$this->print_meta( 'twitter:card', 'summary_large_image' );

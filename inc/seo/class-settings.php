@@ -68,6 +68,16 @@ class Settings {
 			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_url' ),
 			'default'           => '',
 		) );
+		register_setting( self::OPTION_GROUP, 'cotlas_seo_facebook_app_id', array(
+			'type'              => 'string',
+			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_text' ),
+			'default'           => '',
+		) );
+		register_setting( self::OPTION_GROUP, 'cotlas_seo_theme_color', array(
+			'type'              => 'string',
+			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_text' ),
+			'default'           => '',
+		) );
 		register_setting( self::OPTION_GROUP, 'cotlas_seo_localbusiness_type', array(
 			'type'              => 'string',
 			'sanitize_callback' => array( 'CotlasAdmin\\SEO\\Schema_Generator', 'sanitize_text' ),
@@ -190,6 +200,10 @@ class Settings {
 		self::toggle( 'cotlas_seo_use_seo_plugin_title', 'Use SEO plugin title if available', 'Uses Yoast, Rank Math, SEOPress, or AIOSEO title fields before falling back to the WordPress title.', 0 );
 		self::toggle( 'cotlas_seo_use_seo_plugin_description', 'Use SEO plugin description if available', 'Uses SEO plugin meta descriptions before falling back to the excerpt or trimmed content.', 0 );
 		self::toggle( 'cotlas_seo_enable_twitter_cards', 'Enable Twitter Cards', 'Adds twitter:card metadata alongside OpenGraph tags.', 0 );
+		ctap_section( 'Facebook & Browser' );
+		self::text_field( 'cotlas_seo_facebook_app_id', 'Facebook App ID', get_option( 'cotlas_seo_facebook_app_id', '' ), 'text' );
+		self::text_field( 'cotlas_seo_theme_color', 'Theme Color', get_option( 'cotlas_seo_theme_color', '' ), 'text' );
+		ctap_info( 'Facebook App ID outputs <code>fb:app_id</code> (enables Facebook Insights for the domain). Theme Color outputs <code>theme-color</code> for the mobile browser toolbar, e.g. <code>#4285f4</code>. The module also outputs <code>og:locale</code>, <code>og:site_name</code>, <code>og:logo</code>, <code>og:image:alt</code>, <code>article:publisher</code>, and article publish/modify times automatically.' );
 		ctap_card_close();
 		ctap_card_open( 'OpenGraph Priority', 'dashicons-editor-help' );
 		ctap_info( '<ul style="margin:.5em 0 0 1.4em"><li><strong>Title</strong>: SEO plugin title if enabled, otherwise the current post or page title.</li><li><strong>Description</strong>: Yoast description, then Rank Math description, then excerpt, then trimmed content.</li><li><strong>Image</strong>: Featured image, then company logo, then default image.</li><li><strong>Type</strong>: article for posts and custom post types, website for pages, archives, and the homepage.</li></ul>' );

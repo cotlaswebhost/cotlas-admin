@@ -270,6 +270,24 @@ function cotlas_panel_process_saves() {
 				'cotlas_company_whatsapp' => 'sanitize_text_field',
 			),
 		),
+		'ctap_save_social_share_box' => array(
+			'page' => 'cotlas-social-media',
+			'map'  => array(
+				'cotlas_share_box_enabled'   => 'checkbox',
+				'cotlas_share_box_shortlink' => 'checkbox',
+				'cotlas_share_box_css'       => 'cotlas_sanitize_css',
+				'cotlas_share_box_facebook'  => 'checkbox',
+				'cotlas_share_box_twitter'   => 'checkbox',
+				'cotlas_share_box_linkedin'  => 'checkbox',
+				'cotlas_share_box_whatsapp'  => 'checkbox',
+				'cotlas_share_box_telegram'  => 'checkbox',
+				'cotlas_share_box_pinterest' => 'checkbox',
+				'cotlas_share_box_reddit'    => 'checkbox',
+				'cotlas_share_box_threads'   => 'checkbox',
+				'cotlas_share_box_copy'      => 'checkbox',
+				'cotlas_share_box_print'     => 'checkbox',
+			),
+		),
 		'ctap_save_tracking_analytics' => array(
 			'page' => 'cotlas-tracking-codes',
 			'map'  => array(
@@ -816,6 +834,18 @@ function ctap_sanitize_tracking_code( $code ) {
 	return trim( $code );
 }
 
+/**
+ * Sanitize a CSS snippet from the share box (or similar) settings field.
+ * Strips any HTML/style tags and keeps the raw stylesheet text.
+ */
+function cotlas_sanitize_css( $css ) {
+	$css = is_string( $css ) ? $css : '';
+	$css = wp_check_invalid_utf8( $css );
+	$css = wp_strip_all_tags( $css );
+
+	return $css;
+}
+
 /** Open the page wrapper + gradient header. */
 function ctap_page_open( $title, $dashicon, $desc ) {
 	echo '<div class="wrap ctap-wrap">';
@@ -1025,6 +1055,40 @@ function cotlas_panel_page_site_settings() {
 	ctap_field( 'Short Intro',     ctap_textarea( 'cotlas_company_short_intro', '', 3 ), 'HTML allowed (links, strong, em).' );
 	ctap_field( 'WhatsApp Number', ctap_input( 'cotlas_company_whatsapp' ), 'International format without + or spaces, e.g. <code>15551234567</code>.' );
 	ctap_card_close();
+	ctap_form_close();
+	ctap_pane_close();
+
+	/* ── Share Box tab ────────────────────────────────────────────────────── */
+	ctap_pane_open( 'share-box', $active );
+	ctap_form_open( 'ctap_save_social_share_box', 'share-box' );
+
+	ctap_card_open( 'Post Edit Screen Share Box', 'dashicons-share-alt2' );
+	ctap_info( 'Adds a "Share this now" box to the post edit screen — just below the title in the classic editor, and in the right sidebar meta box in the block editor (published posts only). Icons are rendered by the <code>[social_share]</code> shortcode at 24px.' );
+	ctap_toggle( 'cotlas_share_box_enabled', 'Enable Share Box on Post Edit Screen', 'Shows the share box with icons and the post URL on the edit screen. Turn off to remove it everywhere.', 0 );
+	ctap_toggle( 'cotlas_share_box_shortlink', 'Use Short Link', 'Shares the short URL (WP shortlink / <code>?p=ID</code>, or a shortlink plugin&rsquo;s URL via the <code>get_shortlink</code> filter) instead of the full permalink.', 0 );
+
+	ctap_section( 'Networks' );
+	ctap_toggle( 'cotlas_share_box_facebook',  'Facebook',  '', 1 );
+	ctap_toggle( 'cotlas_share_box_twitter',   'X (Twitter)', '', 1 );
+	ctap_toggle( 'cotlas_share_box_linkedin',  'LinkedIn', '', 1 );
+	ctap_toggle( 'cotlas_share_box_whatsapp',  'WhatsApp', '', 1 );
+	ctap_toggle( 'cotlas_share_box_telegram',  'Telegram', '', 1 );
+	ctap_toggle( 'cotlas_share_box_pinterest', 'Pinterest', '', 1 );
+	ctap_toggle( 'cotlas_share_box_reddit',    'Reddit', '', 1 );
+	ctap_toggle( 'cotlas_share_box_threads',   'Threads', '', 1 );
+	ctap_toggle( 'cotlas_share_box_copy',      'Copy Link', 'Copy-to-clipboard button with a toast notification.', 1 );
+	ctap_toggle( 'cotlas_share_box_print',     'Print', '', 1 );
+	ctap_card_close();
+
+	ctap_card_open( 'Share Box CSS', 'dashicons-editor-custom' );
+	ctap_info( 'Default styles are hardcoded (one-line flex layout, 24px icons, compact URL row). Paste additional CSS below to override — it is printed after the defaults, so your rules win. Example: <code>.cotlas-share-box-icons svg{width:32px;height:32px}</code>' );
+	ctap_field(
+		'Custom CSS',
+		'<textarea name="cotlas_share_box_css" rows="6" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( get_option( 'cotlas_share_box_css', '' ) ) . '</textarea>',
+		'Plain CSS only (no <code>&lt;style&gt;</code> tags). Target <code>.cotlas-share-box</code>, <code>.cotlas-share-box-label</code>, <code>.cotlas-share-box-icons</code>, and <code>.cotlas-share-box-url</code>.'
+	);
+	ctap_card_close();
+
 	ctap_form_close();
 	ctap_pane_close();
 
@@ -1932,8 +1996,9 @@ function cotlas_panel_page_post_formats() {
 function cotlas_panel_page_social() {
 	ctap_page_open( 'Social Media', 'dashicons-share', 'Site-wide social media URLs used by shortcodes and GenerateBlocks dynamic tags.' );
 	$tabs = array(
-		array( 'id' => 'links', 'label' => 'Social Links', 'icon' => 'dashicons-share' ),
-		array( 'id' => 'codes', 'label' => 'Shortcodes',   'icon' => 'dashicons-shortcode' ),
+		array( 'id' => 'links',      'label' => 'Social Links',     'icon' => 'dashicons-share' ),
+		array( 'id' => 'share-box',  'label' => 'Social share box', 'icon' => 'dashicons-share-alt2' ),
+		array( 'id' => 'codes',      'label' => 'Shortcodes',       'icon' => 'dashicons-shortcode' ),
 	);
 	$active = ctap_nav( $tabs );
 
@@ -1958,7 +2023,7 @@ function cotlas_panel_page_social() {
 		array( 'cotlas_social',       'Site social icons. Only platforms with a saved URL are rendered.',
 			'<code>class="my-class"</code><br><code>size="24"</code> — icon size in px<br><code>show_names="1"</code> — show platform names beside icons<br><code>networks="facebook,twitter,youtube,instagram,linkedin,threads"</code>' ),
 		array( 'social_share',        'Share buttons for the current post.',
-			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print"</code>' ),
+			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,linkedin,whatsapp,telegram,pinterest,reddit,threads,copy,print"</code><br><code>urlstructure="short"</code> &mdash; share the short URL (WP shortlink / <code>?p=ID</code>) instead of the full permalink. Default: <code>long</code>' ),
 		array( 'author_social_links', "Post author's social links from their user profile.",
 			'<code>class="my-class"</code> <code>size="24"</code> <code>show_names="1"</code><br><code>networks="facebook,twitter,youtube,instagram,linkedin,pinterest"</code>' ),
 		array( 'social_facebook',     'Facebook URL shortcode — returns the saved URL.',

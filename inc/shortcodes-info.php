@@ -54,7 +54,7 @@ function cotlas_render_shortcodes_info_page() {
         ['tag' => 'gp_nav',                 'desc' => 'Renders the GeneratePress navigation menu. No attributes.'],
         ['tag' => 'first_category',         'desc' => 'Shows the first category of the current post as a linked badge with icon. No attributes.'],
         ['tag' => 'yoast_primary_category', 'desc' => 'Displays Yoast primary category (or first category fallback). Supports: show_link, class, text_class, fallback.'],
-        ['tag' => 'social_share',           'desc' => 'Social share buttons for the current post. Supports: class, size, show_names, networks.'],
+        ['tag' => 'social_share',           'desc' => 'Social share buttons for the current post. Supports: class, size, show_names, networks, urlstructure.'],
         ['tag' => 'author_social_links',    'desc' => 'Author social profile links from their WP profile. Supports: class, size, show_names, networks.'],
         ['tag' => 'cotlas_social',          'desc' => 'Site social icons from Site Settings. Supports: class, size, show_names, networks.'],
         ['tag' => 'audio_player',           'desc' => 'HTML5 audio player for Audio-format posts. Requires _audio_file_url meta. Supports: style, width, height, autoplay, loop.'],
@@ -267,6 +267,7 @@ function cotlas_render_shortcodes_info_page() {
     echo '<li><strong>size</strong>: Icon size in pixels. Default: <code>24</code>. Example: <code>[social_share size="20"]</code></li>';
     echo '<li><strong>show_names</strong>: <code>true</code> | <code>false</code> (default) &mdash; show platform label next to icon. Example: <code>[social_share show_names="true"]</code></li>';
     echo '<li><strong>networks</strong>: Comma-separated platforms to include. Default: all. Allowed values: <code>facebook, twitter, linkedin, whatsapp, telegram, pinterest, reddit, threads, print</code>. Example: <code>[social_share networks="facebook,twitter,whatsapp"]</code></li>';
+    echo '<li><strong>urlstructure</strong>: <code>long</code> (default) shares the full permalink; <code>short</code> shares the short URL (WP shortlink via the <code>get_shortlink</code> filter, falling back to <code>?p=ID</code>). Example: <code>[social_share urlstructure="short"]</code></li>';
     echo '</ul>';
     echo '</div>';
 

@@ -743,7 +743,7 @@ if ( ! function_exists( 'cotlas_password_policy_render_current_password_field' )
 		}
 		$is_own_profile = get_current_user_id() === (int) $profile_user->ID;
 		?>
-		<table id="cotlas-password-verification-source" class="form-table" role="presentation" style="display:none;">
+		<table id="cotlas-password-verification-source" class="form-table" role="presentation">
 			<tbody>
 				<tr id="cotlas-current-password-row">
 					<th scope="row"><label for="cotlas_current_password"><?php esc_html_e( 'Current Password', 'cotlas-admin' ); ?></label></th>
@@ -778,11 +778,19 @@ if ( ! function_exists( 'cotlas_password_policy_position_current_password_field'
 			var sourceTable = document.getElementById('cotlas-password-verification-source');
 			var currentPasswordRow = document.getElementById('cotlas-current-password-row');
 			if (!sourceTable || !currentPasswordRow) return;
-			var newPasswordRow = document.querySelector('tr.user-pass1-wrap');
-			if (newPasswordRow) { newPasswordRow.insertAdjacentElement('afterend', currentPasswordRow); sourceTable.remove(); return; }
-			var sessionsRow = document.querySelector('tr.user-sessions-wrap');
-			if (sessionsRow) { sessionsRow.insertAdjacentElement('beforebegin', currentPasswordRow); sourceTable.remove(); return; }
-			sourceTable.style.display = '';
+			// Progressive enhancement: move the row next to the password fields
+			// when the expected markup exists. If a selector misses, the row
+			// simply stays visible at its original position in the form.
+			var targetRow = document.querySelector('tr.user-pass2-wrap')
+				|| document.querySelector('tr.user-pass1-wrap')
+				|| document.querySelector('tr.user-sessions-wrap');
+			if (!targetRow) return;
+			if (targetRow.matches('tr.user-sessions-wrap')) {
+				targetRow.insertAdjacentElement('beforebegin', currentPasswordRow);
+			} else {
+				targetRow.insertAdjacentElement('afterend', currentPasswordRow);
+			}
+			sourceTable.remove();
 		});
 		</script>
 		<?php
@@ -796,6 +804,15 @@ if ( ! function_exists( 'cotlas_password_policy_handle_profile_update' ) ) {
 		}
 		$new_password = wp_unslash( (string) $_POST['pass1'] );
 		cotlas_password_policy_add_wp_errors( $errors, $new_password );
+
+		// Re-authentication is enforced only on the screens that render the
+		// current-password field (profile.php / user-edit.php). Other paths
+		// that fire this hook (e.g. user-new.php via edit_user()) cannot
+		// collect it — skipping there prevents a permanent save lockout.
+		$screen = get_current_screen();
+		if ( ! $screen || ! in_array( $screen->id, array( 'profile', 'user-edit' ), true ) ) {
+			return;
+		}
 
 		$actor = wp_get_current_user();
 		if ( ! $actor || ! $actor->exists() ) {
@@ -1099,14 +1116,55 @@ if ( ! function_exists( 'cotlas_email_obfuscation_filter_output' ) ) {
 		if ( ! is_string( $html ) || $html === '' ) {
 			return $html;
 		}
-		$html = preg_replace( '/mailto:\s*([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,})/i', '$1', $html );
-		$html = preg_replace_callback(
-			'/\b([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,})\b/i',
-			static function ( $matches ) {
-				return cotlas_email_obfuscation_encode( $matches[1] );
+
+		// Park <script>/<style> blocks — hex entities would corrupt JS, JSON-LD
+		// and CSS contents. They are restored untouched at the end.
+		$parked = array();
+		$html   = preg_replace_callback(
+			'/<(script|style)\b[^>]*>.*?<\/\1>/is',
+			static function ( $m ) use ( &$parked ) {
+				$key            = "\x01cotlasobf" . count( $parked ) . "\x01";
+				$parked[ $key ] = $m[0];
+				return $key;
 			},
 			$html
 		);
+
+		// mailto links: encode the whole href value (scheme + address) so
+		// browsers still resolve it, but scrapers only see hex entities.
+		$html = preg_replace_callback(
+			'/(href\s*=\s*(["\']))\s*mailto:\s*([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}[^"\']*)\2/i',
+			static function ( $m ) {
+				return $m[1] . cotlas_email_obfuscation_encode( 'mailto:' . $m[3] ) . $m[2];
+			},
+			$html
+		);
+
+		// Legacy behaviour: drop a bare mailto: scheme from visible text.
+		$html = preg_replace( '/mailto:\s*([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,})/i', '$1', $html );
+
+		// Obfuscate emails in TEXT NODES only. Anything inside a tag (src,
+		// srcset, href, data-* attributes...) is left untouched so URLs that
+		// merely contain an "@" — image file names, query strings — never break.
+		$parts = preg_split( '/(<(?:[^>"\']|"[^"]*"|\'[^\']*\')*>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+		foreach ( $parts as $i => $part ) {
+			if ( $part === '' || $part[0] === '<' ) {
+				continue;
+			}
+			$parts[ $i ] = preg_replace_callback(
+				'/\b([A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,})\b/i',
+				static function ( $matches ) {
+					return cotlas_email_obfuscation_encode( $matches[1] );
+				},
+				$part
+			);
+		}
+		$html = implode( '', $parts );
+
+		if ( ! empty( $parked ) ) {
+			$html = strtr( $html, $parked );
+		}
+
 		return $html;
 	}
 }
