@@ -7,6 +7,9 @@
  *   1. Admin Notice Manager   – per-type toggles that suppress WP admin notices.
  *   2. Maintenance Mode       – toggle with custom message, role & IP whitelist.
  *   3. Database Cleanup       – live stats + individual / bulk cleanup actions.
+ *   4. Whitelabel             – replace or remove Cotlas branding (login pages,
+ *                               auth template, sidebar logo, footer credits,
+ *                               dashboard promo widget).
  *
  * Class:   Cotlas_Admin_Tools
  * Menu:    Cotlas Admin → Admin Tools  (slug: cotlas-tools)
@@ -30,6 +33,7 @@ class Cotlas_Admin_Tools {
 	const NONCE_MAINT   = 'cotlas_tools_maint_save';
 	const NONCE_REGEN   = 'cotlas_tools_regen';
 	const NONCE_DB      = 'cotlas_tools_db';
+	const NONCE_WL      = 'cotlas_tools_whitelabel_save';
 
 	/* ── Singleton ──────────────────────────────────────────────────────── */
 
@@ -60,6 +64,7 @@ class Cotlas_Admin_Tools {
 		// Settings saves (admin_init so they run before output)
 		add_action( 'admin_init', array( $this, 'handle_notices_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_maintenance_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_whitelabel_save' ) );
 
 		// Active features
 		add_action( 'admin_notices',   array( $this, 'suppress_admin_notices' ), 1 );
@@ -96,6 +101,9 @@ class Cotlas_Admin_Tools {
 		if ( 'cotlas-admin_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
+
+		// Media library picker for the Whitelabel image fields.
+		wp_enqueue_media();
 
 		// Load the shared ctap panel CSS (defined in admin-panel.php)
 		if ( function_exists( 'cotlas_panel_css' ) ) {
@@ -193,6 +201,63 @@ class Cotlas_Admin_Tools {
 		update_option( 'cotlas_maintenance_ips', $allowed_ips );
 
 		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=maintenance&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * SAVE: WHITELABEL
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_whitelabel_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_WL ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$toggles = array(
+			'cotlas_whitelabel_login_branding',
+			'cotlas_whitelabel_dashboard_ad',
+			'cotlas_whitelabel_hide_sidebar_logo',
+		);
+		foreach ( $toggles as $key ) {
+			update_option( $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+		}
+
+		$urls = array(
+			'cotlas_whitelabel_login_background',
+			'cotlas_whitelabel_login_logo',
+			'cotlas_whitelabel_auth_background',
+			'cotlas_whitelabel_auth_logo',
+			'cotlas_whitelabel_sidebar_logo',
+			'cotlas_whitelabel_sidebar_logo_collapsed',
+			'cotlas_whitelabel_ad_image',
+			'cotlas_whitelabel_ad_link',
+			'cotlas_whitelabel_feed_url',
+		);
+		foreach ( $urls as $key ) {
+			$val = isset( $_POST[ $key ] ) ? trim( wp_unslash( $_POST[ $key ] ) ) : '';
+			update_option( $key, '' === $val ? '' : esc_url_raw( $val ) );
+		}
+
+		$text = array(
+			'cotlas_whitelabel_ad_title',
+			'cotlas_whitelabel_ad_note',
+			'cotlas_whitelabel_feed_note',
+		);
+		foreach ( $text as $key ) {
+			update_option( $key, isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '' );
+		}
+
+		$footer = isset( $_POST['cotlas_whitelabel_footer_text'] ) ? wp_unslash( $_POST['cotlas_whitelabel_footer_text'] ) : '';
+		update_option( 'cotlas_whitelabel_footer_text', wp_kses( $footer, cotlas_whitelabel_allowed_html() ) );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=whitelabel&saved=1' ) );
 		exit;
 	}
 
@@ -597,6 +662,7 @@ class Cotlas_Admin_Tools {
 			array( 'id' => 'notices',     'label' => 'Admin Notices', 'icon' => 'dashicons-megaphone' ),
 			array( 'id' => 'maintenance', 'label' => 'Maintenance',   'icon' => 'dashicons-warning' ),
 			array( 'id' => 'database',    'label' => 'Database',      'icon' => 'dashicons-database' ),
+			array( 'id' => 'whitelabel',  'label' => 'Whitelabel',    'icon' => 'dashicons-art' ),
 		);
 		$active = ctap_nav( $tabs );
 
@@ -610,6 +676,10 @@ class Cotlas_Admin_Tools {
 
 		ctap_pane_open( 'database', $active );
 		$this->tab_database();
+		ctap_pane_close();
+
+		ctap_pane_open( 'whitelabel', $active );
+		$this->tab_whitelabel();
 		ctap_pane_close();
 
 		ctap_page_close();
@@ -798,6 +868,122 @@ class Cotlas_Admin_Tools {
 		ctap_card_close();
 	}
 
+	/* ─── Tab: Whitelabel ──────────────────────────────────────────────────── */
+
+	private function tab_whitelabel() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'whitelabel' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Whitelabel settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_WL, 'whitelabel' );
+
+		/* ── Card: WordPress login page ─────────────────────────────────────── */
+		ctap_card_open( 'WordPress Login Page', 'dashicons-lock' );
+		ctap_info( 'Customises the default WordPress login, registration and lost-password pages (wp-login.php).' );
+		ctap_toggle(
+			'cotlas_whitelabel_login_branding',
+			'Enable Login Page Branding',
+			'Applies the background image and logo below to wp-login.php, the registration page and the lost-password page. Turn off to restore the plain WordPress login screen.',
+			1
+		);
+		ctap_section( 'Login Page Assets' );
+		$this->wl_image_field( 'cotlas_whitelabel_login_background', 'Background Image', 'Full-width background behind the login form. Leave empty to use the bundled banner.' );
+		$this->wl_image_field( 'cotlas_whitelabel_login_logo', 'Login Logo', 'Shown above the login form. Leave empty to use the bundled logo.' );
+		ctap_card_close();
+
+		/* ── Card: Custom auth pages ────────────────────────────────────────── */
+		ctap_card_open( 'Custom Auth Pages', 'dashicons-admin-page' );
+		ctap_info( 'Applies to pages built with the Authentication Template (login, register and reset-password shortcodes).' );
+		$this->wl_image_field( 'cotlas_whitelabel_auth_background', 'Page Background', 'Background image behind the whole authentication page. Leave empty to use the bundled banner.' );
+		$this->wl_image_field( 'cotlas_whitelabel_auth_logo', 'Logo Above Forms', 'Displayed above the login and register forms. Falls back to the theme site logo, then the site name. Leave empty to use the theme logo.' );
+		ctap_card_close();
+
+		/* ── Card: Admin dashboard ──────────────────────────────────────────── */
+		ctap_card_open( 'Admin Dashboard', 'dashicons-dashboard' );
+		ctap_section( 'Footer Credits' );
+		$footer = get_option( 'cotlas_whitelabel_footer_text', false );
+		if ( false === $footer ) {
+			$footer = cotlas_whitelabel_default_footer_text();
+		}
+		ctap_field(
+			'Footer Credits',
+			'<textarea name="cotlas_whitelabel_footer_text" rows="3" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( $footer ) . '</textarea>',
+			'HTML is allowed (links, strong, em). Leave empty to remove the footer credits completely.'
+		);
+
+		ctap_section( 'Sidebar Logo' );
+		$this->wl_image_field( 'cotlas_whitelabel_sidebar_logo', 'Expanded Logo', 'Top of the admin menu when expanded. Leave empty to use the bundled logo.' );
+		$this->wl_image_field( 'cotlas_whitelabel_sidebar_logo_collapsed', 'Collapsed Logo', 'Shown when the admin menu is folded and on compact screens. Leave empty to use the bundled icon.' );
+		ctap_toggle( 'cotlas_whitelabel_hide_sidebar_logo', 'Hide Sidebar Logo', 'Removes the logo from the top of the admin menu completely.', 0 );
+		ctap_card_close();
+
+		/* ── Card: Dashboard promo widget ───────────────────────────────────── */
+		ctap_card_open( 'Dashboard Promo Widget', 'dashicons-megaphone' );
+		ctap_toggle(
+			'cotlas_whitelabel_dashboard_ad',
+			'Show Promo Widget',
+			'Displays the promotional banner widget on the WordPress dashboard. Turn off to hide it completely.',
+			1
+		);
+		ctap_section( 'Promo Widget Content' );
+
+		$ad_title = get_option( 'cotlas_whitelabel_ad_title', '' );
+		if ( '' === trim( (string) $ad_title ) ) {
+			$ad_title = __( 'We create your online presence', 'cotlas-admin' );
+		}
+		ctap_field( 'Widget Title', '<input type="text" name="cotlas_whitelabel_ad_title" value="' . esc_attr( $ad_title ) . '">', '' );
+
+		$this->wl_image_field( 'cotlas_whitelabel_ad_image', 'Banner Image', 'Leave empty to use the bundled banner.' );
+
+		$ad_link = get_option( 'cotlas_whitelabel_ad_link', '' );
+		if ( '' === trim( (string) $ad_link ) ) {
+			$ad_link = 'https://cotlas.net';
+		}
+		ctap_field( 'Banner Link', '<input type="url" name="cotlas_whitelabel_ad_link" value="' . esc_attr( $ad_link ) . '">', '' );
+
+		$ad_note = get_option( 'cotlas_whitelabel_ad_note', '' );
+		if ( '' === trim( (string) $ad_note ) ) {
+			$ad_note = __( 'Latest offers from cotlas web solution', 'cotlas-admin' );
+		}
+		ctap_field( 'Note Text', '<input type="text" name="cotlas_whitelabel_ad_note" value="' . esc_attr( $ad_note ) . '">', '' );
+
+		ctap_card_close();
+
+		/* ── Card: Dashboard articles widget ────────────────────────────────── */
+		ctap_card_open( 'Dashboard Articles Widget', 'dashicons-rss' );
+		ctap_info( 'The "Latest Articles" widget on the dashboard pulls posts from an RSS feed and renders each item as a card with thumbnail, title, author and date. Point the feed at your own site to replace the default source.' );
+		ctap_field( 'Feed URL', '<input type="url" name="cotlas_whitelabel_feed_url" value="' . esc_attr( get_option( 'cotlas_whitelabel_feed_url', '' ) ) . '" placeholder="https://cotlas.net/feed">', 'Leave empty to keep the default feed. Example: <code>https://example.com/feed</code>. The "Read more" link follows the feed&rsquo;s site automatically.' );
+		$feed_note = get_option( 'cotlas_whitelabel_feed_note', false );
+		if ( false === $feed_note ) {
+			$feed_note = __( 'Read the latest articles from Cotlas to unlock more value from your portal, generate stronger leads, improve search visibility, and discover curated insights that help your website perform better.', 'cotlas-admin' );
+		}
+		ctap_field(
+			'Widget Note',
+			'<textarea name="cotlas_whitelabel_feed_note" rows="2" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( $feed_note ) . '</textarea>',
+			'Short text shown under the article cards. Leave empty to show nothing.'
+		);
+		ctap_card_close();
+
+		ctap_form_close( 'Save Whitelabel Settings' );
+	}
+
+	/** Image URL field with media-library picker button and live preview. Stores the raw value — an empty field means "use the default". */
+	private function wl_image_field( $name, $label, $desc ) {
+		$value = (string) get_option( $name, '' );
+
+		$input  = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+		$input .= '<input type="url" id="' . esc_attr( $name ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( $value ) . '" placeholder="https://example.com/image.webp" style="flex:1;min-width:220px">';
+		$input .= '<button type="button" class="button ctls-media-btn" data-target="' . esc_attr( $name ) . '"><span class="dashicons dashicons-format-image"></span> ' . esc_html__( 'Select Image', 'cotlas-admin' ) . '</button>';
+		$input .= '</div>';
+		$input .= '<div class="ctls-wl-preview" id="preview-' . esc_attr( $name ) . '">';
+		if ( '' !== trim( $value ) ) {
+			$input .= '<img src="' . esc_url( $value ) . '" alt="">';
+		}
+		$input .= '</div>';
+
+		ctap_field( $label, $input, $desc );
+	}
+
 	/* ═══════════════════════════════════════════════════════════════════════
 	 * INLINE CSS
 	 * ═══════════════════════════════════════════════════════════════════════ */
@@ -820,6 +1006,10 @@ class Cotlas_Admin_Tools {
 
 /* Database action bar */
 .ctls-db-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* Whitelabel image field preview */
+.ctls-wl-preview{margin-top:8px}
+.ctls-wl-preview img{max-width:240px;max-height:80px;display:block;border:1px solid #dcdcde;border-radius:4px;padding:4px;background:#fff}
 		';
 	}
 
@@ -957,6 +1147,36 @@ class Cotlas_Admin_Tools {
             })
             .catch(function () { runSequence(types, i + 1); }); // continue even on error
     }
+
+    /* ════════════════════════════════════════════════════════════════════════
+	 * 3. WHITELABEL – media library picker buttons
+     * ════════════════════════════════════════════════════════════════════════ */
+    document.addEventListener("click", function (e) {
+        var btn = e.target.closest(".ctls-media-btn");
+        if (!btn) return;
+        e.preventDefault();
+        if (!window.wp || !wp.media) return;
+
+        var key = btn.getAttribute("data-target");
+        var target = document.getElementById(key);
+        var preview = document.getElementById("preview-" + key);
+        if (!target) return;
+
+        var frame = wp.media({
+            title: "Select Image",
+            library: { type: "image" },
+            button: { text: "Use this image" },
+            multiple: false
+        });
+        frame.on("select", function () {
+            var att = frame.state().get("selection").first().toJSON();
+            target.value = att.url;
+            if (preview) {
+                preview.innerHTML = '<img src="' + att.url + '" alt="">';
+            }
+        });
+        frame.open();
+    });
 
 })(window.cotlasTools || {});
 JS;

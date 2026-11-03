@@ -12,8 +12,12 @@ defined( 'ABSPATH' ) || exit;
  * Styles the background, logo, form card, inputs, and submit button.
  */
 function cotlas_custom_login_styles() {
-    $background_image = plugin_dir_url( COTLAS_ADMIN_FILE ) . 'assets/img/login-banner.webp';
-    $logo_image = plugin_dir_url( COTLAS_ADMIN_FILE ) . 'assets/img/img/cotlas-logo-full.png';
+    if ( ! get_option( 'cotlas_whitelabel_login_branding', 1 ) ) {
+        return;
+    }
+
+    $background_image = cotlas_whitelabel_image( 'cotlas_whitelabel_login_background', 'login-banner.webp' );
+    $logo_image       = cotlas_whitelabel_image( 'cotlas_whitelabel_login_logo', 'cotlas-logo-full.png' );
     ?>
     <style type="text/css">
         body.login {

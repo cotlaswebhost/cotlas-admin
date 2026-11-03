@@ -1452,9 +1452,18 @@ function cotlas_activate_default_site_asset_item($type, $item) {
  * cotlas_register_dashboard_ad_widget.
  */
 function cotlas_register_dashboard_ad_widget() {
+    if (!get_option('cotlas_whitelabel_dashboard_ad', 1)) {
+        return;
+    }
+
+    $title = get_option('cotlas_whitelabel_ad_title', '');
+    if ('' === trim((string) $title)) {
+        $title = __('We create your online presence', 'cotlas-news');
+    }
+
     wp_add_dashboard_widget(
         'cotlas_dashboard_ad_widget',
-        __('We create your online presence', 'cotlas-news'),
+        $title,
         'cotlas_render_dashboard_ad_widget'
     );
 }
@@ -1463,25 +1472,28 @@ function cotlas_register_dashboard_ad_widget() {
  * cotlas_render_dashboard_ad_widget.
  */
 function cotlas_render_dashboard_ad_widget() {
-    $banner_link = 'https://cotlas.net';
-    $banner_images = array(
-        plugin_dir_url( COTLAS_ADMIN_FILE ) . 'assets/img/website-designing-banner.webp',
-        plugin_dir_url( COTLAS_ADMIN_FILE ) . 'assets/img/website-designing-banner.webp',
-        plugin_dir_url( COTLAS_ADMIN_FILE ) . 'assets/img/website-designing-banner.webp',
-    );
+    $banner_link = get_option('cotlas_whitelabel_ad_link', '');
+    if ('' === trim((string) $banner_link)) {
+        $banner_link = 'https://cotlas.net';
+    }
+
+    $banner_image = cotlas_whitelabel_image('cotlas_whitelabel_ad_image', 'website-designing-banner.webp');
+
+    $note = get_option('cotlas_whitelabel_ad_note', '');
+    if ('' === trim((string) $note)) {
+        $note = __('Latest offers from cotlas web solution', 'cotlas-news');
+    }
     ?>
-    <div class="cotlas-dashboard-ad-widget" data-rotation="true">
+    <div class="cotlas-dashboard-ad-widget">
         <a class="cotlas-dashboard-ad-link" href="<?php echo esc_url($banner_link); ?>" target="_blank" rel="noopener noreferrer sponsored">
-            <?php foreach ($banner_images as $index => $banner_image) : ?>
-                <img
-                    class="cotlas-dashboard-ad-slide<?php echo 0 === $index ? ' is-active' : ''; ?>"
-                    src="<?php echo esc_url($banner_image); ?>"
-                    alt="<?php esc_attr_e('Cotlas promotional banner', 'cotlas-news'); ?>"
-                    data-index="<?php echo esc_attr($index); ?>"
-                />
-            <?php endforeach; ?>
+            <img
+                class="cotlas-dashboard-ad-slide is-active"
+                src="<?php echo esc_url($banner_image); ?>"
+                alt="<?php esc_attr_e('Promotional banner', 'cotlas-news'); ?>"
+                data-index="0"
+            />
         </a>
-        <p class="cotlas-dashboard-ad-note"><?php esc_html_e('Latest offers from cotlas web solution', 'cotlas-news'); ?></p>
+        <p class="cotlas-dashboard-ad-note"><?php echo esc_html($note); ?></p>
     </div>
     <style>
         .cotlas-dashboard-ad-widget {
@@ -1502,14 +1514,9 @@ function cotlas_render_dashboard_ad_widget() {
         }
 
         .cotlas-dashboard-ad-slide {
-            display: none;
+            display: block;
             width: 100%;
             height: auto;
-            
-        }
-
-        .cotlas-dashboard-ad-slide.is-active {
-            display: block;
         }
 
         .cotlas-dashboard-ad-note {
@@ -1518,29 +1525,6 @@ function cotlas_render_dashboard_ad_widget() {
             font-size: 14px;
         }
     </style>
-    <script>
-        (function() {
-            var script = document.currentScript;
-            var widget = script ? script.parentNode.querySelector('.cotlas-dashboard-ad-widget') : null;
-
-            if (!widget) {
-                return;
-            }
-
-            var slides = widget.querySelectorAll('.cotlas-dashboard-ad-slide');
-            var activeIndex = 0;
-
-            if (slides.length < 2) {
-                return;
-            }
-
-            window.setInterval(function() {
-                slides[activeIndex].classList.remove('is-active');
-                activeIndex = (activeIndex + 1) % slides.length;
-                slides[activeIndex].classList.add('is-active');
-            }, 3500);
-        })();
-    </script>
     <?php
 }
 
@@ -1582,7 +1566,24 @@ function cotlas_move_dashboard_feed_widget_to_side() {
  * cotlas_render_dashboard_feed_widget.
  */
 function cotlas_render_dashboard_feed_widget() {
-    $feed_url = 'https://cotlas.net/feed';
+    $feed_url = get_option('cotlas_whitelabel_feed_url', '');
+    if ('' === trim((string) $feed_url)) {
+        $feed_url = 'https://cotlas.net/feed';
+    }
+
+    $read_more_url = 'https://cotlas.net/blog';
+    if ('https://cotlas.net/feed' !== $feed_url) {
+        $feed_parts = parse_url($feed_url);
+        if (!empty($feed_parts['scheme']) && !empty($feed_parts['host'])) {
+            $read_more_url = $feed_parts['scheme'] . '://' . $feed_parts['host'] . '/';
+        }
+    }
+
+    $note = get_option('cotlas_whitelabel_feed_note', false);
+    if (false === $note) {
+        $note = __('Read the latest articles from Cotlas to unlock more value from your portal, generate stronger leads, improve search visibility, and discover curated insights that help your website perform better.', 'cotlas-news');
+    }
+
     $items = cotlas_get_dashboard_feed_items($feed_url, 2);
     ?>
     <div class="cotlas-dashboard-feed-widget">
@@ -1622,8 +1623,10 @@ function cotlas_render_dashboard_feed_widget() {
                 <?php endforeach; ?>
             </ul>
         <?php endif; ?>
-        <p class="cotlas-dashboard-feed-note"><?php esc_html_e('Read the latest articles from Cotlas to unlock more value from your portal, generate stronger leads, improve search visibility, and discover curated insights that help your website perform better.', 'cotlas-news'); ?></p>
-        <a href="https://cotlas.net/blog" class="page-title-action">Read more</a>
+        <?php if ('' !== trim((string) $note)) : ?>
+            <p class="cotlas-dashboard-feed-note"><?php echo esc_html($note); ?></p>
+        <?php endif; ?>
+        <a href="<?php echo esc_url($read_more_url); ?>" class="page-title-action">Read more</a>
     </div>
     <style>
         .cotlas-dashboard-feed-list {

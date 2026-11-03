@@ -9,6 +9,22 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+$wl_background = cotlas_whitelabel_image( 'cotlas_whitelabel_auth_background', 'login-banner.webp' );
+
+$brand_logo = cotlas_whitelabel_image( 'cotlas_whitelabel_auth_logo' );
+
+if ( ! $brand_logo && has_custom_logo() ) {
+	$custom_logo_id = get_theme_mod( 'custom_logo', 0 );
+
+	if ( $custom_logo_id ) {
+		$logo_img_data = wp_get_attachment_image_src( $custom_logo_id, 'full' );
+
+		if ( is_array( $logo_img_data ) && ! empty( $logo_img_data[0] ) ) {
+			$brand_logo = $logo_img_data[0];
+		}
+	}
+}
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?>>
 <head>
@@ -20,34 +36,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 <?php wp_body_open(); ?>
 
 <div id="blank-canvas-wrap">
-	<div class="page-section" style="--inline-bg-image: url(https://news96india.test)">
+	<div class="page-section" style="--inline-bg-image: url('<?php echo esc_url( $wl_background ); ?>')">
 		<div class="page-wrapper">
 			
-			<!-- Brand/Logo Header Section (Dynamic Customizer Logo) -->
+			<!-- Brand/Logo Header Section (Whitelabel option → theme custom logo → site name) -->
 			<div class="brand-inner-container">
 				<div class="brand-container">
-					<?php 
-					if ( has_custom_logo() ) {
-						// Get the custom logo image ID set in the Customizer
-						$custom_logo_id = get_theme_mod( 'custom_logo' );
-						$logo_img_data  = wp_get_attachment_image_src( $custom_logo_id, 'full' );
-						
-						if ( ! empty( $logo_img_data[0] ) ) {
-							?>
-							<a href="<?php echo esc_url( home_url( '/' ) ); ?>">
-								<img decoding="async" class="brand-logo" alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" src="<?php echo esc_url( $logo_img_data[0] ); ?>">
-							</a>
-							<?php
-						}
-					} else {
-						// Fallback to text link if no logo is uploaded in customizer
-						?>
+					<?php if ( $brand_logo ) : ?>
+						<a href="<?php echo esc_url( home_url( '/' ) ); ?>">
+							<img decoding="async" class="brand-logo" alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" src="<?php echo esc_url( $brand_logo ); ?>">
+						</a>
+					<?php else : ?>
 						<a href="<?php echo esc_url( home_url( '/' ) ); ?>" class="brand-logo-text">
 							<?php bloginfo( 'name' ); ?>
 						</a>
-						<?php
-					}
-					?>
+					<?php endif; ?>
 				</div>
 			</div>
 

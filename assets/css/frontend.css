@@ -1010,7 +1010,7 @@ html.cotlas-delete-modal-open {
 .page-section {
     align-items: center;
     background-blend-mode: normal;
-    background-image: url('../img/login-banner.webp');
+    background-image: var(--inline-bg-image, url('../img/login-banner.webp'));
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -1055,6 +1055,13 @@ html.cotlas-delete-modal-open {
     max-width: 100%;
     object-fit: cover;
     width: 140px
+}
+.brand-logo-text {
+    display: inline-block;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    text-decoration: none
 }
 .auth-container {
     max-width: 350px;

@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 2.7.2
+- **Version:** 2.7.3
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
 
@@ -116,3 +116,7 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 
 - WordPress 6.0+
 - PHP 8.0+
+### 2.7.3
+
+- Whitelabel settings added.
+- Thumbnails Problem addressed. 

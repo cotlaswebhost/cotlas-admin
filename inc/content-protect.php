@@ -239,6 +239,14 @@ class Cotlas_Content_Protect {
 			return;
 		}
 
+		// Social-preview crawlers (WhatsApp, Facebook, X, LinkedIn...) build
+		// link thumbnails from these images — never block them, some send a
+		// cross-site Referer.
+		$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		if ( '' !== $ua && self::is_social_crawler( $ua ) ) {
+			return;
+		}
+
 		$referer = isset( $_SERVER['HTTP_REFERER'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) : '';
 		if ( empty( $referer ) ) {
 			return;
@@ -251,7 +259,10 @@ class Cotlas_Content_Protect {
 			return;
 		}
 
-		$allowed_domains = array_filter( array_map( 'trim', explode( "\n", get_option( 'cotlas_cp_hotlink_domains', '' ) ) ) );
+		$allowed_domains = array_merge(
+			self::default_allowed_domains(),
+			array_filter( array_map( 'trim', explode( "\n", get_option( 'cotlas_cp_hotlink_domains', '' ) ) ) )
+		);
 		foreach ( $allowed_domains as $domain ) {
 			$domain = strtolower( trim( $domain ) );
 			if ( empty( $domain ) ) {
@@ -266,6 +277,64 @@ class Cotlas_Content_Protect {
 		nocache_headers();
 		echo 'Hotlinking is not allowed.';
 		exit;
+	}
+
+	/**
+	 * Well-known social/search domains whose embeds and link previews are
+	 * always allowed, even when hotlink protection is enabled.
+	 */
+	public static function default_allowed_domains() {
+		return array(
+			'facebook.com',
+			'whatsapp.com',
+			'twitter.com',
+			'x.com',
+			'linkedin.com',
+			'pinterest.com',
+			'telegram.org',
+			'slack.com',
+			'discord.com',
+			'skype.com',
+			'google.com',
+			'bing.com',
+			'threads.net',
+			'tumblr.com',
+			'reddit.com',
+			'quora.com',
+		);
+	}
+
+	/**
+	 * Match social-preview crawler and search bot user agents.
+	 */
+	private static function is_social_crawler( $ua ) {
+		$ua = strtolower( $ua );
+
+		$bots = array(
+			'facebookexternalhit',
+			'facebookcatalog',
+			'whatsapp',
+			'twitterbot',
+			'linkedinbot',
+			'pinterest',
+			'telegrambot',
+			'slackbot',
+			'slack-img-proxy',
+			'discordbot',
+			'skypeuripreview',
+			'googlebot',
+			'bingbot',
+			'threadsbot',
+			'quorabot',
+		);
+
+		foreach ( $bots as $bot ) {
+			if ( strpos( $ua, $bot ) !== false ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/* ═══════════════════════════════════════════════════════════════════════
@@ -470,8 +539,8 @@ class Cotlas_Content_Protect {
 		ctap_form_open( self::NONCE_SAVE, 'hotlink' );
 		ctap_card_open( 'Hotlink Protection', 'dashicons-admin-links' );
 		ctap_toggle( 'cotlas_cp_hotlink_enabled', 'Enable Hotlink Protection', 'Blocks other websites from directly embedding your images. Requests with a Referer from a different domain will receive a 403 error.', 0 );
-		ctap_info( 'When enabled, any image request from an external domain that links directly to your images will be blocked. This prevents bandwidth theft. Note: empty Referer headers are allowed (some browsers/CDNs don\'t send them).' );
-		ctap_field( 'Allowed Domains', ctap_textarea( 'cotlas_cp_hotlink_domains', "google.com\nbing.com\nfacebook.com\ntwitter.com", 5 ), 'One domain per line. These domains are allowed to link to your images. Your own domain is always allowed.' );
+		ctap_info( 'When enabled, any image request from an external domain that links directly to your images will be blocked. This prevents bandwidth theft. Empty Referer headers are always allowed (some browsers/CDNs don\'t send them). Social preview crawlers (WhatsApp, Facebook, X, LinkedIn, Pinterest, Telegram, Slack, Discord) and search engines are always allowed so link thumbnails keep working.' );
+		ctap_field( 'Allowed Domains', ctap_textarea( 'cotlas_cp_hotlink_domains', "example.com\npartner-site.org", 5 ), 'One domain per line. Your own domain and the well-known social/search domains (Facebook, WhatsApp, X, LinkedIn, Pinterest, Telegram, Slack, Discord, Google, Bing...) are allowed by default — no need to list them.' );
 		ctap_card_close();
 		ctap_form_close();
 		ctap_pane_close();

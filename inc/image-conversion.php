@@ -59,6 +59,51 @@ function cimg_browser_supports_webp() {
 	return ! preg_match( '/(MSIE |Trident\/|Edge\/12|Edge\/13)/', $ua );
 }
 
+/**
+ * Detect social-preview crawlers (WhatsApp, Facebook, X, LinkedIn, ...).
+ *
+ * These clients fetch the page HTML to read og:image, then fetch the image
+ * itself. They are not browsers and choke on WebP/AVIF og:image URLs (or on
+ * a format/type mismatch), so the URL-swap layer must hand them the original
+ * JPEG/PNG.
+ */
+function cimg_is_social_crawler() {
+	$ua = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+
+	if ( '' === $ua ) {
+		return false;
+	}
+
+	$ua   = strtolower( $ua );
+	$bots = array(
+		'facebookexternalhit',
+		'facebookcatalog',
+		'whatsapp',
+		'twitterbot',
+		'linkedinbot',
+		'pinterest',
+		'telegrambot',
+		'slackbot',
+		'slack-img-proxy',
+		'discordbot',
+		'skypeuripreview',
+		'quorabot',
+		'googlebot',
+		'bingbot',
+		'threadsbot',
+	);
+
+	foreach ( $bots as $bot ) {
+		if ( strpos( $ua, $bot ) !== false ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* ── Exclusion check ──────────────────────────────── */
+
 /* ── Exclusion check ──────────────────────────────────────── */
 
 function cimg_should_exclude( $src, $serve_mode = false ) {
@@ -121,6 +166,12 @@ function cimg_choose_format( $mime, $file_path ) {
  * Checks what files actually exist on disk — no assumptions.
  */
 function cimg_pick_serve_format( $src_url, $baseurl, $basedir ) {
+	// Social crawlers must always get the original JPEG/PNG — a swapped
+	// WebP/AVIF og:image breaks link thumbnails (notably WhatsApp).
+	if ( cimg_is_social_crawler() ) {
+		return '';
+	}
+
 	// If the URL already points to a modern format (delete-original case),
 	// no further swapping is needed.
 	if ( preg_match( '/\.(avif|webp)$/i', $src_url ) ) {

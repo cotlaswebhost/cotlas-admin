@@ -108,9 +108,18 @@ function replace_howdy_with_your_text( $wp_admin_bar ) {
 add_action( 'admin_bar_menu', 'replace_howdy_with_your_text', 25 );
 
 function remove_footer_admin () {
- 
-    echo 'Fueled by <a href="https://cotlas.net" target="_blank">Cotlas Web Solutions</a> | Designed by <a href="https://cotlas.net/author/vinay404" target="_blank">Vinay Shukla</a> | Site Tutorials: <a href="https://teklog.in" target="_blank">Teklog</a></p>';
-     
-    }
-     
-    add_filter('admin_footer_text', 'remove_footer_admin');
+
+	$text = get_option( 'cotlas_whitelabel_footer_text', false );
+
+	if ( false === $text ) {
+		$text = cotlas_whitelabel_default_footer_text();
+	}
+
+	if ( '' === trim( (string) $text ) ) {
+		return;
+	}
+
+	echo $text;
+}
+
+add_filter('admin_footer_text', 'remove_footer_admin');

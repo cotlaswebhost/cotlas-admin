@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     2.7.2
+ * Version:     2.7.3
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -127,6 +127,11 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_cp_watermark_enabled'                  => 0,
 		'cotlas_cp_watermark_delete_originals'         => 0,
 		'cotlas_cp_hotlink_enabled'                    => 0,
+
+		// Whitelabel toggles.
+		'cotlas_whitelabel_login_branding'             => 1,
+		'cotlas_whitelabel_dashboard_ad'               => 1,
+		'cotlas_whitelabel_hide_sidebar_logo'          => 0,
 	);
 
 	/**
@@ -168,6 +173,7 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/github-updater.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/security.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/security-hardening.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/wp-login-branding.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/whitelabel.php';
 
 // Admin Dashboard – widgets, welcome notice, starter-kit installer, feed widget
 // ---------------------------------------------------------------------------
