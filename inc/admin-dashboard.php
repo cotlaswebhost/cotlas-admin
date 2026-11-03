@@ -12,7 +12,6 @@ add_action( 'wp_dashboard_setup', 'cotlas_register_dashboard_ad_widget' );
 add_action( 'wp_dashboard_setup', 'cotlas_register_dashboard_feed_widget' );
 add_action( 'wp_dashboard_setup', 'cotlas_move_dashboard_feed_widget_to_side', 100 );
 add_action( 'admin_notices', 'cotlas_render_dashboard_welcome_notice' );
-add_action( 'admin_notices', 'cotlas_render_default_site_setup_notice' );
 add_action( 'admin_menu', 'cotlas_register_default_site_setup_menu' );
 add_action( 'wp_ajax_cotlas_dismiss_dashboard_welcome_notice', 'cotlas_dismiss_dashboard_welcome_notice' );
 add_action( 'wp_ajax_cotlas_dismiss_default_site_setup_notice', 'cotlas_dismiss_default_site_setup_notice' );

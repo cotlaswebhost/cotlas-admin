@@ -662,6 +662,7 @@ class Cotlas_Admin_Tools {
 			array( 'id' => 'notices',     'label' => 'Admin Notices', 'icon' => 'dashicons-megaphone' ),
 			array( 'id' => 'maintenance', 'label' => 'Maintenance',   'icon' => 'dashicons-warning' ),
 			array( 'id' => 'database',    'label' => 'Database',      'icon' => 'dashicons-database' ),
+			array( 'id' => 'starter',     'label' => 'Starter Sites', 'icon' => 'dashicons-admin-site' ),
 			array( 'id' => 'whitelabel',  'label' => 'Whitelabel',    'icon' => 'dashicons-art' ),
 		);
 		$active = ctap_nav( $tabs );
@@ -676,6 +677,10 @@ class Cotlas_Admin_Tools {
 
 		ctap_pane_open( 'database', $active );
 		$this->tab_database();
+		ctap_pane_close();
+
+		ctap_pane_open( 'starter', $active );
+		$this->tab_starter_sites();
 		ctap_pane_close();
 
 		ctap_pane_open( 'whitelabel', $active );
@@ -865,6 +870,17 @@ class Cotlas_Admin_Tools {
 			. '</button>';
 		echo '</div>';
 
+		ctap_card_close();
+	}
+
+	/* ─── Tab: Starter Sites ───────────────────────────────────────────────── */
+
+	private function tab_starter_sites() {
+		ctap_card_open( 'Starter Sites', 'dashicons-admin-site' );
+		ctap_info( 'Install a starter kit (theme + plugins) on this fresh site. Opens the Default Site Setup page where you can choose a kit and install it.' );
+		echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=cotlas-default-site-setup' ) ) . '" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;">';
+		echo '<span class="dashicons dashicons-admin-site" style="line-height:20px;"></span> ' . esc_html__( 'Open Starter Sites', 'cotlas-admin' );
+		echo '</a></p>';
 		ctap_card_close();
 	}
 
