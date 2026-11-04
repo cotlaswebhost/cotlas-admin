@@ -283,6 +283,7 @@ function cotlas_panel_process_saves() {
 		'ctap_save_social' => array(
 			'page' => 'cotlas-social-media',
 			'map'  => array(
+				'cotlas_social_enabled'   => 'checkbox',
 				'cotlas_social_facebook'  => 'url',
 				'cotlas_social_twitter'   => 'url',
 				'cotlas_social_youtube'   => 'url',
@@ -535,15 +536,15 @@ function cotlas_panel_css() {
 /* Cards */
 .ctap-card {
   background: white; border: 1px solid #dcdcde;
-  border-radius: 6px; margin-bottom: 20px;
+  border-radius: 6px; margin-bottom: 20px; margin-top: 20px;
   overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 .ctap-card-head {
-  padding: 13px 20px; border-bottom: 1px solid #f0f0f1;
+  padding: 13px 20px; border-bottom: 1px solid #045bc5;background-color: #045bc5;
   display: flex; align-items: center; gap: 8px;
 }
-.ctap-card-head h3 { margin: 0; font-size: 14px; font-weight: 600; color: #1d2327; }
-.ctap-card-head .dashicons { font-size: 18px; color: #2271b1; }
+.ctap-card-head h3 { margin: 0; font-size: 14px; font-weight: 600; color: #ffffff; }
+.ctap-card-head .dashicons { font-size: 18px; color: #ffffff; }
 .ctap-card-body { padding: 20px; }
 
 /* Module status banner */
@@ -584,7 +585,7 @@ function cotlas_panel_css() {
   background: white; border-radius: 50%;
   transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.25);
 }
-.ctap-switch input:checked + .ctap-slider { background: #2271b1; }
+.ctap-switch input:checked + .ctap-slider { background: #22b12c; }
 .ctap-switch input:checked + .ctap-slider::before { transform: translateX(20px); }
 .ctap-switch input:focus-visible + .ctap-slider { box-shadow: 0 0 0 3px rgba(34,113,177,.25); }
 
@@ -621,7 +622,7 @@ function cotlas_panel_css() {
 /* Save button */
 .ctap-save-btn {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 9px 20px; background: #2271b1;
+  padding: 9px 20px; background: #22b12c;
   color: white; border: none; border-radius: 4px;
   font-size: 13px; font-weight: 500; cursor: pointer;
   transition: background .15s; margin-top: 6px;
@@ -1992,6 +1993,10 @@ function cotlas_panel_page_social() {
 
 	ctap_pane_open( 'links', $active );
 	ctap_form_open( 'ctap_save_social', 'links' );
+	ctap_card_open( 'Social Media', 'dashicons-share' );
+	ctap_module_status( 'cotlas_social_enabled', 'Social Media', 'Master toggle. When off, no social links or share buttons are registered.', 1 );
+	ctap_card_close();
+
 	ctap_card_open( 'Social Media URLs', 'dashicons-share' );
 	ctap_field( 'Facebook Page',     ctap_url( 'cotlas_social_facebook',  'https://facebook.com/...' ) );
 	ctap_field( 'Twitter / X',       ctap_url( 'cotlas_social_twitter',   'https://x.com/...' ) );

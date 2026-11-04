@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     3.0.1
+ * Version:     3.0.2
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -146,6 +146,23 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_share_box_threads'                     => 1,
 		'cotlas_share_box_copy'                        => 1,
 		'cotlas_share_box_print'                       => 1,
+
+		// Contact form field toggles.
+		'cotlas_form_field_name'                       => 1,
+		'cotlas_form_field_email'                      => 1,
+		'cotlas_form_field_phone'                      => 1,
+		'cotlas_form_field_subject'                    => 1,
+		'cotlas_form_field_message'                    => 1,
+		'cotlas_form_email_admin_contact_enabled'       => 1,
+		'cotlas_form_email_user_contact_enabled'        => 1,
+		'cotlas_form_email_admin_newsletter_enabled'    => 1,
+		'cotlas_form_email_user_newsletter_enabled'     => 1,
+
+		// SMTP settings.
+		'cotlas_smtp_enabled'                          => 0,
+		'cotlas_smtp_deliver_all'                      => 1,
+		'cotlas_smtp_encryption'                       => 'tls',
+		'cotlas_smtp_port'                             => '587',
 	);
 
 	/**
@@ -205,6 +222,8 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/seo/bootstrap.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/social-media.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/social-share-box.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/contact-form.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/smtp.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/migration-helper.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/trending-widgets.php';

@@ -122,7 +122,12 @@ class CotlasSocialMedia {
         return ob_get_clean();
     }
 }
-add_action('plugins_loaded', function() { new CotlasSocialMedia(); });
+add_action('plugins_loaded', function() {
+	if ( ! get_option( 'cotlas_social_enabled', 1 ) ) {
+		return;
+	}
+	new CotlasSocialMedia();
+});
 
 // Social Share Shortcode - FIXED VERSION
 function cotlas_social_share_shortcode($atts) {
@@ -283,4 +288,6 @@ function cotlas_social_share_shortcode($atts) {
     }
     return ob_get_clean();
 }
-add_shortcode('social_share', 'cotlas_social_share_shortcode');
+if ( get_option( 'cotlas_social_enabled', 1 ) ) {
+	add_shortcode('social_share', 'cotlas_social_share_shortcode');
+}

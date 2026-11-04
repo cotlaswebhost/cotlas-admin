@@ -34,6 +34,8 @@ class Cotlas_Admin_Tools {
 	const NONCE_REGEN   = 'cotlas_tools_regen';
 	const NONCE_DB      = 'cotlas_tools_db';
 	const NONCE_WL      = 'cotlas_tools_whitelabel_save';
+	const NONCE_CF      = 'cotlas_tools_contact_form_save';
+	const NONCE_SMTP    = 'cotlas_tools_smtp_save';
 
 	/* ── Singleton ──────────────────────────────────────────────────────── */
 
@@ -65,6 +67,8 @@ class Cotlas_Admin_Tools {
 		add_action( 'admin_init', array( $this, 'handle_notices_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_maintenance_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_whitelabel_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_contact_form_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_smtp_save' ) );
 
 		// Active features
 		add_action( 'admin_notices',   array( $this, 'suppress_admin_notices' ), 1 );
@@ -262,8 +266,91 @@ class Cotlas_Admin_Tools {
 	}
 
 	/* ═══════════════════════════════════════════════════════════════════════
-	 * ACTIVE FEATURE: SUPPRESS ADMIN NOTICES
+	 * SAVE: CONTACT FORM
 	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_contact_form_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_CF ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$toggles = array(
+			'cotlas_form_enabled',
+			'cotlas_form_field_name',
+			'cotlas_form_field_email',
+			'cotlas_form_field_phone',
+			'cotlas_form_field_subject',
+			'cotlas_form_field_message',
+			'cotlas_form_email_admin_contact_enabled',
+			'cotlas_form_email_user_contact_enabled',
+			'cotlas_form_email_admin_newsletter_enabled',
+			'cotlas_form_email_user_newsletter_enabled',
+			'cotlas_form_collection_enabled',
+		);
+		foreach ( $toggles as $key ) {
+			update_option( $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+		}
+
+		$text = array( 'cotlas_form_custom_class' );
+		foreach ( $text as $key ) {
+			update_option( $key, isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '' );
+		}
+
+		$editors = array(
+			'cotlas_form_email_admin_contact',
+			'cotlas_form_email_user_contact',
+			'cotlas_form_email_admin_newsletter',
+			'cotlas_form_email_user_newsletter',
+		);
+		foreach ( $editors as $key ) {
+			$val = isset( $_POST[ $key ] ) ? wp_unslash( $_POST[ $key ] ) : '';
+			update_option( $key, wp_kses_post( $val ) );
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=contact-form&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * SAVE: SMTP SETTINGS
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_smtp_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_SMTP ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$toggles = array( 'cotlas_smtp_enabled', 'cotlas_smtp_deliver_all' );
+		foreach ( $toggles as $key ) {
+			update_option( $key, isset( $_POST[ $key ] ) ? 1 : 0 );
+		}
+
+		$text = array( 'cotlas_smtp_host', 'cotlas_smtp_port', 'cotlas_smtp_user', 'cotlas_smtp_pass', 'cotlas_smtp_encryption', 'cotlas_smtp_from_name', 'cotlas_smtp_from_email' );
+		foreach ( $text as $key ) {
+			$val = isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '';
+			update_option( $key, $val );
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=smtp&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * ACTIVE FEATURE: SUPPRESS ADMIN NOTICES
 
 	/**
 	 * Suppress selected WP admin notices based on saved options.
@@ -663,6 +750,8 @@ class Cotlas_Admin_Tools {
 			array( 'id' => 'maintenance', 'label' => 'Maintenance',   'icon' => 'dashicons-warning' ),
 			array( 'id' => 'database',    'label' => 'Database',      'icon' => 'dashicons-database' ),
 			array( 'id' => 'starter',     'label' => 'Starter Sites', 'icon' => 'dashicons-admin-site' ),
+			array( 'id' => 'contact-form','label' => 'Contact Form',  'icon' => 'dashicons-email' ),
+			array( 'id' => 'smtp',        'label' => 'SMTP Settings', 'icon' => 'dashicons-email-alt' ),
 			array( 'id' => 'whitelabel',  'label' => 'Whitelabel',    'icon' => 'dashicons-art' ),
 		);
 		$active = ctap_nav( $tabs );
@@ -681,6 +770,14 @@ class Cotlas_Admin_Tools {
 
 		ctap_pane_open( 'starter', $active );
 		$this->tab_starter_sites();
+		ctap_pane_close();
+
+		ctap_pane_open( 'contact-form', $active );
+		$this->tab_contact_form();
+		ctap_pane_close();
+
+		ctap_pane_open( 'smtp', $active );
+		$this->tab_smtp_settings();
 		ctap_pane_close();
 
 		ctap_pane_open( 'whitelabel', $active );
@@ -882,6 +979,94 @@ class Cotlas_Admin_Tools {
 		echo '<span class="dashicons dashicons-admin-site" style="line-height:20px;"></span> ' . esc_html__( 'Open Starter Sites', 'cotlas-admin' );
 		echo '</a></p>';
 		ctap_card_close();
+	}
+
+	/* ─── Tab: Contact Form ───────────────────────────────────────────────── */
+
+	private function tab_contact_form() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'contact-form' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Contact form settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_CF, 'contact-form' );
+
+		ctap_module_status(
+			'cotlas_form_enabled',
+			'Contact Form',
+			'Master toggle. When off, the [cotlas_form] shortcode renders nothing and submissions are not processed.',
+			1
+		);
+
+		ctap_card_open( 'Form Fields', 'dashicons-feedback' );
+		ctap_info( 'Enable or disable fields for the contact form. Use <code>form_fields="name,email,phone,subject,message"</code> in the shortcode to override per form.' );
+		ctap_toggle( 'cotlas_form_field_name',    'Name Field',    '', 1 );
+		ctap_toggle( 'cotlas_form_field_email',   'Email Field',   '', 1 );
+		ctap_toggle( 'cotlas_form_field_phone',   'Mobile Field',  '', 1 );
+		ctap_toggle( 'cotlas_form_field_subject', 'Subject Field', '', 1 );
+		ctap_toggle( 'cotlas_form_field_message', 'Message Field', '', 1 );
+		ctap_field( 'Custom Class', ctap_input( 'cotlas_form_custom_class' ), 'CSS class applied to the form wrapper. Example: <code>my-contact-form</code>.' );
+		ctap_card_close();
+
+		ctap_card_open( 'Email Notifications — Contact Form', 'dashicons-email' );
+		ctap_toggle( 'cotlas_form_email_admin_contact_enabled', 'Email Notification to Admin', 'Send an email to the admin when a contact form is submitted.', 1 );
+		ctap_field( 'Email notification to Admin', '', 'This mail will be sent to admin.' );
+		wp_editor( get_option( 'cotlas_form_email_admin_contact', '' ), 'cotlas_form_email_admin_contact', array( 'textarea_name' => 'cotlas_form_email_admin_contact', 'textarea_rows' => 8, 'media_buttons' => false ) );
+		ctap_toggle( 'cotlas_form_email_user_contact_enabled', 'Email Notification to User', 'Send a confirmation email to the user who submitted the contact form.', 1 );
+		ctap_field( 'Email notification to send to User', '', 'This email will be sent to user.' );
+		wp_editor( get_option( 'cotlas_form_email_user_contact', '' ), 'cotlas_form_email_user_contact', array( 'textarea_name' => 'cotlas_form_email_user_contact', 'textarea_rows' => 8, 'media_buttons' => false ) );
+		ctap_info( 'Placeholders: <code>{name}</code> <code>{email}</code> <code>{phone}</code> <code>{subject}</code> <code>{message}</code> <code>{site_name}</code> <code>{site_url}</code>' );
+		ctap_card_close();
+
+		ctap_card_open( 'Email Notifications — Newsletter', 'dashicons-email' );
+		ctap_toggle( 'cotlas_form_email_admin_newsletter_enabled', 'Email Notification to Admin', 'Send an email to the admin when a newsletter subscription is submitted.', 1 );
+		ctap_field( 'Email notification to Admin', '', 'This mail will be sent to admin.' );
+		wp_editor( get_option( 'cotlas_form_email_admin_newsletter', '' ), 'cotlas_form_email_admin_newsletter', array( 'textarea_name' => 'cotlas_form_email_admin_newsletter', 'textarea_rows' => 8, 'media_buttons' => false ) );
+		ctap_toggle( 'cotlas_form_email_user_newsletter_enabled', 'Email Notification to User', 'Send a welcome email to the new subscriber.', 1 );
+		ctap_field( 'Email notification to send to User', '', 'This email will be sent to user.' );
+		wp_editor( get_option( 'cotlas_form_email_user_newsletter', '' ), 'cotlas_form_email_user_newsletter', array( 'textarea_name' => 'cotlas_form_email_user_newsletter', 'textarea_rows' => 8, 'media_buttons' => false ) );
+		ctap_info( 'Placeholders: <code>{name}</code> <code>{email}</code> <code>{site_name}</code> <code>{site_url}</code>' );
+		ctap_card_close();
+
+		// Usage info
+		ctap_card_open( 'Form Submission Collection', 'dashicons-list-view' );
+		ctap_toggle( 'cotlas_form_collection_enabled', 'Enable Collection', 'When enabled, form submissions are saved to the database and viewable from the Form Submissions page.', 0 );
+		if ( get_option( 'cotlas_form_collection_enabled', 0 ) ) {
+			echo '<p><a href="' . esc_url( admin_url( 'admin.php?page=cotlas-form-submissions' ) ) . '" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;">';
+			echo '<span class="dashicons dashicons-list-view" style="line-height:20px;"></span> ' . esc_html__( 'Form Submissions', 'cotlas-admin' );
+			echo '</a></p>';
+		}
+		ctap_card_close();
+
+		ctap_form_close();
+
+		ctap_card_open( 'Shortcode Usage', 'dashicons-shortcode' );
+		ctap_info( 'Contact form: <code>[cotlas_form form_type="contact_form" class="contact_form" from_name="Site Contact" from_email="info@example.com" form_fields="name,email,phone,subject,message"]</code>' );
+		ctap_info( 'Newsletter: <code>[cotlas_form form_type="newsletter" class="newsletter_form" from_name="Site Newsletter" from_email="info@example.com" form_fields="name,email"]</code>' );
+		ctap_card_close();
+	}
+
+	/* ─── Tab: SMTP Settings ─────────────────────────────────────────────── */
+
+	private function tab_smtp_settings() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'smtp' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'SMTP settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_SMTP, 'smtp' );
+
+		ctap_card_open( 'SMTP Configuration', 'dashicons-email-alt' );
+		ctap_toggle( 'cotlas_smtp_enabled', 'Enable SMTP', 'Send all WordPress emails via the SMTP server below.', 0 );
+		ctap_toggle( 'cotlas_smtp_deliver_all', 'Deliver All Messages', 'If enabled, all WordPress emails (including form submissions) will be sent using these SMTP details.', 1 );
+		ctap_field( 'SMTP Server', ctap_input( 'cotlas_smtp_host' ), 'e.g. <code>smtp.gmail.com</code> or <code>mail.example.com</code>.' );
+		ctap_field( 'Port', ctap_input( 'cotlas_smtp_port', '587', 'number' ), 'Common ports: 587 (TLS), 465 (SSL), 25.' );
+		ctap_field( 'Encryption', ctap_select( 'cotlas_smtp_encryption', array( 'tls' => 'TLS', 'ssl' => 'SSL', 'none' => 'None' ), 'tls' ), '' );
+		ctap_field( 'SMTP Username', ctap_input( 'cotlas_smtp_user' ), 'SMTP login username (usually your email address).' );
+		ctap_field( 'SMTP Password', ctap_input( 'cotlas_smtp_pass', '', 'password' ), 'SMTP login password or app password.' );
+		ctap_field( 'From Name', ctap_input( 'cotlas_smtp_from_name' ), 'Default sender name for all emails. Form-specific from_name overrides this.' );
+		ctap_field( 'From Email', ctap_input( 'cotlas_smtp_from_email', '', 'email' ), 'Default sender email for all emails. Form-specific from_email overrides this.' );
+		ctap_card_close();
+
+		ctap_form_close();
 	}
 
 	/* ─── Tab: Whitelabel ──────────────────────────────────────────────────── */

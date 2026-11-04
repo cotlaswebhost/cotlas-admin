@@ -2,7 +2,7 @@
 
 A WordPress plugin providing core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
 
-- **Version:** 3.0.1
+- **Version:** 3.0.2
 
 - **Author:** [Vinay Shukla](https://cotlas.net)
 - **License:** Proprietary
@@ -144,3 +144,13 @@ This plugin supports automatic updates via GitHub releases. Updates are fetched 
 - Fixed: `[social_share]` default `class` attribute used commas instead of spaces, which broke all share-button CSS matching.
 - Fixed: **WhatsApp og:image** thumbnail failure traced to CloudPanel nginx `pagespeed EnableFilters remove_quotes;` stripping attribute quotes — documented as a server-side fix (remove that line, reload nginx, purge caches).
 - Fixed: **Latest Articles** widget now consumes the whitelabel feed URL and feed note; "Read more" follows the custom feed origin.
+
+### 3.0.2
+
+- New: **Contact Form** module — simple contact/newsletter form via `[cotlas_form]` shortcode with configurable fields (Name, Email, Mobile, Subject, Message), custom class, from_name/from_email overrides, and per-form-type email templates (TinyMCE) for admin and user notifications with placeholders.
+- New: **SMTP Settings** module — configure SMTP (host, port, user, password, encryption, from name/email) with enable/disable and "deliver all messages" toggle; overrides form from settings for form emails and applies to all WordPress mail when enabled.
+- New: **Form Submission Collection** — optional database storage of form submissions, viewable from a "Form Submissions" page (contact + newsletter sections) and a toolbar menu link, only when collection is enabled.
+- New: **Master switches** added to Contact Form and Social Media modules (and verified across all other modules).
+- Improved: Contact Form admin tab now auto-fills empty option fields with defaults and the save button sits below the collection section.
+- Improved: Admin Tools gained "Contact Form" and "SMTP Settings" tabs (before Whitelabel) plus a "Starter Sites" tab.
+- Improved: Default Site Setup notice removed from the dashboard; welcome notice retained.
