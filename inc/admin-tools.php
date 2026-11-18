@@ -405,11 +405,7 @@ class Cotlas_Admin_Tools {
 			} elseif ( ! is_uploaded_file( $file['tmp_name'] ) ) {
 				$result = array( 'fatal' => __( 'Invalid upload.', 'cotlas-admin' ) );
 			} else {
-				$data = json_decode( (string) file_get_contents( $file['tmp_name'] ), true );
-
-				$result = null === $data
-					? array( 'fatal' => __( 'The file is not valid JSON.', 'cotlas-admin' ) )
-					: cotlas_site_import_data( $data );
+				$result = cotlas_site_import_file( $file['tmp_name'], (string) $file['name'] );
 			}
 		}
 
@@ -1541,28 +1537,63 @@ class Cotlas_Admin_Tools {
 			$this->render_site_import_result( $result );
 		}
 
-		$theme      = wp_get_theme();
-		$export_url = admin_url( 'admin-post.php?action=cotlas_site_export&_wpnonce=' . wp_create_nonce( 'cotlas_site_export' ) );
+		$nonce       = wp_create_nonce( 'cotlas_site_export' );
+		$export_base = admin_url( 'admin-post.php?_wpnonce=' . $nonce . '&action=' );
 
 		ctap_card_open( 'Export Site Setup', 'dashicons-download' );
-		ctap_info( 'Exports all navigation menus, widget settings and assignments, and the Customizer settings of the active theme (<strong>' . esc_html( $theme->get( 'Name' ) ) . '</strong>).' );
-		echo '<p><a class="button button-primary" href="' . esc_url( $export_url ) . '" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;text-decoration:none;">';
-		echo '<span class="dashicons dashicons-download" style="line-height:20px;"></span> ' . esc_html__( 'Download Site Setup File', 'cotlas-admin' );
-		echo '</a></p>';
+		ctap_info( 'Each part downloads in the format the WordPress ecosystem already uses, so the files also work with the <strong>Widget Importer &amp; Exporter</strong> and <strong>Customizer Export/Import</strong> plugins. Take all three to move a complete design.' );
+
+		$exports = array(
+			array(
+				'action'  => 'cotlas_export_menus',
+				'label'   => 'Menus',
+				'file'    => 'cotlas-menus-YYYYMMDD-HHMMSS.json',
+				'note'    => 'Navigation menus, their items, order and assigned locations.',
+			),
+			array(
+				'action'  => 'cotlas_export_widgets',
+				'label'   => 'Widgets',
+				'file'    => 'your-site.com-widgets.wie',
+				'note'    => 'Every widget instance and the sidebar it sits in (.wie).',
+			),
+			array(
+				'action'  => 'cotlas_export_customizer',
+				'label'   => 'Customizer',
+				'file'    => esc_html( get_stylesheet() ) . '-export.dat',
+				'note'    => 'Theme mods, GeneratePress settings and Additional CSS (.dat).',
+			),
+		);
+
+		foreach ( $exports as $export ) {
+			echo '<div class="ctap-field-row"><div class="ctap-field-label">' . esc_html( $export['label'] ) . '</div><div class="ctap-field-input">';
+			echo '<a class="button button-primary" href="' . esc_url( $export_base . $export['action'] ) . '" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;text-decoration:none;">';
+			echo '<span class="dashicons dashicons-download" style="line-height:20px;"></span> ' . esc_html__( 'Download', 'cotlas-admin' ) . ' ' . esc_html( $export['label'] );
+			echo '</a>';
+			echo '<p class="ctap-field-desc">' . esc_html( $export['note'] ) . ' <code>' . esc_html( $export['file'] ) . '</code></p>';
+			echo '</div></div>';
+		}
+
+		echo '<div style="margin-top:16px;border-top:1px solid #e0e0e0;padding-top:16px;">';
+		echo '<a class="button" href="' . esc_url( $export_base . 'cotlas_site_export' ) . '" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;text-decoration:none;">';
+		echo '<span class="dashicons dashicons-database-export" style="line-height:20px;"></span> ' . esc_html__( 'Download All Three (single JSON)', 'cotlas-admin' );
+		echo '</a>';
+		echo '<p class="ctap-field-desc">Convenience backup of menus, widgets and Customizer in one file. Only this Site Export tool can import it.</p>';
+		echo '</div>';
+
 		ctap_card_close();
 
 		ctap_card_open( 'Import Site Setup', 'dashicons-upload' );
-		ctap_info( '<strong>Importing replaces all existing menus and widgets</strong> with the ones in the file. Customizer settings overwrite the active theme&rsquo;s settings when the theme matches the export. This cannot be undone &mdash; export a backup first.' );
+		ctap_info( '<strong>Menus are replaced</strong> and widgets are appended; Customizer settings are applied when the file comes from the same parent theme. Importing any single file updates only that part. This cannot be undone &mdash; download a backup first.' );
 
 		echo '<form method="post" enctype="multipart/form-data" class="ctap-form">';
 		echo '<input type="hidden" name="_ctap_nonce" value="' . esc_attr( wp_create_nonce( self::NONCE_SE ) ) . '">';
 		echo '<input type="hidden" name="cotlas_site_import_submit" value="1">';
 		echo '<div class="ctap-field-row"><div class="ctap-field-label">Select File</div><div class="ctap-field-input">';
-		echo '<input type="file" name="cotlas_site_import_file" accept=".json,application/json" required style="font-size:13px;">';
-		echo '<p class="ctap-field-desc">Only <code>.json</code> files exported from this Site Export tool are accepted (max 8 MB).</p>';
+		echo '<input type="file" name="cotlas_site_import_file" accept=".wie,.dat,.json,application/json,application/octet-stream" required style="font-size:13px;">';
+		echo '<p class="ctap-field-desc">Accepts <code>.wie</code> (widgets), <code>.dat</code> (Customizer), menus <code>.json</code>, or a combined site-export <code>.json</code> (max 8 MB).</p>';
 		echo '</div></div>';
 		echo '<div style="margin-top:16px;">';
-		echo '<button type="submit" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;" onclick="return confirm(\'Importing will replace all existing menus and widgets. Continue?\')">';
+		echo '<button type="submit" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;" onclick="return confirm(\'Importing will replace existing menus and add widgets. Continue?\')">';
 		echo '<span class="dashicons dashicons-upload" style="line-height:20px;"></span> ' . esc_html__( 'Import Site Setup', 'cotlas-admin' );
 		echo '</button>';
 		echo '</div></form>';
@@ -1595,16 +1626,22 @@ class Cotlas_Admin_Tools {
 			$lines[] = sprintf( _n( '%d menu item imported', '%d menu items imported', $result['menu_items'], 'cotlas-admin' ), $result['menu_items'] );
 		}
 		if ( ! empty( $result['widgets_cleared'] ) ) {
-			$lines[] = sprintf( _n( '%d widget option cleared', '%d widget options cleared', $result['widgets_cleared'], 'cotlas-admin' ), $result['widgets_cleared'] );
+			$lines[] = sprintf( _n( '%d existing widget option cleared', '%d widget options cleared', $result['widgets_cleared'], 'cotlas-admin' ), $result['widgets_cleared'] );
 		}
 		if ( ! empty( $result['widgets'] ) ) {
-			$lines[] = sprintf( _n( '%d widget option imported', '%d widget options imported', $result['widgets'], 'cotlas-admin' ), $result['widgets'] );
+			$lines[] = sprintf( _n( '%d widget imported', '%d widgets imported', $result['widgets'], 'cotlas-admin' ), $result['widgets'] );
+		}
+		if ( ! empty( $result['skipped'] ) ) {
+			$lines[] = sprintf( _n( '%d widget skipped', '%d widgets skipped', $result['skipped'], 'cotlas-admin' ), $result['skipped'] );
 		}
 		if ( ! empty( $result['sidebar_widgets'] ) ) {
 			$lines[] = sprintf( _n( '%d widget placed in a sidebar', '%d widgets placed in sidebars', $result['sidebar_widgets'], 'cotlas-admin' ), $result['sidebar_widgets'] );
 		}
 		if ( ! empty( $result['customizer'] ) ) {
 			$lines[] = __( 'Customizer settings imported', 'cotlas-admin' );
+		}
+		if ( ! empty( $result['options'] ) ) {
+			$lines[] = sprintf( _n( '%d design option imported', '%d design options imported', $result['options'], 'cotlas-admin' ), $result['options'] );
 		}
 
 		echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Site setup imported.', 'cotlas-admin' );
