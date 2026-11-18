@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     3.0.2
+ * Version:     3.1.0
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -25,6 +25,7 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_auth_enabled'                           => 0,
 		'cotlas_category_features_enabled'              => 0,
 		'cotlas_comment_system_enabled'                 => 0,
+		'cotlas_comment_auto_inject'                    => 0,
 		'cotlas_gb_tags_enabled'                        => 0,
 		'cotlas_gb_page_hero_enabled'                   => 0,
 		'cotlas_image_optimization_enabled'             => 0,
@@ -32,6 +33,7 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_user_profile_enabled'                   => 0,
 		'cotlas_user_avatar_enabled'                    => 0,
 		'cotlas_user_social_links_enabled'              => 0,
+		'cotlas_author_box_enabled'                     => 0,
 		'cotlas_reading_list_enabled'                   => 0,
 		'cotlas_wishlist_enabled'                       => 0,
 		'cotlas_cache_enabled'                          => 0,
@@ -136,6 +138,11 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		// Social share box toggles.
 		'cotlas_share_box_enabled'                     => 0,
 		'cotlas_share_box_shortlink'                   => 0,
+		'cotlas_share_box_inject_top'                  => 0,
+		'cotlas_share_box_inject_bottom'               => 0,
+		'cotlas_topbar_datetime_inject'                => 0,
+		'cotlas_topbar_social_inject'                  => 0,
+		'cotlas_related_posts_inject'                  => 0,
 		'cotlas_share_box_facebook'                    => 1,
 		'cotlas_share_box_twitter'                     => 1,
 		'cotlas_share_box_linkedin'                    => 1,
@@ -151,8 +158,16 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_form_field_name'                       => 1,
 		'cotlas_form_field_email'                      => 1,
 		'cotlas_form_field_phone'                      => 1,
+		'cotlas_form_field_url'                        => 0,
+		'cotlas_form_url_local_only'                   => 1,
 		'cotlas_form_field_subject'                    => 1,
 		'cotlas_form_field_message'                    => 1,
+		'cotlas_form_required_name'                    => 1,
+		'cotlas_form_required_email'                   => 1,
+		'cotlas_form_required_phone'                   => 0,
+		'cotlas_form_required_url'                     => 0,
+		'cotlas_form_required_subject'                 => 0,
+		'cotlas_form_required_message'                 => 0,
 		'cotlas_form_email_admin_contact_enabled'       => 1,
 		'cotlas_form_email_user_contact_enabled'        => 1,
 		'cotlas_form_email_admin_newsletter_enabled'    => 1,
@@ -163,6 +178,11 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_smtp_deliver_all'                      => 1,
 		'cotlas_smtp_encryption'                       => 'tls',
 		'cotlas_smtp_port'                             => '587',
+
+		// Frontend preference modules.
+		'cotlas_theme_switcher_enabled'                => 0,
+		'cotlas_dark_mode_enabled'                     => 0,
+		'cotlas_font_resizer_enabled'                  => 0,
 	);
 
 	/**
@@ -180,6 +200,17 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 
 	// String defaults (not toggles).
 	add_option( 'math_captcha_difficulty', 'easy' );
+	add_option( 'cotlas_share_box_networks_top', 'facebook,twitter,linkedin,whatsapp,copy' );
+	add_option( 'cotlas_share_box_networks_bottom', 'facebook,twitter,linkedin,whatsapp,copy' );
+	add_option( 'cotlas_topbar_datetime_display', 'both' );
+	add_option( 'cotlas_topbar_datetime_date_format', 'medium' );
+	add_option( 'cotlas_topbar_datetime_time_format', '12' );
+	add_option( 'cotlas_topbar_social_networks', 'facebook,twitter,instagram,youtube' );
+	add_option( 'cotlas_related_posts_count', 3 );
+	add_option( 'cotlas_related_posts_label', '' );
+	add_option( 'cotlas_ads_header', '' );
+	add_option( 'cotlas_dark_mode_default', 'system' );
+	add_option( 'cotlas_font_resizer_target', '.entry-content' );
 }
 register_activation_hook( __FILE__, 'cotlas_admin_activate_seed_toggle_defaults' );
 // Ensure cricket cache table exists on activation and admin visits.
@@ -221,9 +252,15 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/admin-panel.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/seo/bootstrap.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/social-media.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/topbar-injection.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/share-injection.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/theme-injections.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/social-share-box.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/contact-form.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/smtp.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/theme-switcher.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/dark-mode.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/font-resizer.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/migration-helper.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/trending-widgets.php';
@@ -233,6 +270,7 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/generateblocks-tags.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/cricket-widget.php';
 
 require_once plugin_dir_path( __FILE__ ) . 'inc/user-profile.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/author-box.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/shortcodes.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/category-features.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/post-formats.php';
@@ -244,6 +282,8 @@ require_once plugin_dir_path( __FILE__ ) . 'inc/wishlist.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/cache-settings.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/content-protect.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/settings-export.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/site-export.php';
+require_once plugin_dir_path( __FILE__ ) . 'inc/site-reset.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/admin-tools.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/custom-template.php';
 require_once plugin_dir_path( __FILE__ ) . 'inc/custom-patterns.php';

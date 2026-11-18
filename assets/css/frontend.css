@@ -1070,3 +1070,81 @@ html.cotlas-delete-modal-open {
     border-radius: 12px;
     padding: 30px
 }
+
+/* ==========================================================================
+   Dark Mode Toggle — [cotlas_dark_mode_toggle] + {{dark_mode_toggle}}
+   ========================================================================== */
+.cws-dark-mode-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1
+}
+.cws-dark-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent
+}
+.cws-dark-mode-toggle:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
+    border-radius: 999px
+}
+.cws-dark-mode-slide {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .08);
+    transition: background-color .2s ease
+}
+.cws-dark-mode-slide-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: currentColor;
+    opacity: .4;
+    transition: opacity .2s ease, background-color .2s ease, color .2s ease
+}
+.cws-dark-mode-slide-btn .cws-svg-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    fill: currentColor
+}
+.cws-dark-mode-slide-btn.activated {
+    opacity: 1;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .18)
+}
+.cws-dark-mode-slide-btn.activated.cws-mode-icon-dark {
+    background: #1e1e1e;
+    color: #fff
+}
+html.cws-dark-mode .cws-dark-mode-slide {
+    background: rgba(255, 255, 255, .14)
+}
+html.cws-dark-mode .cws-dark-mode-slide-btn.activated.cws-mode-icon-default {
+    background: #f3f4f6;
+    color: #111
+}
+
+/* ==========================================================================
+   Font Resizer — [cotlas_font_resizer] + {{font_resizer}}
+   ========================================================================== */
+.font-resizer-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    line-height: 1
+}
+.font-resizer-trigger strong {
+    font-weight: 700
+}

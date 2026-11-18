@@ -36,6 +36,12 @@ class Cotlas_Admin_Tools {
 	const NONCE_WL      = 'cotlas_tools_whitelabel_save';
 	const NONCE_CF      = 'cotlas_tools_contact_form_save';
 	const NONCE_SMTP    = 'cotlas_tools_smtp_save';
+	const NONCE_TS      = 'cotlas_tools_theme_switcher_save';
+	const NONCE_DM      = 'cotlas_tools_dark_mode_save';
+	const NONCE_FR      = 'cotlas_tools_font_resizer_save';
+	const NONCE_SE      = 'cotlas_tools_site_export';
+	const NONCE_RD      = 'cotlas_tools_reset_design';
+	const NONCE_RF      = 'cotlas_tools_reset_full';
 
 	/* ── Singleton ──────────────────────────────────────────────────────── */
 
@@ -69,6 +75,12 @@ class Cotlas_Admin_Tools {
 		add_action( 'admin_init', array( $this, 'handle_whitelabel_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_contact_form_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_smtp_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_theme_switcher_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_dark_mode_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_font_resizer_save' ) );
+		add_action( 'admin_init', array( $this, 'handle_site_import' ) );
+		add_action( 'admin_init', array( $this, 'handle_reset_design' ) );
+		add_action( 'admin_init', array( $this, 'handle_reset_full' ) );
 
 		// Active features
 		add_action( 'admin_notices',   array( $this, 'suppress_admin_notices' ), 1 );
@@ -266,6 +278,207 @@ class Cotlas_Admin_Tools {
 	}
 
 	/* ═══════════════════════════════════════════════════════════════════════
+	 * SAVE: THEME SWITCHER
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_theme_switcher_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_TS ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		update_option( 'cotlas_theme_switcher_enabled', isset( $_POST['cotlas_theme_switcher_enabled'] ) ? 1 : 0 );
+
+		$theme = isset( $_POST['cotlas_preview_theme'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_preview_theme'] ) ) : '';
+		if ( '' !== $theme ) {
+			$wp_theme = wp_get_theme( $theme );
+			if ( ! $wp_theme->exists() ) {
+				$theme = '';
+			}
+		}
+
+		$user_id = get_current_user_id();
+		if ( '' === $theme ) {
+			delete_user_meta( $user_id, 'cotlas_preview_theme' );
+		} else {
+			update_user_meta( $user_id, 'cotlas_preview_theme', $theme );
+		}
+
+		if ( function_exists( 'cotlas_set_preview_theme_cookie' ) ) {
+			cotlas_set_preview_theme_cookie( $theme );
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=theme-switcher&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * SAVE: DARK MODE
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_dark_mode_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_DM ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		update_option( 'cotlas_dark_mode_enabled', isset( $_POST['cotlas_dark_mode_enabled'] ) ? 1 : 0 );
+
+		$mode = isset( $_POST['cotlas_dark_mode_default'] ) ? sanitize_key( wp_unslash( $_POST['cotlas_dark_mode_default'] ) ) : 'system';
+		if ( ! in_array( $mode, array( 'light', 'dark', 'system' ), true ) ) {
+			$mode = 'system';
+		}
+		update_option( 'cotlas_dark_mode_default', $mode );
+
+		$css = isset( $_POST['cotlas_dark_mode_css'] ) ? wp_strip_all_tags( wp_unslash( $_POST['cotlas_dark_mode_css'] ) ) : '';
+		update_option( 'cotlas_dark_mode_css', $css );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=dark-mode&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * SAVE: FONT RESIZER
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_font_resizer_save() {
+		if ( empty( $_POST['_ctap_nonce'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_FR ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		update_option( 'cotlas_font_resizer_enabled', isset( $_POST['cotlas_font_resizer_enabled'] ) ? 1 : 0 );
+
+		$target = isset( $_POST['cotlas_font_resizer_target'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_font_resizer_target'] ) ) : '';
+		if ( '' === trim( $target ) ) {
+			$target = '.entry-content';
+		}
+		update_option( 'cotlas_font_resizer_target', $target );
+
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=font-resizer&saved=1' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * IMPORT: SITE SETUP (MENUS, WIDGETS, CUSTOMIZER)
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_site_import() {
+		if ( empty( $_POST['_ctap_nonce'] ) || empty( $_POST['cotlas_site_import_submit'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_SE ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$result = array( 'fatal' => __( 'No file was uploaded.', 'cotlas-admin' ) );
+
+		if ( ! empty( $_FILES['cotlas_site_import_file']['tmp_name'] ) ) {
+			$file = $_FILES['cotlas_site_import_file'];
+
+			if ( UPLOAD_ERR_OK !== (int) $file['error'] ) {
+				$result = array( 'fatal' => __( 'The upload failed. Please try again.', 'cotlas-admin' ) );
+			} elseif ( (int) $file['size'] > 8 * MB_IN_BYTES ) {
+				$result = array( 'fatal' => __( 'The file is larger than 8 MB.', 'cotlas-admin' ) );
+			} elseif ( ! is_uploaded_file( $file['tmp_name'] ) ) {
+				$result = array( 'fatal' => __( 'Invalid upload.', 'cotlas-admin' ) );
+			} else {
+				$data = json_decode( (string) file_get_contents( $file['tmp_name'] ), true );
+
+				$result = null === $data
+					? array( 'fatal' => __( 'The file is not valid JSON.', 'cotlas-admin' ) )
+					: cotlas_site_import_data( $data );
+			}
+		}
+
+		set_transient( 'cotlas_site_import_' . get_current_user_id(), $result, 5 * MINUTE_IN_SECONDS );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=site-export' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * RESET: DESIGN (KEEP CONTENT)
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_reset_design() {
+		if ( empty( $_POST['_ctap_nonce'] ) || empty( $_POST['cotlas_reset_design_submit'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_RD ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$confirm = isset( $_POST['cotlas_reset_confirm'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['cotlas_reset_confirm'] ) ) ) : '';
+
+		if ( 'RESET' !== $confirm ) {
+			$result = array( 'fatal' => __( 'Type RESET to confirm. Nothing was changed.', 'cotlas-admin' ) );
+		} else {
+			$result         = cotlas_site_reset_design();
+			$result['type'] = 'design';
+		}
+
+		set_transient( 'cotlas_site_reset_' . get_current_user_id(), $result, 5 * MINUTE_IN_SECONDS );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reset-site' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
+	 * RESET: FULL SITE
+	 * ═══════════════════════════════════════════════════════════════════════ */
+
+	public function handle_reset_full() {
+		if ( empty( $_POST['_ctap_nonce'] ) || empty( $_POST['cotlas_reset_full_submit'] ) ) {
+			return;
+		}
+		$nonce = sanitize_text_field( wp_unslash( $_POST['_ctap_nonce'] ) );
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_RF ) ) {
+			return;
+		}
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'cotlas-admin' ) );
+		}
+
+		$confirm = isset( $_POST['cotlas_reset_confirm'] ) ? strtoupper( sanitize_text_field( wp_unslash( $_POST['cotlas_reset_confirm'] ) ) ) : '';
+
+		if ( 'RESET' !== $confirm ) {
+			$result = array( 'fatal' => __( 'Type RESET to confirm. Nothing was changed.', 'cotlas-admin' ) );
+		} else {
+			$result         = cotlas_site_reset_full();
+			$result['type'] = 'full';
+		}
+
+		set_transient( 'cotlas_site_reset_' . get_current_user_id(), $result, 5 * MINUTE_IN_SECONDS );
+		wp_safe_redirect( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=reset-site' ) );
+		exit;
+	}
+
+	/* ═══════════════════════════════════════════════════════════════════════
 	 * SAVE: CONTACT FORM
 	 * ═══════════════════════════════════════════════════════════════════════ */
 
@@ -286,8 +499,16 @@ class Cotlas_Admin_Tools {
 			'cotlas_form_field_name',
 			'cotlas_form_field_email',
 			'cotlas_form_field_phone',
+			'cotlas_form_field_url',
+			'cotlas_form_url_local_only',
 			'cotlas_form_field_subject',
 			'cotlas_form_field_message',
+			'cotlas_form_required_name',
+			'cotlas_form_required_email',
+			'cotlas_form_required_phone',
+			'cotlas_form_required_url',
+			'cotlas_form_required_subject',
+			'cotlas_form_required_message',
 			'cotlas_form_email_admin_contact_enabled',
 			'cotlas_form_email_user_contact_enabled',
 			'cotlas_form_email_admin_newsletter_enabled',
@@ -753,6 +974,11 @@ class Cotlas_Admin_Tools {
 			array( 'id' => 'contact-form','label' => 'Contact Form',  'icon' => 'dashicons-email' ),
 			array( 'id' => 'smtp',        'label' => 'SMTP Settings', 'icon' => 'dashicons-email-alt' ),
 			array( 'id' => 'whitelabel',  'label' => 'Whitelabel',    'icon' => 'dashicons-art' ),
+			array( 'id' => 'theme-switcher', 'label' => 'Theme Switcher', 'icon' => 'dashicons-admin-appearance' ),
+			array( 'id' => 'dark-mode',      'label' => 'Dark Mode',      'icon' => 'dashicons-visibility' ),
+			array( 'id' => 'font-resizer',   'label' => 'Font Resizer',   'icon' => 'dashicons-editor-textcolor' ),
+			array( 'id' => 'site-export',    'label' => 'Site Export',    'icon' => 'dashicons-migrate' ),
+			array( 'id' => 'reset-site',     'label' => 'Reset Site',     'icon' => 'dashicons-database-remove' ),
 		);
 		$active = ctap_nav( $tabs );
 
@@ -782,6 +1008,26 @@ class Cotlas_Admin_Tools {
 
 		ctap_pane_open( 'whitelabel', $active );
 		$this->tab_whitelabel();
+		ctap_pane_close();
+
+		ctap_pane_open( 'theme-switcher', $active );
+		$this->tab_theme_switcher();
+		ctap_pane_close();
+
+		ctap_pane_open( 'dark-mode', $active );
+		$this->tab_dark_mode();
+		ctap_pane_close();
+
+		ctap_pane_open( 'font-resizer', $active );
+		$this->tab_font_resizer();
+		ctap_pane_close();
+
+		ctap_pane_open( 'site-export', $active );
+		$this->tab_site_export();
+		ctap_pane_close();
+
+		ctap_pane_open( 'reset-site', $active );
+		$this->tab_reset_site();
 		ctap_pane_close();
 
 		ctap_page_close();
@@ -1002,9 +1248,21 @@ class Cotlas_Admin_Tools {
 		ctap_toggle( 'cotlas_form_field_name',    'Name Field',    '', 1 );
 		ctap_toggle( 'cotlas_form_field_email',   'Email Field',   '', 1 );
 		ctap_toggle( 'cotlas_form_field_phone',   'Mobile Field',  '', 1 );
+		ctap_toggle( 'cotlas_form_field_url',     'URL Field',     'Only used by contact and newsletter forms when enabled. The URL field is always included in grievance_form.', 0 );
+		ctap_toggle( 'cotlas_form_url_local_only', 'Restrict URL to Site Articles', 'Accept only links or slugs that resolve to a published post on this site. The submitted value is replaced with that post permalink.', 1 );
 		ctap_toggle( 'cotlas_form_field_subject', 'Subject Field', '', 1 );
 		ctap_toggle( 'cotlas_form_field_message', 'Message Field', '', 1 );
 		ctap_field( 'Custom Class', ctap_input( 'cotlas_form_custom_class' ), 'CSS class applied to the form wrapper. Example: <code>my-contact-form</code>.' );
+		ctap_card_close();
+
+		ctap_card_open( 'Required Fields', 'dashicons-star-filled' );
+		ctap_info( 'Required fields show a <strong>*</strong> next to the label and are also enforced on submission. The URL field is always required for <code>grievance_form</code>.' );
+		ctap_toggle( 'cotlas_form_required_name',    'Name Required',    '', 1 );
+		ctap_toggle( 'cotlas_form_required_email',   'Email Required',   '', 1 );
+		ctap_toggle( 'cotlas_form_required_phone',   'Mobile Required',  '', 0 );
+		ctap_toggle( 'cotlas_form_required_url',     'URL Required',     '', 0 );
+		ctap_toggle( 'cotlas_form_required_subject', 'Subject Required', '', 0 );
+		ctap_toggle( 'cotlas_form_required_message', 'Message Required', '', 0 );
 		ctap_card_close();
 
 		ctap_card_open( 'Email Notifications — Contact Form', 'dashicons-email' );
@@ -1014,7 +1272,7 @@ class Cotlas_Admin_Tools {
 		ctap_toggle( 'cotlas_form_email_user_contact_enabled', 'Email Notification to User', 'Send a confirmation email to the user who submitted the contact form.', 1 );
 		ctap_field( 'Email notification to send to User', '', 'This email will be sent to user.' );
 		wp_editor( get_option( 'cotlas_form_email_user_contact', '' ), 'cotlas_form_email_user_contact', array( 'textarea_name' => 'cotlas_form_email_user_contact', 'textarea_rows' => 8, 'media_buttons' => false ) );
-		ctap_info( 'Placeholders: <code>{name}</code> <code>{email}</code> <code>{phone}</code> <code>{subject}</code> <code>{message}</code> <code>{site_name}</code> <code>{site_url}</code>' );
+		ctap_info( 'Placeholders: <code>{name}</code> <code>{email}</code> <code>{phone}</code> <code>{subject}</code> <code>{url}</code> <code>{message}</code> <code>{site_name}</code> <code>{site_url}</code>' );
 		ctap_card_close();
 
 		ctap_card_open( 'Email Notifications — Newsletter', 'dashicons-email' );
@@ -1042,6 +1300,7 @@ class Cotlas_Admin_Tools {
 		ctap_card_open( 'Shortcode Usage', 'dashicons-shortcode' );
 		ctap_info( 'Contact form: <code>[cotlas_form form_type="contact_form" class="contact_form" from_name="Site Contact" from_email="info@example.com" form_fields="name,email,phone,subject,message"]</code>' );
 		ctap_info( 'Newsletter: <code>[cotlas_form form_type="newsletter" class="newsletter_form" from_name="Site Newsletter" from_email="info@example.com" form_fields="name,email"]</code>' );
+		ctap_info( 'Grievance form: <code>[cotlas_form form_type="grievance_form" class="grievance_form" form_fields="name,email,phone,url,message"]</code> &mdash; the URL field accepts a published article link or slug; with the restriction enabled, anything else is rejected.' );
 		ctap_card_close();
 	}
 
@@ -1166,6 +1425,285 @@ class Cotlas_Admin_Tools {
 		ctap_card_close();
 
 		ctap_form_close( 'Save Whitelabel Settings' );
+	}
+
+	/* ─── Tab: Theme Switcher ─────────────────────────────────────────────── */
+
+	private function tab_theme_switcher() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'theme-switcher' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Theme switcher settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_TS, 'theme-switcher' );
+
+		ctap_card_open( 'Theme Switcher', 'dashicons-admin-appearance' );
+		ctap_toggle(
+			'cotlas_theme_switcher_enabled',
+			'Enable Theme Switcher',
+			'Only administrators can preview a theme, and the preview applies to your own browser. Visitors and other users keep seeing the active theme.',
+			0
+		);
+		ctap_info( 'WordPress loads the theme before the current user is known, so the choice is remembered with a signed cookie in your browser. It applies to the frontend and wp-admin for your browser only, so the previewed theme&rsquo;s Customizer and settings screens are available.' );
+
+		$current = (string) get_user_meta( get_current_user_id(), 'cotlas_preview_theme', true );
+		$select  = '<select name="cotlas_preview_theme">';
+		$select .= '<option value="">' . esc_html__( '— Use Site Theme —', 'cotlas-admin' ) . '</option>';
+		foreach ( wp_get_themes() as $stylesheet => $theme ) {
+			$select .= sprintf(
+				'<option value="%s"%s>%s (%s)</option>',
+				esc_attr( $stylesheet ),
+				selected( $current, $stylesheet, false ),
+				esc_html( $theme->get( 'Name' ) ),
+				esc_html( $stylesheet )
+			);
+		}
+		$select .= '</select>';
+
+		ctap_field( 'Preview Theme', $select, 'Choose the theme to preview on the frontend and in wp-admin. Clear the selection to return to the site theme. Activating a theme from Appearance &rarr; Themes also clears the preview.' );
+		ctap_card_close();
+
+		ctap_form_close( 'Save Theme Switcher' );
+	}
+
+	/* ─── Tab: Dark Mode ──────────────────────────────────────────────────── */
+
+	private function tab_dark_mode() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'dark-mode' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Dark mode settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_DM, 'dark-mode' );
+
+		ctap_card_open( 'Dark Mode', 'dashicons-visibility' );
+		ctap_toggle( 'cotlas_dark_mode_enabled', 'Enable Dark Mode', 'Adds the frontend dark mode toggle, its shortcode and dynamic tag.', 0 );
+		ctap_field(
+			'Default Mode',
+			ctap_select( 'cotlas_dark_mode_default', array( 'system' => 'System (device preference)', 'light' => 'Light', 'dark' => 'Dark' ), 'system' ),
+			'What visitors see before choosing their own mode. <strong>System</strong> follows the device dark mode setting.'
+		);
+		ctap_info( 'Visitors who use the toggle have their choice stored in the browser for 30 days and it overrides the default. Clearing site data returns them to the default.' );
+		ctap_card_close();
+
+		ctap_card_open( 'Dark Mode CSS Overrides', 'dashicons-editor-code' );
+		$css = (string) get_option( 'cotlas_dark_mode_css', '' );
+		ctap_field(
+			'Custom CSS',
+			'<textarea name="cotlas_dark_mode_css" rows="12" style="width:100%;font-family:monospace;font-size:12px">' . esc_textarea( $css ) . '</textarea>',
+			'Applied only while dark mode is active. The <code>cws-dark-mode</code> class is added to <code>&lt;html&gt;</code>, e.g. <code>html.cws-dark-mode body{background:#111;color:#eee}</code>.'
+		);
+		ctap_card_close();
+
+		ctap_form_close( 'Save Dark Mode Settings' );
+
+		ctap_card_open( 'Usage', 'dashicons-shortcode' );
+		ctap_info( 'Shortcode: <code>[cotlas_dark_mode_toggle]</code>' );
+		ctap_info( 'Dynamic tag: <code>{{dark_mode_toggle}}</code>' );
+		ctap_info( 'Both render the same switch and can be placed in GeneratePress header elements, widgets or blocks.' );
+		ctap_card_close();
+	}
+
+	/* ─── Tab: Font Resizer ───────────────────────────────────────────────── */
+
+	private function tab_font_resizer() {
+		if ( ! empty( $_GET['saved'] ) && isset( $_GET['tab'] ) && 'font-resizer' === sanitize_key( $_GET['tab'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Font resizer settings saved.', 'cotlas-admin' ) . '</div>';
+		}
+
+		ctap_form_open( self::NONCE_FR, 'font-resizer' );
+
+		ctap_card_open( 'Font Resizer', 'dashicons-editor-textcolor' );
+		ctap_toggle( 'cotlas_font_resizer_enabled', 'Enable Font Resizer', 'Adds the article font size control.', 0 );
+
+		$target = (string) get_option( 'cotlas_font_resizer_target', '.entry-content' );
+		ctap_field(
+			'Content Selector',
+			'<input type="text" name="cotlas_font_resizer_target" value="' . esc_attr( $target ) . '" placeholder=".entry-content">',
+			'CSS selector for the article content. Adjust it if your theme uses a different content wrapper.'
+		);
+		ctap_info( 'Clicking the button cycles the font size through 100%, 110%, 120% and 130%, then back to 100%. The choice is stored in the visitor&rsquo;s browser.' );
+		ctap_card_close();
+
+		ctap_form_close( 'Save Font Resizer Settings' );
+
+		ctap_card_open( 'Usage', 'dashicons-shortcode' );
+		ctap_info( 'Shortcode: <code>[cotlas_font_resizer]</code>' );
+		ctap_info( 'Dynamic tag: <code>{{font_resizer}}</code>' );
+		ctap_card_close();
+	}
+
+	/* ─── Tab: Site Export ────────────────────────────────────────────────── */
+
+	private function tab_site_export() {
+		$transient = 'cotlas_site_import_' . get_current_user_id();
+		$result    = get_transient( $transient );
+		if ( false !== $result ) {
+			delete_transient( $transient );
+			$this->render_site_import_result( $result );
+		}
+
+		$theme      = wp_get_theme();
+		$export_url = admin_url( 'admin-post.php?action=cotlas_site_export&_wpnonce=' . wp_create_nonce( 'cotlas_site_export' ) );
+
+		ctap_card_open( 'Export Site Setup', 'dashicons-download' );
+		ctap_info( 'Exports all navigation menus, widget settings and assignments, and the Customizer settings of the active theme (<strong>' . esc_html( $theme->get( 'Name' ) ) . '</strong>).' );
+		echo '<p><a class="button button-primary" href="' . esc_url( $export_url ) . '" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;text-decoration:none;">';
+		echo '<span class="dashicons dashicons-download" style="line-height:20px;"></span> ' . esc_html__( 'Download Site Setup File', 'cotlas-admin' );
+		echo '</a></p>';
+		ctap_card_close();
+
+		ctap_card_open( 'Import Site Setup', 'dashicons-upload' );
+		ctap_info( '<strong>Importing replaces all existing menus and widgets</strong> with the ones in the file. Customizer settings overwrite the active theme&rsquo;s settings when the theme matches the export. This cannot be undone &mdash; export a backup first.' );
+
+		echo '<form method="post" enctype="multipart/form-data" class="ctap-form">';
+		echo '<input type="hidden" name="_ctap_nonce" value="' . esc_attr( wp_create_nonce( self::NONCE_SE ) ) . '">';
+		echo '<input type="hidden" name="cotlas_site_import_submit" value="1">';
+		echo '<div class="ctap-field-row"><div class="ctap-field-label">Select File</div><div class="ctap-field-input">';
+		echo '<input type="file" name="cotlas_site_import_file" accept=".json,application/json" required style="font-size:13px;">';
+		echo '<p class="ctap-field-desc">Only <code>.json</code> files exported from this Site Export tool are accepted (max 8 MB).</p>';
+		echo '</div></div>';
+		echo '<div style="margin-top:16px;">';
+		echo '<button type="submit" class="button button-primary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:13px;" onclick="return confirm(\'Importing will replace all existing menus and widgets. Continue?\')">';
+		echo '<span class="dashicons dashicons-upload" style="line-height:20px;"></span> ' . esc_html__( 'Import Site Setup', 'cotlas-admin' );
+		echo '</button>';
+		echo '</div></form>';
+		ctap_card_close();
+
+		ctap_card_open( 'Plugin Settings Are Separate', 'dashicons-admin-settings' );
+		ctap_info( 'This tool moves site structure and theme design. To move Cotlas Admin plugin configuration, use <a href="' . esc_url( admin_url( 'admin.php?page=cotlas-export-import' ) ) . '">Export / Import</a> instead.' );
+		ctap_card_close();
+	}
+
+	/** Render the result of a site setup import. */
+	private function render_site_import_result( $result ) {
+		if ( ! is_array( $result ) ) {
+			return;
+		}
+
+		if ( ! empty( $result['fatal'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-error"><span class="dashicons dashicons-warning"></span> ' . esc_html( $result['fatal'] ) . '</div>';
+			return;
+		}
+
+		$lines = array();
+		if ( ! empty( $result['menus_cleared'] ) ) {
+			$lines[] = sprintf( _n( '%d existing menu removed', '%d existing menus removed', $result['menus_cleared'], 'cotlas-admin' ), $result['menus_cleared'] );
+		}
+		if ( ! empty( $result['menus'] ) ) {
+			$lines[] = sprintf( _n( '%d menu imported', '%d menus imported', $result['menus'], 'cotlas-admin' ), $result['menus'] );
+		}
+		if ( ! empty( $result['menu_items'] ) ) {
+			$lines[] = sprintf( _n( '%d menu item imported', '%d menu items imported', $result['menu_items'], 'cotlas-admin' ), $result['menu_items'] );
+		}
+		if ( ! empty( $result['widgets_cleared'] ) ) {
+			$lines[] = sprintf( _n( '%d widget option cleared', '%d widget options cleared', $result['widgets_cleared'], 'cotlas-admin' ), $result['widgets_cleared'] );
+		}
+		if ( ! empty( $result['widgets'] ) ) {
+			$lines[] = sprintf( _n( '%d widget option imported', '%d widget options imported', $result['widgets'], 'cotlas-admin' ), $result['widgets'] );
+		}
+		if ( ! empty( $result['sidebar_widgets'] ) ) {
+			$lines[] = sprintf( _n( '%d widget placed in a sidebar', '%d widgets placed in sidebars', $result['sidebar_widgets'], 'cotlas-admin' ), $result['sidebar_widgets'] );
+		}
+		if ( ! empty( $result['customizer'] ) ) {
+			$lines[] = __( 'Customizer settings imported', 'cotlas-admin' );
+		}
+
+		echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Site setup imported.', 'cotlas-admin' );
+		if ( $lines ) {
+			echo '<br>' . esc_html( implode( ' · ', $lines ) );
+		}
+		echo '</div>';
+
+		foreach ( (array) ( $result['warnings'] ?? array() ) as $warning ) {
+			echo '<div class="ctap-notice ctap-notice-error"><span class="dashicons dashicons-warning"></span> ' . esc_html( $warning ) . '</div>';
+		}
+	}
+
+	/* ─── Tab: Reset Site ─────────────────────────────────────────────────── */
+
+	private function tab_reset_site() {
+		$transient = 'cotlas_site_reset_' . get_current_user_id();
+		$result    = get_transient( $transient );
+		if ( false !== $result ) {
+			delete_transient( $transient );
+			$this->render_site_reset_result( $result );
+		}
+
+		if ( is_multisite() ) {
+			ctap_card_open( 'Site Reset', 'dashicons-database-remove' );
+			ctap_info( 'Site reset is not available on multisite installations. Reset each site individually using its own tools.' );
+			ctap_card_close();
+			return;
+		}
+
+		ctap_card_open( 'Before You Reset', 'dashicons-info' );
+		ctap_info( 'Resetting cannot be undone. Download a <strong>Site Export</strong> (menus, widgets, Customizer) and an <strong>Export / Import</strong> plugin-settings file first, and take a full database backup if possible.' );
+		ctap_card_close();
+
+		ctap_card_open( 'Reset Design — Keep Content', 'dashicons-art' );
+		ctap_info( 'Keeps all posts, pages, custom post types, media, categories, tags, comments and users. Removes navigation menus, widgets, Customizer settings, Additional CSS, block global styles and cached data. Use this when a redesign starts over but the content must stay.' );
+
+		echo '<form method="post" class="ctap-form">';
+		echo '<input type="hidden" name="_ctap_nonce" value="' . esc_attr( wp_create_nonce( self::NONCE_RD ) ) . '">';
+		echo '<input type="hidden" name="cotlas_reset_design_submit" value="1">';
+		echo '<div class="ctap-field-row"><div class="ctap-field-label">Confirmation</div><div class="ctap-field-input">';
+		echo '<input type="text" name="cotlas_reset_confirm" placeholder="Type RESET" autocomplete="off" required style="max-width:220px">';
+		echo '<p class="ctap-field-desc">Type <code>RESET</code> to confirm. The active theme and plugins stay active.</p>';
+		echo '</div></div>';
+		echo '<div style="margin-top:16px;">';
+		echo '<button type="submit" class="button button-primary" onclick="return confirm(\'Remove menus, widgets and design settings while keeping all content? This cannot be undone.\')">';
+		echo esc_html__( 'Reset Design (Keep Content)', 'cotlas-admin' );
+		echo '</button>';
+		echo '</div></form>';
+		ctap_card_close();
+
+		ctap_card_open( 'Full Reset — Fresh WordPress', 'dashicons-warning' );
+		ctap_info( '<strong>Deletes all posts, pages, custom post types, media files, comments, categories, tags, menus, widgets, Customizer settings and all users except your account.</strong> Nearly all database options are reset. The site URL/name/admin email, active theme and active plugins are kept so the site stays reachable. Plugin-created database tables are not dropped.' );
+
+		echo '<form method="post" class="ctap-form">';
+		echo '<input type="hidden" name="_ctap_nonce" value="' . esc_attr( wp_create_nonce( self::NONCE_RF ) ) . '">';
+		echo '<input type="hidden" name="cotlas_reset_full_submit" value="1">';
+		echo '<div class="ctap-field-row"><div class="ctap-field-label">Confirmation</div><div class="ctap-field-input">';
+		echo '<input type="text" name="cotlas_reset_confirm" placeholder="Type RESET" autocomplete="off" required style="max-width:220px">';
+		echo '<p class="ctap-field-desc">Type <code>RESET</code> to confirm. Every post, page, media file and other user will be deleted.</p>';
+		echo '</div></div>';
+		echo '<div style="margin-top:16px;">';
+		echo '<button type="submit" class="button" style="color:#b32d2e;border-color:#b32d2e;" onclick="return confirm(\'FULL RESET will delete all content, media, terms and other users. This cannot be undone. Continue?\')">';
+		echo esc_html__( 'Full Reset Site', 'cotlas-admin' );
+		echo '</button>';
+		echo '</div></form>';
+		ctap_card_close();
+	}
+
+	/** Render the result of a site reset. */
+	private function render_site_reset_result( $result ) {
+		if ( ! is_array( $result ) ) {
+			return;
+		}
+
+		if ( ! empty( $result['fatal'] ) ) {
+			echo '<div class="ctap-notice ctap-notice-error"><span class="dashicons dashicons-warning"></span> ' . esc_html( $result['fatal'] ) . '</div>';
+			return;
+		}
+
+		$lines = array();
+
+		if ( 'design' === ( $result['type'] ?? '' ) ) {
+			$lines[] = sprintf( _n( '%d menu removed', '%d menus removed', (int) $result['menus'], 'cotlas-admin' ), (int) $result['menus'] );
+			$lines[] = sprintf( _n( '%d widget option removed', '%d widget options removed', (int) $result['widgets'], 'cotlas-admin' ), (int) $result['widgets'] );
+			$lines[] = sprintf( _n( '%d Customizer settings group removed', '%d Customizer settings groups removed', (int) $result['customizer'], 'cotlas-admin' ), (int) $result['customizer'] );
+
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Design reset complete. All content and media were preserved.', 'cotlas-admin' );
+		} else {
+			$lines[] = sprintf( _n( '%d post deleted', '%d posts deleted', (int) $result['posts'], 'cotlas-admin' ), (int) $result['posts'] );
+			$lines[] = sprintf( _n( '%d media attachment deleted', '%d media attachments deleted', (int) $result['attachments'], 'cotlas-admin' ), (int) $result['attachments'] );
+			$lines[] = sprintf( _n( '%d comment deleted', '%d comments deleted', (int) $result['comments'], 'cotlas-admin' ), (int) $result['comments'] );
+			$lines[] = sprintf( _n( '%d user deleted', '%d users deleted', (int) $result['users'], 'cotlas-admin' ), (int) $result['users'] );
+			$lines[] = sprintf( _n( '%d option reset', '%d options reset', (int) $result['options'], 'cotlas-admin' ), (int) $result['options'] );
+
+			echo '<div class="ctap-notice ctap-notice-success"><span class="dashicons dashicons-yes-alt"></span> ' . esc_html__( 'Full reset complete. The site is now a fresh WordPress installation.', 'cotlas-admin' );
+		}
+
+		echo '<br>' . esc_html( implode( ' · ', $lines ) ) . '</div>';
 	}
 
 	/** Image URL field with media-library picker button and live preview. Stores the raw value — an empty field means "use the default". */

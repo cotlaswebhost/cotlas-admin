@@ -123,6 +123,16 @@ function cotlas_panel_process_saves() {
 			'page' => 'cotlas-comment-system',
 			'map'  => array(
 				'cotlas_comment_system_enabled' => 'checkbox',
+				'cotlas_comment_auto_inject'    => 'checkbox',
+			),
+		),
+		'ctap_save_theme_injections' => array(
+			'page' => 'cotlas-gb-tags',
+			'map'  => array(
+				'cotlas_related_posts_inject' => 'checkbox',
+				'cotlas_related_posts_label'  => 'sanitize_text_field',
+				'cotlas_related_posts_count'  => 'cotlas_sanitize_related_posts_count',
+				'cotlas_ads_header'           => 'cotlas_sanitize_ads_shortcode',
 			),
 		),
 		'ctap_save_gbtags' => array(
@@ -293,11 +303,32 @@ function cotlas_panel_process_saves() {
 				'cotlas_company_whatsapp' => 'sanitize_text_field',
 			),
 		),
+		'ctap_save_topbar' => array(
+			'page' => 'cotlas-social-media',
+			'map'  => array(
+				'cotlas_topbar_datetime_inject'      => 'checkbox',
+				'cotlas_topbar_datetime_display'     => function( $v ) {
+					return cotlas_sanitize_topbar_datetime_choice( $v, array( 'date', 'time', 'both' ), 'both' );
+				},
+				'cotlas_topbar_datetime_date_format' => function( $v ) {
+					return cotlas_sanitize_topbar_datetime_choice( $v, array( 'full', 'long', 'medium', 'short' ), 'medium' );
+				},
+				'cotlas_topbar_datetime_time_format' => function( $v ) {
+					return cotlas_sanitize_topbar_datetime_choice( $v, array( '12', '24' ), '12' );
+				},
+				'cotlas_topbar_social_inject'        => 'checkbox',
+				'cotlas_topbar_social_networks'      => 'cotlas_sanitize_topbar_social_networks',
+			),
+		),
 		'ctap_save_social_share_box' => array(
 			'page' => 'cotlas-social-media',
 			'map'  => array(
 				'cotlas_share_box_enabled'   => 'checkbox',
 				'cotlas_share_box_shortlink' => 'checkbox',
+				'cotlas_share_box_inject_top'    => 'checkbox',
+				'cotlas_share_box_inject_bottom' => 'checkbox',
+				'cotlas_share_box_networks_top'    => 'cotlas_sanitize_share_networks',
+				'cotlas_share_box_networks_bottom' => 'cotlas_sanitize_share_networks',
 				'cotlas_share_box_css'       => 'cotlas_sanitize_css',
 				'cotlas_share_box_facebook'  => 'checkbox',
 				'cotlas_share_box_twitter'   => 'checkbox',
@@ -337,6 +368,7 @@ function cotlas_panel_process_saves() {
 				'cotlas_user_profile_enabled'      => 'checkbox',
 				'cotlas_user_avatar_enabled'       => 'checkbox',
 				'cotlas_user_social_links_enabled' => 'checkbox',
+				'cotlas_author_box_enabled'        => 'checkbox',
 			),
 		),
 		'ctap_save_reading_list' => array(
@@ -1271,7 +1303,15 @@ function cotlas_panel_page_comments() {
 	ctap_pane_open( 'settings', $active );
 	ctap_form_open( 'ctap_save_comments', 'settings' );
 	ctap_card_open( 'Comment System', 'dashicons-admin-comments' );
-	ctap_module_status( 'cotlas_comment_system_enabled', 'Comment System', 'Provides a Facebook-style threaded comment section, inline edit, coloured initials avatars, and AJAX replies.' );
+	ctap_module_status( 'cotlas_comment_system_enabled', 'Comment System', 'Master switch for the whole comment system: shortcode, AJAX handler and auto-injection. Provides a Facebook-style threaded comment section, inline edit, coloured initials avatars, and AJAX replies.' );
+	ctap_card_close();
+	ctap_card_open( 'Placement', 'dashicons-admin-generate' );
+	ctap_toggle(
+		'cotlas_comment_auto_inject',
+		'Auto-inject comments',
+		'Replaces GeneratePress\'s native comments with the Cotlas comment section on single posts and pages. Leave this off when you place [cotlas_comments] manually (for example in Elementor or another page builder) — the theme\'s native comments are left untouched in that case.'
+	);
+	ctap_info( 'Auto-injection only runs while the master <strong>Comment System</strong> switch above is enabled.' );
 	ctap_card_close();
 	ctap_card_open( 'Features', 'dashicons-info-outline' );
 	ctap_info( '<ul style="margin:.5em 0 0 1.4em"><li>Threaded replies up to any depth</li><li>Coloured-initials avatar (Gravatar fallback)</li><li>Inline comment editing for post author and commenter (via cookie)</li><li>Reply form cloned inline — no page reload</li><li>Spam protection: guests must pass honeypot / Turnstile if enabled in Security Settings</li></ul>' );
@@ -1282,7 +1322,7 @@ function cotlas_panel_page_comments() {
 	ctap_pane_open( 'codes', $active );
 	ctap_card_open( 'Shortcodes', 'dashicons-shortcode' );
 	ctap_ref_table( array(
-		array( 'cotlas_comments', 'Styled threaded comments section. Use inside single post templates.',
+		array( 'cotlas_comments', 'Styled threaded comments section. Use when Auto-inject comments is off (e.g. Elementor or another page builder).',
 			'<code>post_id="123"</code> — specific post ID (defaults to current post)<br><code>title="Comments"</code> — heading above the list' ),
 	) );
 	ctap_card_close();
@@ -1303,6 +1343,7 @@ function cotlas_panel_page_gb_tags() {
 		array( 'id' => 'cricket',    'label' => 'Cricket',      'icon' => 'dashicons-calendar-alt' ),
 		array( 'id' => 'query',      'label' => 'Query Params',  'icon' => 'dashicons-database-view' ),
 		array( 'id' => 'shortcodes', 'label' => 'Shortcodes',    'icon' => 'dashicons-shortcode' ),
+		array( 'id' => 'theme-injections', 'label' => 'Theme Injections', 'icon' => 'dashicons-layout' ),
 		array( 'id' => 'settings',   'label' => 'Settings',      'icon' => 'dashicons-admin-generic' ),
 	);
 	$active = ctap_nav( $tabs );
@@ -1311,6 +1352,7 @@ function cotlas_panel_page_gb_tags() {
 	ctap_card_open( 'Registered Dynamic Tags', 'dashicons-tag' );
 	ctap_info( 'These tags appear in the <strong>Dynamic Content</strong> and <strong>Dynamic Link</strong> dropdowns inside GenerateBlocks. No manual key entry needed.' );
 	$tag_cards = array(
+		array( 'Current Date/Time',   'current_datetime', 'option', 'Live current date/time. Updates to the visitor\'s local clock; server-rendered fallback for no-JS.', array( 'format: date | time | both', 'date_format: full | long | medium | short', 'time_format: 12 | 24' ) ),
 		array( 'Human Date',          'human_date',       'post',   'Relative date ("3 hours ago"). Falls back to formatted date after 24 h.',             array( 'type: published (default) | modified', 'source: current or specific post' ) ),
 		array( 'Page Hero',           'hero_section',     'post',   'Per-page Hero title, description, and image fields for posts/pages/CPTs.',            array( 'field: title | description | image_url', 'Enable from the Page Hero tab first' ) ),
 		array( 'Post Views',          'post_views',       'post',   'Raw view count for a post. Requires Post Views Counter plugin.',                       array( 'source: current post or pick a specific one' ) ),
@@ -1491,8 +1533,8 @@ function cotlas_panel_page_gb_tags() {
 			'<code>id="5"</code> — term ID<br><code>slug="news"</code> — term slug<br><code>field="name"</code> <code>field="description"</code> <code>field="link"</code><br><code>link="1"</code> — wrap in anchor' ),
 		array( 'cotlas_search',          'Accessible styled search form.',
 			'<code>placeholder="Search…"</code><br><code>button_label="Go"</code><br><code>post_types="post,page"</code> — comma-separated post types' ),
-		array( 'local_datetime',         "Visitor's local date/time updating live.",
-			'<code>class="my-class"</code><br><code>date_format="DD/MM/YYYY"</code><br><code>time_format="HH:mm"</code>' ),
+		array( 'local_datetime',         "Current date/time. Renders server-side, then updates to the visitor's local time via JS.",
+			'<code>class="my-class"</code> — extra CSS class<br><code>date_format="long"</code> — full | long | medium | short<br><code>time_format="12"</code> — 12 or 24' ),
 		array( 'audio_player',           'HTML5 audio player for Audio-format posts.',
 			'<code>style="modern"</code> <code>style="minimal"</code> <code>style="dark"</code><br><code>width="100%"</code> <code>height="54px"</code><br><code>autoplay="0"</code> or <code>autoplay="1"</code><br><code>loop="0"</code> or <code>loop="1"</code>' ),
 		array( 'cotlas_bookmark',        'Reading list bookmark toggle button (Reading List module).',
@@ -1509,6 +1551,36 @@ function cotlas_panel_page_gb_tags() {
 			'<em style="color:#999">same as cricket_points_table</em>' ),
 	) );
 	ctap_card_close();
+	ctap_pane_close();
+
+	ctap_pane_open( 'theme-injections', $active );
+	ctap_form_open( 'ctap_save_theme_injections', 'theme-injections' );
+	ctap_card_open( 'Related Posts', 'dashicons-admin-links' );
+	ctap_info( 'Injects a related-posts block on single posts, after the main content. Posts are pulled from the same categories as the current post, newest first, using the theme&rsquo;s own markup (no GenerateBlocks or Latest Posts block needed).' );
+	ctap_toggle( 'cotlas_related_posts_inject', 'Enable Related Posts Injection', 'Outputs the <code>.cws-related-posts</code> block on single posts. Uses your existing theme CSS.', 0 );
+	ctap_field(
+		'Heading Label',
+		'<input type="text" name="cotlas_related_posts_label" value="' . esc_attr( get_option( 'cotlas_related_posts_label', '' ) ) . '" placeholder="Related News" style="width:100%">',
+		'Text shown above the related posts. Leave empty to use <code>Related News</code>.'
+	);
+	ctap_field(
+		'Number of Posts',
+		'<input type="number" min="1" max="12" step="1" name="cotlas_related_posts_count" value="' . esc_attr( get_option( 'cotlas_related_posts_count', 3 ) ) . '">',
+		'How many related posts to show. Minimum 1, maximum 12.'
+	);
+	ctap_card_close();
+	ctap_card_open( 'Styling', 'dashicons-editor-custom' );
+	ctap_info( 'Output classes match the existing theme styles: <code>.cws-related-posts</code>, <code>.cws-posts</code>, <code>.cws-posts-list</code>, <code>.wp-block-latest-posts__featured-image</code>, <code>.wp-block-latest-posts__post-title</code>, <code>.wp-block-latest-posts__post-date</code>. Thumbnails use the <code>small-card</code> image size.' );
+	ctap_card_close();
+	ctap_card_open( 'Ads Injections', 'dashicons-megaphone' );
+	ctap_info( 'Paste any ads shortcode here and it is rendered in the matching page position. Leave a field empty to inject nothing. Example: <code>[cotlas_ad zone="inside-header"]</code>' );
+	ctap_field(
+		'Header Ads',
+		'<input type="text" name="cotlas_ads_header" value="' . esc_attr( get_option( 'cotlas_ads_header', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;inside-header&quot;]" style="width:100%">',
+		'Rendered just after the site logo in the header, inside <code>.header-right</code> (same position as the former GeneratePress Element).'
+	);
+	ctap_card_close();
+	ctap_form_close();
 	ctap_pane_close();
 
 	ctap_pane_open( 'settings', $active );
@@ -2007,6 +2079,22 @@ function cotlas_panel_page_social() {
 	ctap_field( 'WhatsApp Number',   ctap_input( 'cotlas_company_whatsapp' ), 'International format without + or spaces, e.g. <code>15551234567</code>.' );
 	ctap_card_close();
 	ctap_form_close();
+
+	ctap_form_open( 'ctap_save_topbar', 'links' );
+	ctap_card_open( 'Top Bar (Secondary Navigation)', 'dashicons-align-left' );
+	ctap_info( 'Injects entries into GeneratePress&rsquo;s secondary navigation on every page. Save this form separately from the Social Media URLs above. Requires the GP Premium secondary navigation to be enabled.' );
+	ctap_toggle( 'cotlas_topbar_datetime_inject', 'Enable Date/Time Entry in Top Bar', 'Adds the visitor&rsquo;s local date/time at the start of the top bar. Updates live via JavaScript.', 0 );
+	ctap_field( 'Show', ctap_select( 'cotlas_topbar_datetime_display', array( 'both' => 'Date and time', 'date' => 'Date only', 'time' => 'Time only' ), 'both' ) );
+	ctap_field( 'Date Format', ctap_select( 'cotlas_topbar_datetime_date_format', array( 'full' => 'Full', 'long' => 'Long', 'medium' => 'Medium', 'short' => 'Short' ), 'medium' ) );
+	ctap_field( 'Time Format', ctap_select( 'cotlas_topbar_datetime_time_format', array( '12' => '12-hour (AM/PM)', '24' => '24-hour' ), '12' ) );
+	ctap_toggle( 'cotlas_topbar_social_inject', 'Enable Social Media Icons in Top Bar', 'Adds the social icons at the end of the top bar. Requires the Social Media master toggle above.', 0 );
+	ctap_field(
+		'Social Networks',
+		'<input type="text" name="cotlas_topbar_social_networks" value="' . esc_attr( get_option( 'cotlas_topbar_social_networks', 'facebook,twitter,instagram,youtube' ) ) . '" placeholder="facebook,twitter,instagram,youtube" style="width:100%">',
+		'Comma-separated networks for the top bar icons. Allowed: <code>facebook</code>, <code>twitter</code>, <code>instagram</code>, <code>youtube</code>, <code>linkedin</code>, <code>threads</code>, <code>whatsapp</code>. Only networks with a saved URL above are rendered.'
+	);
+	ctap_card_close();
+	ctap_form_close();
 	ctap_pane_close();
 
 	/* ── Share Box tab ────────────────────────────────────────────────────── */
@@ -2016,7 +2104,7 @@ function cotlas_panel_page_social() {
 	ctap_card_open( 'Post Edit Screen Share Box', 'dashicons-share-alt2' );
 	ctap_info( 'Adds a "Share this now" box to the post edit screen — just below the title in the classic editor, and in the right sidebar meta box in the block editor (published posts only). Icons are rendered by the <code>[social_share]</code> shortcode at 24px.' );
 	ctap_toggle( 'cotlas_share_box_enabled', 'Enable Share Box on Post Edit Screen', 'Shows the share box with icons and the post URL on the edit screen. Turn off to remove it everywhere.', 0 );
-	ctap_toggle( 'cotlas_share_box_shortlink', 'Use Short Link', 'Shares the short URL (WP shortlink / <code>?p=ID</code>, or a shortlink plugin&rsquo;s URL via the <code>get_shortlink</code> filter) instead of the full permalink.', 0 );
+	ctap_toggle( 'cotlas_share_box_shortlink', 'Use Short Link', 'Shares the short URL (WP shortlink / <code>?p=ID</code>, or a shortlink plugin&rsquo;s URL via the <code>get_shortlink</code> filter) instead of the full permalink. Applies to the edit-screen box and both injected icon sets below.', 0 );
 
 	ctap_section( 'Networks' );
 	ctap_toggle( 'cotlas_share_box_facebook',  'Facebook',  '', 1 );
@@ -2029,6 +2117,22 @@ function cotlas_panel_page_social() {
 	ctap_toggle( 'cotlas_share_box_threads',   'Threads', '', 1 );
 	ctap_toggle( 'cotlas_share_box_copy',      'Copy Link', 'Copy-to-clipboard button with a toast notification.', 1 );
 	ctap_toggle( 'cotlas_share_box_print',     'Print', '', 1 );
+	ctap_card_close();
+
+	ctap_card_open( 'Post Social Share Injection', 'dashicons-share' );
+	ctap_info( 'Injects <code>[social_share]</code> icons into the post entry meta on single posts. Requires the <strong>Social Media</strong> master toggle on the Social Links tab. Each position has its own networks field below, and both follow the <strong>Use Short Link</strong> setting above.' );
+	ctap_toggle( 'cotlas_share_box_inject_top', 'Inject Top Social Share Icons', 'Inside the header entry meta, below the post title. Icons only (no labels).', 0 );
+	ctap_toggle( 'cotlas_share_box_inject_bottom', 'Inject Bottom Social Share Icons', 'Inside the footer entry meta, just above the post navigation (pagination). Icons plus labels.', 0 );
+	ctap_field(
+		'Top Networks',
+		'<input type="text" name="cotlas_share_box_networks_top" value="' . esc_attr( get_option( 'cotlas_share_box_networks_top', 'facebook,twitter,linkedin,whatsapp,copy' ) ) . '" placeholder="facebook,twitter,linkedin,whatsapp,copy" style="width:100%">',
+		'Comma-separated networks for the <strong>top</strong> icons. Allowed: <code>facebook</code>, <code>twitter</code>, <code>linkedin</code>, <code>whatsapp</code>, <code>telegram</code>, <code>pinterest</code>, <code>reddit</code>, <code>threads</code>, <code>copy</code>, <code>print</code>.'
+	);
+	ctap_field(
+		'Bottom Networks',
+		'<input type="text" name="cotlas_share_box_networks_bottom" value="' . esc_attr( get_option( 'cotlas_share_box_networks_bottom', 'facebook,twitter,linkedin,whatsapp,copy' ) ) . '" placeholder="facebook,whatsapp,copy" style="width:100%">',
+		'Comma-separated networks for the <strong>bottom</strong> icons. Allowed: <code>facebook</code>, <code>twitter</code>, <code>linkedin</code>, <code>whatsapp</code>, <code>telegram</code>, <code>pinterest</code>, <code>reddit</code>, <code>threads</code>, <code>copy</code>, <code>print</code>.'
+	);
 	ctap_card_close();
 
 	ctap_card_open( 'Share Box CSS', 'dashicons-editor-custom' );
@@ -2117,7 +2221,7 @@ function cotlas_panel_page_tracking() {
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 function cotlas_panel_page_users() {
-	ctap_page_open( 'User Settings', 'dashicons-admin-users', 'Custom avatar upload and author social links profile enhancements.' );
+	ctap_page_open( 'User Settings', 'dashicons-admin-users', 'Custom avatar upload, author social links, and single-post author box.' );
 	$tabs = array(
 		array( 'id' => 'settings', 'label' => 'Settings',  'icon' => 'dashicons-admin-generic' ),
 		array( 'id' => 'codes',    'label' => 'Shortcodes', 'icon' => 'dashicons-shortcode' ),
@@ -2132,6 +2236,7 @@ function cotlas_panel_page_users() {
 	ctap_card_open( 'Feature Toggles', 'dashicons-admin-generic' );
 	ctap_toggle( 'cotlas_user_avatar_enabled',       'Custom Avatar Upload',  'Adds a file-upload field to user profiles for uploading a custom avatar. Replaces Gravatar when set.' );
 	ctap_toggle( 'cotlas_user_social_links_enabled', 'Author Social Links',   'Adds Facebook, Twitter, Instagram, LinkedIn, YouTube, and Pinterest fields to user profiles. Used by [author_social_links] shortcode.' );
+	ctap_toggle( 'cotlas_author_box_enabled',       'Author Box',            'Injects the author box (avatar, name, bio, social links) after the post content on single posts.' );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();

@@ -287,6 +287,46 @@ function cotlas_comments_shortcode( $atts ) {
 add_shortcode( 'cotlas_comments', 'cotlas_comments_shortcode' );
 
 /**
+ * Automatically render the Cotlas comment section where GeneratePress would
+ * normally output its native comments. Requires the master comment system
+ * switch and the Auto-inject option to both be enabled.
+ *
+ * Posts that already place [cotlas_comments] in their content are skipped so
+ * the section is never rendered twice.
+ */
+function cotlas_render_comments_in_place_of_generatepress( $template ) {
+    if ( ! get_option( 'cotlas_comment_auto_inject' ) ) {
+        return;
+    }
+
+    if ( 'single' !== $template && 'page' !== $template ) {
+        return;
+    }
+
+    if ( post_password_required() ) {
+        return;
+    }
+
+    $post_id = get_the_ID();
+    if ( ! $post_id ) {
+        return;
+    }
+
+    $post = get_post( $post_id );
+    if ( $post && has_shortcode( $post->post_content, 'cotlas_comments' ) ) {
+        return;
+    }
+
+    $html = cotlas_comments_shortcode( array( 'post_id' => $post_id ) );
+    if ( '' === $html ) {
+        return;
+    }
+
+    echo '<div class="comments-area">' . $html . '</div>';
+}
+add_action( 'generate_after_do_template_part', 'cotlas_render_comments_in_place_of_generatepress', 15 );
+
+/**
  * AJAX handler: submit a new comment without forcing a full page reload.
  */
 function cotlas_ajax_submit_comment() {

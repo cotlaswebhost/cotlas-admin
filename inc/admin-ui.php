@@ -74,6 +74,17 @@ add_action('wp_enqueue_scripts', function() {
             true
         );
     }
+
+    $local_datetime_file = plugin_dir_path( dirname(__FILE__) ) . 'assets/js/local-datetime.js';
+    if ( file_exists( $local_datetime_file ) ) {
+        wp_enqueue_script(
+            'cotlas-local-datetime',
+            plugin_dir_url( dirname(__FILE__) ) . 'assets/js/local-datetime.js',
+            array(),
+            (string) filemtime( $local_datetime_file ),
+            true
+        );
+    }
 });
 
 /**

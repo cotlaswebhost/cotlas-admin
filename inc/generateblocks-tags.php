@@ -1718,3 +1718,160 @@ function cotlas_hero_section_dynamic_tag( $options, $block, $instance ) {
 
 	return $value;
 }
+
+/**
+ * Register {{current_datetime}} — live current date/time for GenerateBlocks.
+ */
+add_action( 'init', 'cotlas_register_current_datetime_dynamic_tag', 20 );
+function cotlas_register_current_datetime_dynamic_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'title'       => __( 'Current Date/Time', 'cotlas-admin' ),
+			'tag'         => 'current_datetime',
+			'type'        => 'option',
+			'supports'    => array(),
+			'description' => __( 'Current date and time, updated to the visitor clock.', 'cotlas-admin' ),
+			'options'     => array(
+				'format'      => array(
+					'type'    => 'select',
+					'label'   => __( 'Show', 'cotlas-admin' ),
+					'default' => 'date',
+					'options' => array(
+						array( 'value' => 'date', 'label' => __( 'Date only', 'cotlas-admin' ) ),
+						array( 'value' => 'time', 'label' => __( 'Time only', 'cotlas-admin' ) ),
+						array( 'value' => 'both', 'label' => __( 'Date and time', 'cotlas-admin' ) ),
+					),
+				),
+				'date_format' => array(
+					'type'    => 'select',
+					'label'   => __( 'Date style', 'cotlas-admin' ),
+					'default' => 'long',
+					'options' => array(
+						array( 'value' => 'full',   'label' => __( 'Full', 'cotlas-admin' ) ),
+						array( 'value' => 'long',   'label' => __( 'Long', 'cotlas-admin' ) ),
+						array( 'value' => 'medium', 'label' => __( 'Medium', 'cotlas-admin' ) ),
+						array( 'value' => 'short',  'label' => __( 'Short', 'cotlas-admin' ) ),
+					),
+				),
+				'time_format' => array(
+					'type'    => 'select',
+					'label'   => __( 'Time format', 'cotlas-admin' ),
+					'default' => '12',
+					'options' => array(
+						array( 'value' => '12', 'label' => __( '12-hour', 'cotlas-admin' ) ),
+						array( 'value' => '24', 'label' => __( '24-hour', 'cotlas-admin' ) ),
+					),
+				),
+			),
+			'return'      => 'cotlas_current_datetime_dynamic_tag',
+		)
+	);
+}
+
+/**
+ * Callback for {{current_datetime}}.
+ *
+ * Outputs a span populated by assets/js/local-datetime.js with the visitor's
+ * local date/time, with a server-rendered fallback for no-JS visitors.
+ *
+ * @param array  $options  Parsed tag options.
+ * @param array  $block    Block data.
+ * @param object $instance Block instance.
+ * @return string
+ */
+function cotlas_current_datetime_dynamic_tag( $options, $block, $instance ) {
+	$display = isset( $options['format'] ) ? sanitize_key( $options['format'] ) : 'date';
+	if ( ! in_array( $display, array( 'date', 'time', 'both' ), true ) ) {
+		$display = 'date';
+	}
+
+	$date_format = isset( $options['date_format'] ) ? sanitize_key( $options['date_format'] ) : 'long';
+	if ( ! in_array( $date_format, array( 'full', 'long', 'medium', 'short' ), true ) ) {
+		$date_format = 'long';
+	}
+
+	$time_format = ( isset( $options['time_format'] ) && '24' === $options['time_format'] ) ? '24' : '12';
+
+	return sprintf(
+		'<span class="cotlas-local-datetime" data-date-format="%s" data-time-format="%s" data-display="%s" aria-live="polite" aria-label="%s">%s</span>',
+		esc_attr( $date_format ),
+		esc_attr( $time_format ),
+		esc_attr( $display ),
+		esc_attr__( 'Current date and time', 'cotlas-admin' ),
+		esc_html( cotlas_local_datetime_fallback( $display ) )
+	);
+}
+
+/**
+ * Register {{dark_mode_toggle}} — dark/light switch for the frontend.
+ */
+add_action( 'init', 'cotlas_register_dark_mode_dynamic_tag', 20 );
+function cotlas_register_dark_mode_dynamic_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'title'       => __( 'Dark Mode Toggle', 'cotlas-admin' ),
+			'tag'         => 'dark_mode_toggle',
+			'type'        => 'option',
+			'supports'    => array(),
+			'description' => __( 'Dark/light mode switch. The visitor preference is remembered for 30 days.', 'cotlas-admin' ),
+			'options'     => array(),
+			'return'      => 'cotlas_dark_mode_dynamic_tag',
+		)
+	);
+}
+
+/**
+ * Callback for {{dark_mode_toggle}}.
+ *
+ * @return string
+ */
+function cotlas_dark_mode_dynamic_tag() {
+	if ( ! function_exists( 'cotlas_dark_mode_toggle_html' ) || ! get_option( 'cotlas_dark_mode_enabled', 0 ) ) {
+		return '';
+	}
+
+	return cotlas_dark_mode_toggle_html();
+}
+
+/**
+ * Register {{font_resizer}} — article font size control.
+ */
+add_action( 'init', 'cotlas_register_font_resizer_dynamic_tag', 20 );
+function cotlas_register_font_resizer_dynamic_tag() {
+	if ( ! class_exists( 'GenerateBlocks_Register_Dynamic_Tag' ) ) {
+		return;
+	}
+
+	new GenerateBlocks_Register_Dynamic_Tag(
+		array(
+			'title'       => __( 'Font Resizer', 'cotlas-admin' ),
+			'tag'         => 'font_resizer',
+			'type'        => 'option',
+			'supports'    => array(),
+			'description' => __( 'Button that cycles the article font size.', 'cotlas-admin' ),
+			'options'     => array(),
+			'return'      => 'cotlas_font_resizer_dynamic_tag',
+		)
+	);
+}
+
+/**
+ * Callback for {{font_resizer}}.
+ *
+ * @return string
+ */
+function cotlas_font_resizer_dynamic_tag() {
+	if ( ! function_exists( 'cotlas_font_resizer_html' ) || ! get_option( 'cotlas_font_resizer_enabled', 0 ) ) {
+		return '';
+	}
+
+	return cotlas_font_resizer_html();
+}

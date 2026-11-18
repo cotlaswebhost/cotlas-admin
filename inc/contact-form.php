@@ -2,7 +2,7 @@
 /**
  * Cotlas Contact Form module.
  *
- * Shortcode: [cotlas_form form_type="contact_form|newsletter" class="" from_name="" from_email="" form_fields="name,email,phone,subject,message"]
+ * Shortcode: [cotlas_form form_type="contact_form|newsletter|grievance_form" class="" from_name="" from_email="" form_fields="name,email,phone,subject,url,message"]
  *
  * Submissions are handled on init, emails sent via wp_mail() (which respects
  * SMTP settings when enabled). Email templates are configurable per form type.
@@ -23,18 +23,25 @@ function cotlas_form_shortcode( $atts ) {
 		return '';
 	}
 	$atts = shortcode_atts( array(
-		'class'       => '',
+		'form_type'   => 'contact_form',
+		'class'       => get_option( 'cotlas_form_custom_class', '' ),
 		'from_name'   => '',
 		'from_email'  => '',
 		'form_fields' => '',
 	), $atts, 'cotlas_form' );
 
-	$form_type = ( 'newsletter' === $atts['form_type'] ) ? 'newsletter' : 'contact_form';
+	$form_type = in_array( $atts['form_type'], array( 'contact_form', 'newsletter', 'grievance_form' ), true ) ? $atts['form_type'] : 'contact_form';
 
 	// Determine which fields to show.
-	$all_fields = array( 'name', 'email', 'phone', 'subject', 'message' );
+	$all_fields = array( 'name', 'email', 'phone', 'url', 'subject', 'message' );
 	$global_enabled = array();
 	foreach ( $all_fields as $f ) {
+		if ( 'url' === $f ) {
+			if ( 'grievance_form' === $form_type || get_option( 'cotlas_form_field_url', 0 ) ) {
+				$global_enabled[] = $f;
+			}
+			continue;
+		}
 		if ( get_option( 'cotlas_form_field_' . $f, 1 ) ) {
 			$global_enabled[] = $f;
 		}
@@ -58,7 +65,20 @@ function cotlas_form_shortcode( $atts ) {
 		$msg = __( 'Something went wrong. Please try again.', 'cotlas-admin' );
 	}
 
-	$wrapper_class = trim( 'cotlas-form cotlas-form-' . $form_type . ' ' . sanitize_html_class( $atts['class'] ) );
+	$custom_classes = array();
+	foreach ( preg_split( '/\s+/', (string) $atts['class'] ) as $class ) {
+		$class = sanitize_html_class( $class );
+		if ( '' !== $class ) {
+			$custom_classes[] = $class;
+		}
+	}
+	$wrapper_class = trim( 'cotlas-form cotlas-form-' . $form_type . ' ' . implode( ' ', $custom_classes ) );
+	$url_local_only = (bool) get_option( 'cotlas_form_url_local_only', 1 );
+	$url_example    = $url_local_only ? cotlas_form_url_example() : 'https://';
+	$url_label      = $url_local_only
+		? sprintf( __( 'URL (paste the news article link, e.g. %s)', 'cotlas-admin' ), $url_example )
+		: __( 'URL', 'cotlas-admin' );
+	$required_fields = cotlas_form_required_fields( $fields, $form_type );
 
 	ob_start();
 	?>
@@ -77,44 +97,53 @@ function cotlas_form_shortcode( $atts ) {
 
 			<?php foreach ( $fields as $field ) : ?>
 				<?php
+				$is_required = in_array( $field, $required_fields, true );
 				switch ( $field ) {
 					case 'name':
 						?>
 						<div class="cotlas-form-field">
-							<label><?php esc_html_e( 'Name', 'cotlas-admin' ); ?></label>
-							<input type="text" name="cotlas_form_name" required>
+							<label><?php esc_html_e( 'Name', 'cotlas-admin' ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<input type="text" name="cotlas_form_name"<?php if ( $is_required ) : ?> required<?php endif; ?>>
 						</div>
 						<?php
 						break;
 					case 'email':
 						?>
 						<div class="cotlas-form-field">
-							<label><?php esc_html_e( 'Email', 'cotlas-admin' ); ?></label>
-							<input type="email" name="cotlas_form_email" required>
+							<label><?php esc_html_e( 'Email', 'cotlas-admin' ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<input type="email" name="cotlas_form_email"<?php if ( $is_required ) : ?> required<?php endif; ?>>
 						</div>
 						<?php
 						break;
 					case 'phone':
 						?>
 						<div class="cotlas-form-field">
-							<label><?php esc_html_e( 'Mobile', 'cotlas-admin' ); ?></label>
-							<input type="tel" name="cotlas_form_phone">
+							<label><?php esc_html_e( 'Mobile', 'cotlas-admin' ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<input type="tel" name="cotlas_form_phone"<?php if ( $is_required ) : ?> required<?php endif; ?>>
 						</div>
 						<?php
 						break;
 					case 'subject':
 						?>
 						<div class="cotlas-form-field">
-							<label><?php esc_html_e( 'Subject', 'cotlas-admin' ); ?></label>
-							<input type="text" name="cotlas_form_subject">
+							<label><?php esc_html_e( 'Subject', 'cotlas-admin' ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<input type="text" name="cotlas_form_subject"<?php if ( $is_required ) : ?> required<?php endif; ?>>
 						</div>
 						<?php
 						break;
 					case 'message':
 						?>
 						<div class="cotlas-form-field">
-							<label><?php esc_html_e( 'Message', 'cotlas-admin' ); ?></label>
-							<textarea name="cotlas_form_message" rows="5"></textarea>
+							<label><?php esc_html_e( 'Message', 'cotlas-admin' ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<textarea name="cotlas_form_message" rows="5"<?php if ( $is_required ) : ?> required<?php endif; ?>></textarea>
+						</div>
+						<?php
+						break;
+					case 'url':
+						?>
+						<div class="cotlas-form-field">
+							<label><?php echo esc_html( $url_label ); ?><?php if ( $is_required ) : ?> <span class="cotlas-form-required" aria-hidden="true">*</span><?php endif; ?></label>
+							<input type="text" name="cotlas_form_url" placeholder="<?php echo esc_attr( $url_example ); ?>" autocomplete="off"<?php if ( $is_required ) : ?> required<?php endif; ?>>
 						</div>
 						<?php
 						break;
@@ -129,6 +158,108 @@ function cotlas_form_shortcode( $atts ) {
 	</div>
 	<?php
 	return ob_get_clean();
+}
+
+/**
+ * Determine which of the given fields are marked required.
+ *
+ * Name and email are required by default; the URL field is always required
+ * for the grievance form.
+ */
+function cotlas_form_required_fields( $fields, $form_type ) {
+	$required = array();
+	foreach ( $fields as $field ) {
+		if ( 'url' === $field && 'grievance_form' === $form_type ) {
+			$required[] = $field;
+			continue;
+		}
+		$default = in_array( $field, array( 'name', 'email' ), true ) ? 1 : 0;
+		if ( get_option( 'cotlas_form_required_' . $field, $default ) ) {
+			$required[] = $field;
+		}
+	}
+	return $required;
+}
+
+/**
+ * Build an example article URL that matches the site's permalink structure.
+ */
+function cotlas_form_url_example() {
+	$home      = home_url( '/' );
+	$structure = (string) get_option( 'permalink_structure', '' );
+	if ( '' !== $structure && false !== strpos( $structure, '%postname%' ) ) {
+		$example = strtr( $structure, array(
+			'%year%'     => gmdate( 'Y' ),
+			'%monthnum%' => gmdate( 'm' ),
+			'%day%'      => gmdate( 'd' ),
+			'%hour%'     => gmdate( 'H' ),
+			'%minute%'   => gmdate( 'i' ),
+			'%second%'   => gmdate( 's' ),
+			'%post_id%'  => '123',
+			'%category%' => 'category',
+			'%postname%' => 'news-slug-one',
+		) );
+		$example = preg_replace( '/%[a-z_]+%/', '', $example );
+		$example = preg_replace( '#/+#', '/', $example );
+		$example = ltrim( (string) $example, '/' );
+		if ( '' !== $example ) {
+			return $home . $example;
+		}
+	}
+	return $home . 'news-slug-one/';
+}
+
+/**
+ * Resolve a pasted article URL or slug to the permalink of a published post.
+ *
+ * Returns an empty string when the input does not belong to a published post
+ * on this site.
+ */
+function cotlas_form_resolve_local_url( $input ) {
+	$input = trim( (string) $input );
+	if ( '' === $input ) {
+		return '';
+	}
+
+	$home_host = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+	$home_host = preg_replace( '/^www\./i', '', $home_host );
+
+	if ( preg_match( '#^//#', $input ) ) {
+		$input = 'https:' . $input;
+	}
+
+	$is_absolute = (bool) preg_match( '#^https?://#i', $input );
+	if ( $is_absolute ) {
+		$host = (string) wp_parse_url( $input, PHP_URL_HOST );
+		$host = preg_replace( '/^www\./i', '', $host );
+		if ( '' === $host || strtolower( $host ) !== strtolower( $home_host ) ) {
+			return '';
+		}
+	} elseif ( preg_match( '#^[a-z][a-z0-9+.-]*:#i', $input ) ) {
+		return '';
+	}
+
+	$post_id = $is_absolute ? (int) url_to_postid( $input ) : 0;
+
+	if ( ! $post_id ) {
+		$path     = (string) wp_parse_url( $input, PHP_URL_PATH );
+		$segments = array_values( array_filter( explode( '/', $path ) ) );
+		$slug     = empty( $segments ) ? '' : sanitize_title( end( $segments ) );
+		if ( '' !== $slug ) {
+			$post_types = array_values( array_diff( get_post_types( array( 'public' => true ), 'names' ), array( 'attachment' ) ) );
+			$post       = get_page_by_path( $slug, OBJECT, $post_types );
+			if ( $post instanceof WP_Post ) {
+				$post_id = (int) $post->ID;
+			}
+		}
+	}
+
+	if ( ! $post_id || 'publish' !== get_post_status( $post_id ) ) {
+		return '';
+	}
+
+	$permalink = get_permalink( $post_id );
+	return $permalink ? esc_url_raw( $permalink, array( 'http', 'https' ) ) : '';
 }
 
 /**
@@ -149,7 +280,10 @@ function cotlas_form_handle_submission() {
 		return;
 	}
 
-	$form_type  = ( isset( $_POST['cotlas_form_type'] ) && 'newsletter' === $_POST['cotlas_form_type'] ) ? 'newsletter' : 'contact_form';
+	$form_type = isset( $_POST['cotlas_form_type'] ) ? sanitize_key( wp_unslash( $_POST['cotlas_form_type'] ) ) : 'contact_form';
+	if ( ! in_array( $form_type, array( 'contact_form', 'newsletter', 'grievance_form' ), true ) ) {
+		$form_type = 'contact_form';
+	}
 	$from_name  = isset( $_POST['cotlas_form_from_name'] ) ? sanitize_text_field( wp_unslash( $_POST['cotlas_form_from_name'] ) ) : '';
 	$from_email = isset( $_POST['cotlas_form_from_email'] ) ? sanitize_email( wp_unslash( $_POST['cotlas_form_from_email'] ) ) : '';
 
@@ -165,6 +299,52 @@ function cotlas_form_handle_submission() {
 		return;
 	}
 
+	// Sanitize and validate the URL field.
+	$raw_url   = ( isset( $_POST['cotlas_form_url'] ) && is_string( $_POST['cotlas_form_url'] ) ) ? trim( wp_unslash( $_POST['cotlas_form_url'] ) ) : '';
+	$url       = '';
+	$url_valid = true;
+
+	if ( '' !== $raw_url ) {
+		if ( get_option( 'cotlas_form_url_local_only', 1 ) ) {
+			$url       = cotlas_form_resolve_local_url( $raw_url );
+			$url_valid = ( '' !== $url );
+		} else {
+			if ( ! preg_match( '#^[a-z][a-z0-9+.-]*:#i', $raw_url ) ) {
+				$raw_url = 'https://' . ltrim( $raw_url, '/' );
+			}
+			$url       = esc_url_raw( $raw_url, array( 'http', 'https' ) );
+			$scheme    = wp_parse_url( $url, PHP_URL_SCHEME );
+			$host      = wp_parse_url( $url, PHP_URL_HOST );
+			$url_valid = ( '' !== $url && in_array( $scheme, array( 'http', 'https' ), true ) && ! empty( $host ) );
+		}
+	}
+
+	if ( ! $url_valid || ( 'grievance_form' === $form_type && '' === $url ) ) {
+		cotlas_form_redirect( 'error' );
+		return;
+	}
+
+	// Enforce fields the admin marked as required (server-side).
+	$field_values = array(
+		'name'    => $name,
+		'email'   => $email,
+		'phone'   => $phone,
+		'url'     => $url,
+		'subject' => $subject,
+		'message' => $message,
+	);
+	foreach ( $field_values as $field_name => $field_value ) {
+		if ( ! isset( $_POST[ 'cotlas_form_' . $field_name ] ) ) {
+			continue;
+		}
+		$default  = in_array( $field_name, array( 'name', 'email' ), true ) ? 1 : 0;
+		$required = ( 'url' === $field_name && 'grievance_form' === $form_type ) || get_option( 'cotlas_form_required_' . $field_name, $default );
+		if ( $required && '' === trim( (string) $field_value ) ) {
+			cotlas_form_redirect( 'error' );
+			return;
+		}
+	}
+
 	$site_name = get_bloginfo( 'name' );
 	$site_url  = home_url();
 
@@ -173,6 +353,7 @@ function cotlas_form_handle_submission() {
 		'{email}'      => $email,
 		'{phone}'      => $phone,
 		'{subject}'    => $subject,
+		'{url}'        => $url,
 		'{message}'    => $message,
 		'{site_name}'  => $site_name,
 		'{site_url}'   => $site_url,
@@ -192,9 +373,18 @@ function cotlas_form_handle_submission() {
 		$template = get_option( $admin_template_key, '' );
 		if ( '' === trim( (string) $template ) ) {
 			$template = "New submission from {site_name}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\nSubject: {subject}\nMessage:\n{message}";
+			if ( 'grievance_form' === $form_type ) {
+				$template = "New grievance submission from {site_name}\n\nName: {name}\nEmail: {email}\nPhone: {phone}\nURL: {url}\nSubject: {subject}\nMessage:\n{message}";
+			}
 		}
 		$body = strtr( $template, $placeholders );
-		$subj = ( 'newsletter' === $form_type ) ? "New newsletter subscription - {$site_name}" : "New contact form submission - {$site_name}";
+		if ( 'newsletter' === $form_type ) {
+			$subj = "New newsletter subscription - {$site_name}";
+		} elseif ( 'grievance_form' === $form_type ) {
+			$subj = "New grievance form submission - {$site_name}";
+		} else {
+			$subj = "New contact form submission - {$site_name}";
+		}
 		if ( '' !== $subject ) {
 			$subj .= " ({$subject})";
 		}
@@ -230,6 +420,7 @@ function cotlas_form_handle_submission() {
 			'name'         => $name,
 			'email'        => $email,
 			'phone'        => $phone,
+			'url'          => $url,
 			'subject'      => $subject,
 			'message'      => $message,
 			'from_name'    => $effective_from_name,
@@ -258,6 +449,10 @@ function cotlas_form_maybe_create_table() {
 	$table = cotlas_form_table();
 	$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 	if ( $exists === $table ) {
+		$has_url = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM {$table} LIKE %s", 'url' ) );
+		if ( ! $has_url ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN url varchar(255) DEFAULT '' AFTER phone" );
+		}
 		return;
 	}
 	$charset = $wpdb->get_charset_collate();
@@ -267,6 +462,7 @@ function cotlas_form_maybe_create_table() {
 		name varchar(255) DEFAULT '',
 		email varchar(255) DEFAULT '',
 		phone varchar(50) DEFAULT '',
+		url varchar(255) DEFAULT '',
 		subject varchar(255) DEFAULT '',
 		message text,
 		from_name varchar(255) DEFAULT '',
@@ -327,8 +523,9 @@ function cotlas_form_submissions_page() {
 	global $wpdb;
 	$table = cotlas_form_table();
 
-	$contact = $wpdb->get_results( "SELECT * FROM {$table} WHERE form_type = 'contact_form' ORDER BY submitted_at DESC", ARRAY_A );
-	$news    = $wpdb->get_results( "SELECT * FROM {$table} WHERE form_type = 'newsletter' ORDER BY submitted_at DESC", ARRAY_A );
+	$contact   = $wpdb->get_results( "SELECT * FROM {$table} WHERE form_type = 'contact_form' ORDER BY submitted_at DESC", ARRAY_A );
+	$grievance = $wpdb->get_results( "SELECT * FROM {$table} WHERE form_type = 'grievance_form' ORDER BY submitted_at DESC", ARRAY_A );
+	$news      = $wpdb->get_results( "SELECT * FROM {$table} WHERE form_type = 'newsletter' ORDER BY submitted_at DESC", ARRAY_A );
 
 	?>
 	<div class="wrap">
@@ -340,7 +537,7 @@ function cotlas_form_submissions_page() {
 		<?php else : ?>
 			<table class="widefat striped">
 				<thead><tr>
-					<th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Subject</th><th>Message</th><th>Submitted</th>
+					<th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>URL</th><th>Subject</th><th>Message</th><th>Submitted</th>
 				</tr></thead>
 				<tbody>
 				<?php foreach ( $contact as $row ) : ?>
@@ -349,6 +546,32 @@ function cotlas_form_submissions_page() {
 						<td><?php echo esc_html( $row['name'] ); ?></td>
 						<td><?php echo esc_html( $row['email'] ); ?></td>
 						<td><?php echo esc_html( $row['phone'] ); ?></td>
+						<td><?php echo esc_html( $row['url'] ); ?></td>
+						<td><?php echo esc_html( $row['subject'] ); ?></td>
+						<td><?php echo esc_html( $row['message'] ); ?></td>
+						<td><?php echo esc_html( $row['submitted_at'] ); ?></td>
+					</tr>
+				<?php endforeach; ?>
+				</tbody>
+			</table>
+		<?php endif; ?>
+
+		<h2 style="margin-top:30px"><?php esc_html_e( 'Grievance Form Submissions', 'cotlas-admin' ); ?></h2>
+		<?php if ( empty( $grievance ) ) : ?>
+			<p><?php esc_html_e( 'No grievance form submissions yet.', 'cotlas-admin' ); ?></p>
+		<?php else : ?>
+			<table class="widefat striped">
+				<thead><tr>
+					<th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>URL</th><th>Subject</th><th>Message</th><th>Submitted</th>
+				</tr></thead>
+				<tbody>
+				<?php foreach ( $grievance as $row ) : ?>
+					<tr>
+						<td><?php echo esc_html( $row['id'] ); ?></td>
+						<td><?php echo esc_html( $row['name'] ); ?></td>
+						<td><?php echo esc_html( $row['email'] ); ?></td>
+						<td><?php echo esc_html( $row['phone'] ); ?></td>
+						<td><?php echo esc_html( $row['url'] ); ?></td>
 						<td><?php echo esc_html( $row['subject'] ); ?></td>
 						<td><?php echo esc_html( $row['message'] ); ?></td>
 						<td><?php echo esc_html( $row['submitted_at'] ); ?></td>

@@ -214,7 +214,7 @@ class Cotlas_Settings_Export {
 			return;
 		}
 
-		ctap_page_open( 'Export / Import', 'dashicons-download', 'Export plugin settings to a file or import settings from another site.' );
+		ctap_page_open( 'Export / Import', 'dashicons-download', 'Export Cotlas Admin plugin settings to a file or import them from another site. For menus, widgets and Customizer settings, use Admin Tools &rarr; Site Export instead.' );
 
 		$tabs = array(
 			array( 'id' => 'export', 'label' => 'Export', 'icon' => 'dashicons-download' ),

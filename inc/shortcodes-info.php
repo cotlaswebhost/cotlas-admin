@@ -142,6 +142,14 @@ function cotlas_render_shortcodes_info_page() {
             'options' => ['Published date (default)', 'Modified date'],
         ],
         [
+            'tag'     => 'Current Date/Time',
+            'tag_id'  => 'current_datetime',
+            'type'    => 'Option value (global)',
+            'use_for' => 'Dynamic Content — header and date blocks',
+            'desc'    => 'Current date/time rendered server-side, then updated to the visitor\'s local clock via JS. Matches the [local_datetime] shortcode.',
+            'options' => ['Show: Date only / Time only / Date and time', 'Date style: Full / Long / Medium / Short', 'Time format: 12-hour / 24-hour'],
+        ],
+        [
             'tag'     => 'Post Views Count',
             'tag_id'  => 'post_views',
             'type'    => 'Post-based (query loop)',

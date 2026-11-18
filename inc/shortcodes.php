@@ -127,8 +127,17 @@ function gp_format_category_output( $category, $atts ) {
 
 add_shortcode( 'yoast_primary_category', 'gp_yoast_primary_category_shortcode' );
 
-// Remove the default GeneratePress comments template
+// Remove the default GeneratePress comments template only when the Cotlas
+// comment system is enabled AND set to auto-inject. When auto-inject is off,
+// the theme's native comments are left untouched and [cotlas_comments] can be
+// placed manually (e.g. Elementor).
 function remove_generatepress_default_comments() {
+    if ( ! get_option( 'cotlas_comment_system_enabled' ) ) {
+        return;
+    }
+    if ( ! get_option( 'cotlas_comment_auto_inject' ) ) {
+        return;
+    }
     remove_action( 'generate_after_do_template_part', 'generate_do_comments_template', 15 );
 }
 add_action( 'wp_loaded', 'remove_generatepress_default_comments' );
@@ -490,27 +499,51 @@ add_shortcode('post_marquee', 'post_marquee_shortcode');
 
 
 /**
+ * Server-rendered fallback for the local date/time span (replaced client-side).
+ *
+ * @param string $display date | time | both.
+ * @return string
+ */
+function cotlas_local_datetime_fallback( $display = 'both' ) {
+    $date_format = get_option( 'date_format', 'F j, Y' );
+    $time_format = get_option( 'time_format', 'g:i a' );
+
+    if ( 'date' === $display ) {
+        return wp_date( $date_format );
+    }
+    if ( 'time' === $display ) {
+        return wp_date( $time_format );
+    }
+    return wp_date( $date_format . ' ' . $time_format );
+}
+
+/**
  * Local Date/Time Shortcode
  * Outputs a placeholder populated client-side with the visitor's local date & time.
  * Usage: [local_datetime]
- * Optional atts: class, date_format (JS Intl format: 'full'|'long'|'medium'|'short'), time_format ('12'|'24')
+ * Optional atts: class, date_format (JS Intl format: 'full'|'long'|'medium'|'short'),
+ *                time_format ('12'|'24'), display ('date'|'time'|'both')
  */
 function cotlas_local_datetime_shortcode( $atts ) {
     $atts = shortcode_atts( array(
         'class'       => 'cotlas-local-datetime',
         'date_format' => 'long',   // full | long | medium | short
         'time_format' => '12',     // 12 | 24
+        'display'     => 'both',   // date | time | both
     ), $atts, 'local_datetime' );
 
     $class       = esc_attr( $atts['class'] );
     $date_format = esc_attr( $atts['date_format'] );
     $time_format = esc_attr( $atts['time_format'] );
+    $display     = in_array( $atts['display'], array( 'date', 'time', 'both' ), true ) ? $atts['display'] : 'both';
 
     return sprintf(
-        '<span class="%s" data-date-format="%s" data-time-format="%s" aria-live="polite" aria-label="Current date and time"></span>',
+        '<span class="%s" data-date-format="%s" data-time-format="%s" data-display="%s" aria-live="polite" aria-label="Current date and time">%s</span>',
         $class,
         $date_format,
-        $time_format
+        $time_format,
+        esc_attr( $display ),
+        esc_html( cotlas_local_datetime_fallback( $display ) )
     );
 }
 add_shortcode( 'local_datetime', 'cotlas_local_datetime_shortcode' );
