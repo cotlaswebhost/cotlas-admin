@@ -984,6 +984,8 @@ function cotlas_register_post_taxonomies() {
         ) );
 
         // ── City ──────────────────────────────────────────────────────────
+        // Hierarchical so it behaves like Categories: editors pick from a
+        // checklist instead of typing free-text tags, and terms can nest.
         register_taxonomy( 'city', array( 'post' ), array(
             'labels' => array(
                 'name'              => __( 'Cities', 'cotlas-admin' ),
@@ -1002,7 +1004,7 @@ function cotlas_register_post_taxonomies() {
             ),
             'public'             => true,
             'publicly_queryable' => true,
-            'hierarchical'       => false,
+            'hierarchical'       => true,
             'show_ui'            => true,
             'show_admin_column'  => true,
             'show_in_nav_menus'  => true,
@@ -1010,10 +1012,27 @@ function cotlas_register_post_taxonomies() {
             'show_in_rest'       => true,
             'rest_base'          => 'cities',
             'query_var'          => 'city',
-            'rewrite'            => array( 'slug' => 'city', 'with_front' => false ),
+            'rewrite'            => array( 'slug' => 'city', 'with_front' => false, 'hierarchical' => true ),
         ) );
     }
 }
+
+/**
+ * Flush rewrite rules once when the taxonomy rewrite structure changes.
+ *
+ * `city` moved from a flat to a hierarchical rewrite, so sites that enabled
+ * the taxonomy earlier keep stale rules until this runs.
+ */
+add_action( 'admin_init', function() {
+    $signature = '3';
+
+    if ( get_option( 'cotlas_taxonomy_rewrite_signature' ) === $signature ) {
+        return;
+    }
+
+    flush_rewrite_rules( false );
+    update_option( 'cotlas_taxonomy_rewrite_signature', $signature );
+} );
 
 // Show/hide format meta boxes based on selected post format in block editor
 add_action( 'admin_footer', function() {

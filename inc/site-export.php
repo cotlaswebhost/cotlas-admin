@@ -125,6 +125,160 @@ function cotlas_registered_widget_bases() {
 }
 
 /**
+ * Name of an exported menu, from its term ID.
+ *
+ * @param int $term_id Menu term ID.
+ * @return string
+ */
+function cotlas_export_menu_name( $term_id ) {
+	$menu = get_term( (int) $term_id, 'nav_menu' );
+
+	return ( $menu && ! is_wp_error( $menu ) ) ? (string) $menu->name : '';
+}
+
+/**
+ * Find a menu on this site by name.
+ *
+ * @param string $name Menu name.
+ * @return int Menu term ID, or 0 when not found.
+ */
+function cotlas_find_menu_id_by_name( $name ) {
+	$name = trim( (string) $name );
+
+	if ( '' === $name ) {
+		return 0;
+	}
+
+	foreach ( (array) wp_get_nav_menus() as $menu ) {
+		if ( 0 === strcasecmp( $menu->name, $name ) ) {
+			return (int) $menu->term_id;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * Resolve an exported menu reference to a menu on this site.
+ *
+ * Menu term IDs are per-site, so a raw ID from another install is meaningless.
+ * Preference order: the ID map built during a menus import, then the menu name,
+ * then the raw ID if it still exists locally.
+ *
+ * @param int    $raw_id      Menu term ID in the export.
+ * @param string $name        Menu name in the export.
+ * @param array  $menu_id_map Old → new term IDs from a menus import.
+ * @return int Local menu term ID, or 0 when unresolvable.
+ */
+function cotlas_resolve_menu_id( $raw_id, $name, $menu_id_map = array() ) {
+	$raw_id = (int) $raw_id;
+
+	if ( $raw_id && ! empty( $menu_id_map[ $raw_id ] ) ) {
+		return (int) $menu_id_map[ $raw_id ];
+	}
+
+	$by_name = cotlas_find_menu_id_by_name( $name );
+
+	if ( $by_name ) {
+		return $by_name;
+	}
+
+	if ( $raw_id ) {
+		$term = get_term( $raw_id, 'nav_menu' );
+
+		if ( $term && ! is_wp_error( $term ) ) {
+			return $raw_id;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * Collect menu references inside block-widget content.
+ *
+ * Block widgets embed legacy-widget instances in serialized block markup, so
+ * their menu IDs are invisible to the sidebar maps.
+ *
+ * @param string $content Serialized block markup.
+ * @return array<int,string> Old menu term ID => menu name.
+ */
+function cotlas_collect_block_menu_refs( $content ) {
+	if ( ! is_string( $content ) || false === strpos( $content, 'wp:legacy-widget' ) ) {
+		return array();
+	}
+
+	$refs = array();
+
+	$walk = function ( $blocks ) use ( &$walk, &$refs ) {
+		foreach ( $blocks as $block ) {
+			if ( ! is_array( $block ) ) {
+				continue;
+			}
+
+			if (
+				isset( $block['blockName'] ) && 'core/legacy-widget' === $block['blockName']
+				&& ! empty( $block['attrs']['instance']['raw']['nav_menu'] )
+			) {
+				$raw     = (array) $block['attrs']['instance']['raw'];
+				$old     = (int) $raw['nav_menu'];
+				$name    = cotlas_export_menu_name( $old );
+
+				// The stored ID may already be stale (e.g. after a prior import);
+				// the widget title is the next best identifier.
+				if ( '' === $name && ! empty( $raw['title'] ) ) {
+					$name = (string) $raw['title'];
+				}
+
+				$refs[ $old ] = $name;
+			}
+
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$walk( $block['innerBlocks'] );
+			}
+		}
+	};
+
+	$walk( parse_blocks( $content ) );
+
+	return $refs;
+}
+
+/**
+ * Annotate a widget instance with the menu names it references.
+ *
+ * The extra keys are ignored by other importers, but let this plugin remap
+ * menu IDs by name on the target site.
+ *
+ * @param string $id_base  Widget id_base.
+ * @param mixed  $instance Widget instance.
+ * @return mixed
+ */
+function cotlas_annotate_widget_menu_refs( $id_base, $instance ) {
+	if ( ! is_array( $instance ) ) {
+		return $instance;
+	}
+
+	if ( 'nav_menu' === $id_base && ! empty( $instance['nav_menu'] ) ) {
+		$name = cotlas_export_menu_name( (int) $instance['nav_menu'] );
+
+		if ( '' !== $name ) {
+			$instance['_cotlas_menu_name'] = $name;
+		}
+	}
+
+	if ( 'block' === $id_base && isset( $instance['content'] ) ) {
+		$refs = cotlas_collect_block_menu_refs( $instance['content'] );
+
+		if ( $refs ) {
+			$instance['_cotlas_block_menus'] = $refs;
+		}
+	}
+
+	return $instance;
+}
+
+/**
  * Build widget export data in Widget Importer & Exporter (.wie) format.
  *
  * The file is a JSON object keyed by sidebar ID, each holding
@@ -148,7 +302,7 @@ function cotlas_export_widgets_data() {
 				continue;
 			}
 
-			$instances[ $id_base . '-' . $instance_id ] = $instance_data;
+			$instances[ $id_base . '-' . $instance_id ] = cotlas_annotate_widget_menu_refs( $id_base, $instance_data );
 		}
 	}
 
@@ -600,32 +754,87 @@ function cotlas_sanitize_widget_instance( $instance, $id_base ) {
 }
 
 /**
- * Point legacy-widget blocks at the newly created menu IDs and refresh their
- * signed instance payloads.
+ * Remap and re-sign the menu references inside a widget instance.
+ *
+ * Handles both plain nav_menu widgets and menu widgets embedded in block
+ * widget content, and strips the helper keys added during export.
+ *
+ * @param string $id_base      Widget id_base.
+ * @param array  $instance     Widget instance.
+ * @param array  $menu_id_map  Old → new term IDs from a menus import.
+ * @return array
+ */
+function cotlas_remap_widget_menu_refs( $id_base, $instance, $menu_id_map = array() ) {
+	if ( ! is_array( $instance ) ) {
+		return $instance;
+	}
+
+	$name_hint = isset( $instance['_cotlas_menu_name'] ) ? (string) $instance['_cotlas_menu_name'] : '';
+	$block_refs = isset( $instance['_cotlas_block_menus'] ) && is_array( $instance['_cotlas_block_menus'] ) ? $instance['_cotlas_block_menus'] : array();
+
+	unset( $instance['_cotlas_menu_name'], $instance['_cotlas_block_menus'] );
+
+	if ( 'nav_menu' === $id_base && ! empty( $instance['nav_menu'] ) ) {
+		$resolved = cotlas_resolve_menu_id( (int) $instance['nav_menu'], $name_hint, $menu_id_map );
+
+		// Files exported before menu names were recorded: the widget title is
+		// usually the menu name, so use it as a last resort.
+		if ( ! $resolved && '' === $name_hint && ! empty( $instance['title'] ) ) {
+			$resolved = cotlas_find_menu_id_by_name( $instance['title'] );
+		}
+
+		if ( $resolved ) {
+			$instance['nav_menu'] = $resolved;
+		}
+	}
+
+	if ( 'block' === $id_base && isset( $instance['content'] ) ) {
+		$instance['content'] = cotlas_resign_legacy_widget_blocks( $instance['content'], $menu_id_map, $block_refs );
+	}
+
+	return $instance;
+}
+
+/**
+ * Point legacy-widget blocks at local menu IDs and refresh their signed
+ * instance payloads.
  *
  * The `encoded`/`hash` pair is signed with this site's salts, so a block
  * widget copied from another site renders empty until it is re-signed.
+ * Menu IDs are also site-specific, so they are resolved by name.
  *
- * @param string $content     Serialized block markup.
- * @param array  $menu_id_map Old → new menu term IDs.
+ * @param string $content      Serialized block markup.
+ * @param array  $menu_id_map  Old → new menu term IDs.
+ * @param array  $menu_names   Old menu term ID => menu name from the export.
  * @return string
  */
-function cotlas_resign_legacy_widget_blocks( $content, $menu_id_map ) {
+function cotlas_resign_legacy_widget_blocks( $content, $menu_id_map, $menu_names = array() ) {
 	if ( ! is_string( $content ) || false === strpos( $content, 'wp:legacy-widget' ) ) {
 		return $content;
 	}
 
 	$blocks = parse_blocks( $content );
 
-	$walk = function ( $items ) use ( &$walk, $menu_id_map ) {
+	$walk = function ( $items ) use ( &$walk, $menu_id_map, $menu_names ) {
 		foreach ( $items as $index => $block ) {
 			if ( is_array( $block ) && isset( $block['blockName'] ) && 'core/legacy-widget' === $block['blockName'] && is_array( $block['attrs'] ) ) {
 				$attrs    = $block['attrs'];
 				$instance = isset( $attrs['instance']['raw'] ) && is_array( $attrs['instance']['raw'] ) ? $attrs['instance']['raw'] : array();
 				$id_base  = isset( $attrs['idBase'] ) ? (string) $attrs['idBase'] : '';
 
-				if ( 'nav_menu' === $id_base && ! empty( $instance['nav_menu'] ) && isset( $menu_id_map[ (int) $instance['nav_menu'] ] ) ) {
-					$instance['nav_menu'] = (int) $menu_id_map[ (int) $instance['nav_menu'] ];
+				if ( 'nav_menu' === $id_base && ! empty( $instance['nav_menu'] ) ) {
+					$old_id    = (int) $instance['nav_menu'];
+					$name_hint = isset( $menu_names[ $old_id ] ) ? (string) $menu_names[ $old_id ] : '';
+					$resolved  = cotlas_resolve_menu_id( $old_id, $name_hint, $menu_id_map );
+
+					// Older exports carry no menu names; the title usually matches.
+					if ( ! $resolved && '' === $name_hint && ! empty( $instance['title'] ) ) {
+						$resolved = cotlas_find_menu_id_by_name( $instance['title'] );
+					}
+
+					if ( $resolved ) {
+						$instance['nav_menu'] = $resolved;
+					}
 				}
 
 				$serialized = serialize( $instance ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Core block format.
@@ -704,13 +913,8 @@ function cotlas_import_widgets_data( $data, $menu_id_map = array() ) {
 			// Round-trip through JSON so nested objects become arrays.
 			$instance = json_decode( wp_json_encode( $instance ), true );
 
-			if ( 'nav_menu' === $id_base && ! empty( $instance['nav_menu'] ) && isset( $menu_id_map[ (int) $instance['nav_menu'] ] ) ) {
-				$instance['nav_menu'] = (int) $menu_id_map[ (int) $instance['nav_menu'] ];
-			}
-
-			if ( 'block' === $id_base && isset( $instance['content'] ) ) {
-				$instance['content'] = cotlas_resign_legacy_widget_blocks( $instance['content'], $menu_id_map );
-			}
+			// Resolve menu references by name: term IDs are site-specific.
+			$instance = cotlas_remap_widget_menu_refs( $id_base, $instance, $menu_id_map );
 
 			$instance = cotlas_sanitize_widget_instance( $instance, $id_base );
 
@@ -929,7 +1133,17 @@ function cotlas_site_import_data( $data ) {
 				}
 
 				$value = maybe_unserialize( $option_value );
-				update_option( $option_name, is_array( $value ) ? $value : array() );
+				$value = is_array( $value ) ? $value : array();
+				$base  = substr( $option_name, strlen( 'widget_' ) );
+
+				// Menu IDs are site-specific; remap them to the menus we just created.
+				foreach ( $value as $instance_id => $instance ) {
+					if ( is_numeric( $instance_id ) ) {
+						$value[ $instance_id ] = cotlas_remap_widget_menu_refs( $base, $instance, $menu_id_map );
+					}
+				}
+
+				update_option( $option_name, $value );
 				$restored++;
 			}
 

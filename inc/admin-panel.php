@@ -2007,7 +2007,7 @@ function cotlas_panel_page_post_formats() {
 	ctap_form_open( 'ctap_save_post_formats_taxonomies', 'taxonomies' );
 	ctap_card_open( 'Taxonomies for Posts', 'dashicons-category' );
 	ctap_toggle( 'cotlas_taxonomy_location_enabled', 'Location Taxonomy', 'Registers a hierarchical <code>location</code> taxonomy on Posts. Slug: <code>/location/</code>. Adds a Location column and panel in the block editor.' );
-	ctap_toggle( 'cotlas_taxonomy_state_city_enabled', 'State &amp; City Taxonomies', 'Registers hierarchical <code>state</code> and flat <code>city</code> taxonomies on Posts. Slugs: <code>/state/</code> and <code>/city/</code>.' );
+	ctap_toggle( 'cotlas_taxonomy_state_city_enabled', 'State &amp; City Taxonomies', 'Registers hierarchical <code>state</code> and <code>city</code> taxonomies on Posts, both behaving like Categories (checkbox selection, nestable terms). Slugs: <code>/state/</code> and <code>/city/</code>.' );
 	ctap_card_close();
 	ctap_info( 'After enabling or disabling a taxonomy, visit <strong>Settings → Permalinks</strong> and click Save to flush rewrite rules.' );
 	ctap_form_close();
