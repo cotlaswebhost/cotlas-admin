@@ -124,7 +124,7 @@ function cotlas_get_injected_share_html( $position ) {
     return ob_get_clean();
 }
 
-if ( ! function_exists( 'generate_post_meta' ) ) {
+if ( cotlas_is_generatepress_active() && ! function_exists( 'generate_post_meta' ) ) {
     /**
      * GeneratePress header entry meta, plus the optional top share icons.
      *
@@ -160,7 +160,7 @@ add_filter( 'generate_footer_entry_meta_items', 'cotlas_add_bottom_share_meta_it
  * @return array
  */
 function cotlas_add_bottom_share_meta_item( $items ) {
-    if ( ! is_singular() || ! get_option( 'cotlas_share_box_inject_bottom' ) ) {
+    if ( ! cotlas_is_generatepress_active() || ! is_singular() || ! get_option( 'cotlas_share_box_inject_bottom' ) ) {
         return $items;
     }
 
@@ -187,6 +187,10 @@ add_action( 'generate_post_meta_items', 'cotlas_render_bottom_share_meta_item' )
  * @param string $item Current post meta item.
  */
 function cotlas_render_bottom_share_meta_item( $item ) {
+    if ( ! cotlas_is_generatepress_active() ) {
+        return;
+    }
+
     if ( 'cotlas-share-bottom' === $item ) {
         echo cotlas_get_injected_share_html( 'bottom' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built by this plugin.
     }

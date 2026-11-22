@@ -158,7 +158,8 @@ function cotlas_panel_process_saves() {
 		'ctap_save_gbtags' => array(
 			'page' => 'cotlas-gb-tags',
 			'map'  => array(
-				'cotlas_gb_tags_enabled' => 'checkbox',
+				'cotlas_generatepress_enabled' => 'checkbox',
+				'cotlas_gb_tags_enabled'       => 'checkbox',
 			),
 		),
 		'ctap_save_gbtags_hero' => array(
@@ -365,6 +366,7 @@ function cotlas_panel_process_saves() {
 		'ctap_save_tracking_analytics' => array(
 			'page' => 'cotlas-tracking-codes',
 			'map'  => array(
+				'cotlas_tracking_enabled'    => 'checkbox',
 				'cotlas_ga4_code'            => 'sanitize_text_field',
 				'cotlas_search_console_code' => 'tracking_code',
 				'cotlas_bing_console_code'   => 'tracking_code',
@@ -453,7 +455,7 @@ function cotlas_panel_register_menus() {
 		array( 'cotlas-login-system',          __( 'Login System', 'cotlas-admin' ),            'cotlas_panel_page_login'          ),
 		array( 'cotlas-category-enhancements', __( 'Category Enhance', 'cotlas-admin' ),   'cotlas_panel_page_categories'     ),
 		array( 'cotlas-comment-system',        __( 'Comment System', 'cotlas-admin' ),           'cotlas_panel_page_comments'       ),
-		array( 'cotlas-gb-tags',               __( 'Dynamic Tags', 'cotlas-admin' ),      'cotlas_panel_page_gb_tags'        ),
+		array( 'cotlas-gb-tags',               __( 'GeneratePress', 'cotlas-admin' ),     'cotlas_panel_page_gb_tags'        ),
 		array( 'cotlas-security-settings',     __( 'Site Security', 'cotlas-admin' ),        'cotlas_panel_page_security'       ),
 		array( 'cotlas-image-optimization',    __( 'Image Optimize', 'cotlas-admin' ),       'cotlas_panel_page_image_opt'      ),
 		array( 'cotlas-post-formats',          __( 'Post Formats', 'cotlas-admin' ),             'cotlas_panel_page_post_formats'   ),
@@ -1356,7 +1358,12 @@ function cotlas_panel_page_comments() {
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 function cotlas_panel_page_gb_tags() {
-	ctap_page_open( 'GenerateBlocks Tags', 'dashicons-block-default', 'Custom dynamic tags and query parameters for GenerateBlocks Pro.' );
+	ctap_page_open( 'GeneratePress', 'dashicons-block-default', 'Dynamic tags, page hero, cricket, theme injections and ad injection for GeneratePress sites.' );
+
+	if ( ! cotlas_generatepress_module_enabled() ) {
+		echo '<div class="ctap-notice ctap-notice-error"><span class="dashicons dashicons-warning"></span> ' . esc_html__( 'The GeneratePress module is switched off. Dynamic tags, page hero, cricket, theme injections and ad injections are inactive until you switch it back on in the Settings tab.', 'cotlas-admin' ) . '</div>';
+	}
+
 	$tabs = array(
 		array( 'id' => 'tags',       'label' => 'Dynamic Tags', 'icon' => 'dashicons-tag' ),
 		array( 'id' => 'page-hero',  'label' => 'Page Hero',    'icon' => 'dashicons-format-image' ),
@@ -1671,7 +1678,9 @@ function cotlas_panel_page_gb_tags() {
 	ctap_pane_open( 'settings', $active );
 	ctap_form_open( 'ctap_save_gbtags', 'settings' );
 	ctap_card_open( 'Module Settings', 'dashicons-admin-generic' );
-	ctap_module_status( 'cotlas_gb_tags_enabled', 'GenerateBlocks Tags', 'When disabled, no custom dynamic tags will be registered with GenerateBlocks. All tags will disappear from the GB dropdowns.' );
+	ctap_module_status( 'cotlas_generatepress_enabled', 'GeneratePress Module', 'Master switch for this entire page. When off, dynamic tags, page hero, cricket, theme injections and ad injections stop running — useful on sites that do not need them.', 1 );
+	ctap_section( 'Dynamic Tags' );
+	ctap_module_status( 'cotlas_gb_tags_enabled', 'GenerateBlocks Tags', 'When disabled, no custom dynamic tags will be registered with GenerateBlocks. All tags will disappear from the GB dropdowns. This only applies while the GeneratePress Module master switch above is on.' );
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();
@@ -2276,6 +2285,8 @@ function cotlas_panel_page_tracking() {
 	ctap_pane_open( 'analytics', $active );
 	ctap_form_open( 'ctap_save_tracking_analytics', 'analytics' );
 	ctap_card_open( 'Analytics & Verification', 'dashicons-chart-bar' );
+	ctap_module_status( 'cotlas_tracking_enabled', 'Tracking Codes', 'Master switch for this entire page. When off, no analytics, verification tags, pixels or custom header/footer scripts are printed.', 1 );
+	ctap_section( 'Codes' );
 	ctap_field( 'Google Analytics 4 (GA4) ID', ctap_input( 'cotlas_ga4_code', 'G-XXXXXXXXXX' ), 'Measurement ID only (e.g. G-XXXXXXXXXX). The gtag.js script is injected automatically.' );
 	ctap_field( 'Search Console Meta Tag', ctap_textarea( 'cotlas_search_console_code', '<meta name="google-site-verification" content="..." />', 2 ), 'Paste the full meta verification tag.' );
 	ctap_field( 'Bing Console Meta Tag', ctap_textarea( 'cotlas_bing_console_code', '<meta name="msvalidate.01" content="..." />', 2 ), 'Paste the full Bing Webmaster Tools verification meta tag.' );

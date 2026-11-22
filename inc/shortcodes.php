@@ -26,6 +26,10 @@ function tct_gp_nav( $atts ) {
         $wrapper_class .= ' ' . esc_attr( $atts['class'] );
     }
 
+    if ( ! function_exists( 'generate_navigation_position' ) ) {
+        return '';
+    }
+
     ob_start();
     echo '<div class="' . $wrapper_class . '">';
     generate_navigation_position();

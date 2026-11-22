@@ -16,7 +16,8 @@ defined( 'ABSPATH' ) || exit;
  * @return bool
  */
 function cotlas_author_box_is_enabled() {
-    return get_option( 'cotlas_user_profile_enabled' )
+    return cotlas_is_generatepress_active()
+        && get_option( 'cotlas_user_profile_enabled' )
         && get_option( 'cotlas_author_box_enabled' )
         && is_singular( 'post' );
 }

@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Bail if the module is disabled.
-if ( ! get_option( 'cotlas_cricket_enabled' ) ) {
+// Bail if the GeneratePress module or cricket widget is disabled.
+if ( ! get_option( 'cotlas_generatepress_enabled', 1 ) || ! get_option( 'cotlas_cricket_enabled' ) ) {
 	return;
 }
 

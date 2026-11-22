@@ -143,6 +143,10 @@ add_action( 'generate_after_main_content', 'cotlas_render_related_posts', 10 );
  * Output the related posts block after the main content.
  */
 function cotlas_render_related_posts() {
+    if ( ! cotlas_generatepress_frontend_enabled() ) {
+        return;
+    }
+
     echo cotlas_get_related_posts_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built by this plugin.
 }
 
@@ -198,6 +202,10 @@ add_action( 'generate_after_logo', 'cotlas_render_header_ads', 10 );
  * the shortcode is wrapped in .header-right inside .inside-header.
  */
 function cotlas_render_header_ads() {
+    if ( ! cotlas_generatepress_frontend_enabled() ) {
+        return;
+    }
+
     $shortcode = cotlas_sanitize_ads_shortcode( get_option( 'cotlas_ads_header', '' ) );
 
     if ( '' === $shortcode ) {
@@ -232,7 +240,7 @@ function cotlas_render_ads_location( $option, $wrapper_class ) {
         return;
     }
 
-    echo '<div class="cotlas-ad-slot ' . esc_attr( $wrapper_class ) . '">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is trusted plugin markup.
+    echo '<div class="cotlas-od-slot ' . esc_attr( $wrapper_class ) . '">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is trusted plugin markup.
 }
 
 /**
@@ -249,7 +257,7 @@ add_action( 'generate_before_main_content', 'cotlas_render_above_archive_ads', 1
  * Output the Above Archive ad. Mirrors GeneratePress Element #840.
  */
 function cotlas_render_above_archive_ads() {
-    if ( ! cotlas_is_ads_archive_view() ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! cotlas_is_ads_archive_view() ) {
         return;
     }
 
@@ -261,7 +269,7 @@ add_action( 'generate_before_main_content', 'cotlas_render_above_post_ads', 10 )
  * Output the Above Post ad. Mirrors GeneratePress Element #831.
  */
 function cotlas_render_above_post_ads() {
-    if ( ! is_singular( 'post' ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) ) {
         return;
     }
 
@@ -276,7 +284,7 @@ add_action( 'generate_after_entry_header', 'cotlas_render_above_content_ads', 20
  * .entry-content div.
  */
 function cotlas_render_above_content_ads() {
-    if ( ! is_singular( 'post' ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) ) {
         return;
     }
 
@@ -291,7 +299,7 @@ add_action( 'generate_after_entry_content', 'cotlas_render_below_content_ads', 5
  * .entry-content div.
  */
 function cotlas_render_below_content_ads() {
-    if ( ! is_singular( 'post' ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) ) {
         return;
     }
 
@@ -306,19 +314,22 @@ add_action( 'generate_after_main_content', 'cotlas_render_above_related_ads', 5 
  * directly above the .cws-related-posts block.
  */
 function cotlas_render_above_related_ads() {
-    if ( ! is_singular( 'post' ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) ) {
         return;
     }
 
     cotlas_render_ads_location( 'cotlas_ads_above_related', 'cotlas-ad-above-related' );
 }
 
-add_action( 'generate_after_main_content', 'cotlas_render_below_archive_ads', 10 );
+// Runs after GeneratePress Premium's infinite-scroll "Load more" button on
+// archives (generate_blog_load_more is hooked at priority 20), so the ad sits
+// below it and before </main>.
+add_action( 'generate_after_main_content', 'cotlas_render_below_archive_ads', 30 );
 /**
  * Output the Below Archive ad. Mirrors GeneratePress Element #842.
  */
 function cotlas_render_below_archive_ads() {
-    if ( ! cotlas_is_ads_archive_view() ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! cotlas_is_ads_archive_view() ) {
         return;
     }
 
@@ -333,7 +344,7 @@ add_action( 'generate_after_main_content', 'cotlas_render_below_post_ads', 20 );
  * below the related-posts block.
  */
 function cotlas_render_below_post_ads() {
-    if ( ! is_singular( 'post' ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) ) {
         return;
     }
 
@@ -352,7 +363,7 @@ add_filter( 'the_content', 'cotlas_inject_inside_content_ads', 12 );
  * @return string
  */
 function cotlas_inject_inside_content_ads( $content ) {
-    if ( ! is_singular( 'post' ) || ! is_main_query() || ! in_the_loop() || ! is_string( $content ) ) {
+    if ( ! cotlas_generatepress_frontend_enabled() || ! is_singular( 'post' ) || ! is_main_query() || ! in_the_loop() || ! is_string( $content ) ) {
         return $content;
     }
 

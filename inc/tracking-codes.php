@@ -275,6 +275,9 @@ class Cotlas_Tracking_Codes {
 
     // Inject footer codes
     public function inject_footer_codes() {
+        if ( ! get_option( 'cotlas_tracking_enabled', 1 ) ) {
+            return;
+        }
         $footer_scripts = get_option('cotlas_footer_scripts');
         if ($footer_scripts) {
             echo "\n<!-- Custom Footer Scripts -->\n";
@@ -284,6 +287,9 @@ class Cotlas_Tracking_Codes {
 
     // Inject tracking codes into head
     public function inject_tracking_codes() {
+        if ( ! get_option( 'cotlas_tracking_enabled', 1 ) ) {
+            return;
+        }
         $ga4_code = get_option('cotlas_ga4_code');
         $search_console_code = get_option('cotlas_search_console_code');
         $bing_console_code = get_option('cotlas_bing_console_code');

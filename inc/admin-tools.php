@@ -974,6 +974,7 @@ class Cotlas_Admin_Tools {
 			array( 'id' => 'dark-mode',      'label' => 'Dark Mode',      'icon' => 'dashicons-visibility' ),
 			array( 'id' => 'font-resizer',   'label' => 'Font Resizer',   'icon' => 'dashicons-editor-textcolor' ),
 			array( 'id' => 'site-export',    'label' => 'Site Export',    'icon' => 'dashicons-migrate' ),
+			array( 'id' => 'export-import',  'label' => 'Export / Import', 'icon' => 'dashicons-database-import' ),
 			array( 'id' => 'reset-site',     'label' => 'Reset Site',     'icon' => 'dashicons-database-remove' ),
 		);
 		$active = ctap_nav( $tabs );
@@ -1020,6 +1021,10 @@ class Cotlas_Admin_Tools {
 
 		ctap_pane_open( 'site-export', $active );
 		$this->tab_site_export();
+		ctap_pane_close();
+
+		ctap_pane_open( 'export-import', $active );
+		Cotlas_Settings_Export::get_instance()->render_tab();
 		ctap_pane_close();
 
 		ctap_pane_open( 'reset-site', $active );
@@ -1600,7 +1605,7 @@ class Cotlas_Admin_Tools {
 		ctap_card_close();
 
 		ctap_card_open( 'Plugin Settings Are Separate', 'dashicons-admin-settings' );
-		ctap_info( 'This tool moves site structure and theme design. To move Cotlas Admin plugin configuration, use <a href="' . esc_url( admin_url( 'admin.php?page=cotlas-export-import' ) ) . '">Export / Import</a> instead.' );
+		ctap_info( 'This tool moves site structure and theme design. To move Cotlas Admin plugin configuration, use the <a href="' . esc_url( admin_url( 'admin.php?page=cotlas-tools&tab=export-import' ) ) . '">Export / Import</a> tab instead.' );
 		ctap_card_close();
 	}
 

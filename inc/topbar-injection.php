@@ -58,7 +58,7 @@ function cotlas_sanitize_topbar_datetime_choice( $value, array $allowed, $fallba
  * @return string
  */
 function cotlas_get_topbar_datetime_html() {
-    if ( ! get_option( 'cotlas_topbar_datetime_inject' ) ) {
+    if ( ! get_option( 'cotlas_social_enabled', 1 ) || ! get_option( 'cotlas_topbar_datetime_inject' ) ) {
         return '';
     }
 
@@ -116,6 +116,10 @@ add_action( 'generate_inside_secondary_navigation', 'cotlas_render_secondary_nav
  * Output the date/time and social entries inside the secondary navigation.
  */
 function cotlas_render_secondary_navigation_extras() {
+    if ( ! cotlas_is_generatepress_active() ) {
+        return;
+    }
+
     echo cotlas_get_topbar_datetime_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built by this plugin.
     echo cotlas_get_topbar_social_html();   // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built by this plugin.
 }

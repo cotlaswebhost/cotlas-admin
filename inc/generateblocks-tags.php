@@ -10,6 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+if ( ! get_option( 'cotlas_generatepress_enabled', 1 ) ) { return; }
 if ( ! get_option( 'cotlas_gb_tags_enabled' ) ) { return; }
 
 

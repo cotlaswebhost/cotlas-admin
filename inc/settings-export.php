@@ -26,27 +26,7 @@ class Cotlas_Settings_Export {
 	}
 
 	private function __construct() {
-		add_action( 'admin_menu', array( $this, 'register_menu' ), 5 );
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
-	}
-
-	public function register_menu() {
-		add_submenu_page(
-			'cotlas-admin-panel',
-			'Export / Import',
-			'Export / Import',
-			'manage_options',
-			self::PAGE_SLUG,
-			array( $this, 'render_page' )
-		);
-	}
-
-	public function enqueue_assets( $hook ) {
-		if ( 'cotlas-admin_page_' . self::PAGE_SLUG !== $hook ) {
-			return;
-		}
-		// No extra assets needed — uses the shared panel CSS/JS.
 	}
 
 	/**
@@ -207,31 +187,22 @@ class Cotlas_Settings_Export {
 	}
 
 	/**
-	 * Render the Export / Import page.
+	 * Render the Export / Import tab inside Admin Tools.
 	 */
-	public function render_page() {
+	public function render_tab() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
-		ctap_page_open( 'Export / Import', 'dashicons-download', 'Export Cotlas Admin plugin settings to a file or import them from another site. For menus, widgets and Customizer settings, use Admin Tools &rarr; Site Export instead.' );
-
-		$tabs = array(
-			array( 'id' => 'export', 'label' => 'Export', 'icon' => 'dashicons-download' ),
-			array( 'id' => 'import', 'label' => 'Import', 'icon' => 'dashicons-upload' ),
-		);
-		$active = ctap_nav( $tabs );
-
-		// ── Export Tab ──
-		ctap_pane_open( 'export', $active );
+		// ── Export ──
 		ctap_card_open( 'Export Settings', 'dashicons-download' );
 
 		$settings = self::collect_settings();
 		$count    = count( $settings );
 		$nonce    = wp_create_nonce( self::NONCE_NAME );
-		$url      = admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&cotlas_export=1&_wpnonce=' . $nonce );
+		$url      = admin_url( 'admin.php?page=cotlas-tools&tab=export-import&cotlas_export=1&_wpnonce=' . $nonce );
 
-		ctap_info( 'Exports all Cotlas Admin plugin settings (including security keys, tracking codes, and all module configurations) to a JSON file. You can then import this file on another site to replicate the same configuration.' );
+		ctap_info( 'Exports all Cotlas Admin plugin settings (including security keys, tracking codes, and all module configurations) to a JSON file. You can then import this file on another site to replicate the same configuration. For menus, widgets and Customizer settings, use the Site Export tab instead.' );
 
 		echo '<div class="ctap-field-row">';
 		echo '<div class="ctap-field-label">Settings Count</div>';
@@ -245,10 +216,8 @@ class Cotlas_Settings_Export {
 		echo '</div>';
 
 		ctap_card_close();
-		ctap_pane_close();
 
-		// ── Import Tab ──
-		ctap_pane_open( 'import', $active );
+		// ── Import ──
 		ctap_card_open( 'Import Settings', 'dashicons-upload' );
 
 		if ( function_exists( 'settings_errors' ) ) {
@@ -275,9 +244,6 @@ class Cotlas_Settings_Export {
 
 		echo '</form>';
 		ctap_card_close();
-		ctap_pane_close();
-
-		ctap_page_close();
 	}
 }
 

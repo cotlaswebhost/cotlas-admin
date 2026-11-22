@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     3.1.3
+ * Version:     3.1.4
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -12,6 +12,46 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+/**
+ * Whether GeneratePress is the active theme (directly or as a parent theme).
+ *
+ * Frontend injections in this plugin target GeneratePress hooks and markup.
+ * Guarding them keeps imported settings from producing markup (or calling
+ * GeneratePress functions) when a different theme such as Elementor is active.
+ *
+ * @return bool
+ */
+function cotlas_is_generatepress_active() {
+	if ( function_exists( 'generate_get_option' ) ) {
+		return true;
+	}
+
+	return 'generatepress' === get_template();
+}
+
+/**
+ * Whether the GeneratePress module on the Dynamic Tags page is switched on.
+ *
+ * This is the page-level master switch for dynamic tags, page hero, cricket,
+ * theme injections and ad injections.
+ *
+ * @return bool
+ */
+function cotlas_generatepress_module_enabled() {
+	return (bool) get_option( 'cotlas_generatepress_enabled', 1 );
+}
+
+/**
+ * Whether GeneratePress frontend injections should run.
+ *
+ * Requires both the GeneratePress theme and the page-level master switch.
+ *
+ * @return bool
+ */
+function cotlas_generatepress_frontend_enabled() {
+	return cotlas_is_generatepress_active() && cotlas_generatepress_module_enabled();
+}
 
 /**
  * Seed missing toggle options with deterministic defaults on activation.
@@ -26,7 +66,9 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 		'cotlas_category_features_enabled'              => 0,
 		'cotlas_comment_system_enabled'                 => 0,
 		'cotlas_comment_auto_inject'                    => 0,
+		'cotlas_generatepress_enabled'                  => 1,
 		'cotlas_gb_tags_enabled'                        => 0,
+		'cotlas_tracking_enabled'                       => 1,
 		'cotlas_gb_page_hero_enabled'                   => 0,
 		'cotlas_image_optimization_enabled'             => 0,
 		'cotlas_post_formats_enabled'                   => 0,
