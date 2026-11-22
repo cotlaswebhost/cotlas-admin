@@ -3,7 +3,7 @@
  * Plugin Name: Cotlas Admin
  * Plugin URI:  https://cotlas.net
  * Description: Core admin customizations, security hardening, site settings, shortcodes, and utility features for Cotlas client sites.
- * Version:     3.1.2
+ * Version:     3.1.3
  * Author:      Vinay Shukla
  * Author URI:  https://cotlas.net
  * License:     Proprietary
@@ -209,6 +209,17 @@ function cotlas_admin_activate_seed_toggle_defaults() {
 	add_option( 'cotlas_related_posts_count', 3 );
 	add_option( 'cotlas_related_posts_label', '' );
 	add_option( 'cotlas_ads_header', '' );
+	add_option( 'cotlas_ads_above_archive', '' );
+	add_option( 'cotlas_ads_above_post', '' );
+	add_option( 'cotlas_ads_below_archive', '' );
+	add_option( 'cotlas_ads_below_post', '' );
+	add_option( 'cotlas_ads_above_content', '' );
+	add_option( 'cotlas_ads_below_content', '' );
+	add_option( 'cotlas_ads_above_related', '' );
+	for ( $cotlas_ads_inside = 1; $cotlas_ads_inside <= 4; $cotlas_ads_inside++ ) {
+		add_option( 'cotlas_ads_inside_content_' . $cotlas_ads_inside, '' );
+		add_option( 'cotlas_ads_inside_paragraph_' . $cotlas_ads_inside, '' );
+	}
 	add_option( 'cotlas_dark_mode_default', 'system' );
 	add_option( 'cotlas_font_resizer_target', '.entry-content' );
 }

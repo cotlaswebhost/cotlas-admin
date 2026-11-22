@@ -147,6 +147,34 @@ function cotlas_render_related_posts() {
 }
 
 /**
+ * Sanitize an ads paragraph-number field.
+ *
+ * Empty is allowed (slot disabled). Otherwise the value is clamped to 1–100.
+ *
+ * @param mixed $value Raw value.
+ * @return string
+ */
+function cotlas_sanitize_ads_paragraph( $value ) {
+    if ( ! is_string( $value ) && ! is_numeric( $value ) ) {
+        return '';
+    }
+
+    $value = trim( (string) $value );
+
+    if ( '' === $value ) {
+        return '';
+    }
+
+    $number = absint( $value );
+
+    if ( $number < 1 ) {
+        return '';
+    }
+
+    return (string) min( 100, $number );
+}
+
+/**
  * Sanitize an ads shortcode field.
  *
  * Keeps the shortcode brackets intact while stripping any stray HTML.
@@ -183,4 +211,205 @@ function cotlas_render_header_ads() {
     }
 
     echo '<div class="header-right">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is trusted plugin markup.
+}
+
+/**
+ * Render a saved ads shortcode for one GeneratePress ad location.
+ *
+ * @param string $option        Option key holding the shortcode.
+ * @param string $wrapper_class Extra class for the wrapper element.
+ */
+function cotlas_render_ads_location( $option, $wrapper_class ) {
+    $shortcode = cotlas_sanitize_ads_shortcode( get_option( $option, '' ) );
+
+    if ( '' === $shortcode ) {
+        return;
+    }
+
+    $html = do_shortcode( $shortcode );
+
+    if ( '' === trim( $html ) ) {
+        return;
+    }
+
+    echo '<div class="cotlas-ad-slot ' . esc_attr( $wrapper_class ) . '">' . $html . '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is trusted plugin markup.
+}
+
+/**
+ * Whether the current request counts as a GeneratePress archive view.
+ *
+ * @return bool
+ */
+function cotlas_is_ads_archive_view() {
+    return is_archive() || is_home();
+}
+
+add_action( 'generate_before_main_content', 'cotlas_render_above_archive_ads', 10 );
+/**
+ * Output the Above Archive ad. Mirrors GeneratePress Element #840.
+ */
+function cotlas_render_above_archive_ads() {
+    if ( ! cotlas_is_ads_archive_view() ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_above_archive', 'cotlas-ad-above-archive' );
+}
+
+add_action( 'generate_before_main_content', 'cotlas_render_above_post_ads', 10 );
+/**
+ * Output the Above Post ad. Mirrors GeneratePress Element #831.
+ */
+function cotlas_render_above_post_ads() {
+    if ( ! is_singular( 'post' ) ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_above_post', 'cotlas-ad-above-post' );
+}
+
+add_action( 'generate_after_entry_header', 'cotlas_render_above_content_ads', 20 );
+/**
+ * Output the Above Content ad on single posts.
+ *
+ * Runs after the featured image (priority 10) and directly before the
+ * .entry-content div.
+ */
+function cotlas_render_above_content_ads() {
+    if ( ! is_singular( 'post' ) ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_above_content', 'cotlas-ad-above-content' );
+}
+
+add_action( 'generate_after_entry_content', 'cotlas_render_below_content_ads', 5 );
+/**
+ * Output the Below Content ad on single posts.
+ *
+ * Runs before the footer entry-meta (priority 10), directly after the
+ * .entry-content div.
+ */
+function cotlas_render_below_content_ads() {
+    if ( ! is_singular( 'post' ) ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_below_content', 'cotlas-ad-below-content' );
+}
+
+add_action( 'generate_after_main_content', 'cotlas_render_above_related_ads', 5 );
+/**
+ * Output the Above Related News ad on single posts.
+ *
+ * Runs before cotlas_render_related_posts() (priority 10) so the ad sits
+ * directly above the .cws-related-posts block.
+ */
+function cotlas_render_above_related_ads() {
+    if ( ! is_singular( 'post' ) ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_above_related', 'cotlas-ad-above-related' );
+}
+
+add_action( 'generate_after_main_content', 'cotlas_render_below_archive_ads', 10 );
+/**
+ * Output the Below Archive ad. Mirrors GeneratePress Element #842.
+ */
+function cotlas_render_below_archive_ads() {
+    if ( ! cotlas_is_ads_archive_view() ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_below_archive', 'cotlas-ad-below-archive' );
+}
+
+add_action( 'generate_after_main_content', 'cotlas_render_below_post_ads', 20 );
+/**
+ * Output the Below Related Post ad. Mirrors GeneratePress Element #833.
+ *
+ * Runs after cotlas_render_related_posts() (priority 10) so the ad sits
+ * below the related-posts block.
+ */
+function cotlas_render_below_post_ads() {
+    if ( ! is_singular( 'post' ) ) {
+        return;
+    }
+
+    cotlas_render_ads_location( 'cotlas_ads_below_post', 'cotlas-ad-below-post' );
+}
+
+add_filter( 'the_content', 'cotlas_inject_inside_content_ads', 12 );
+/**
+ * Inject the Inside Content ads after their configured paragraphs.
+ *
+ * Runs on single posts only, after wpautop/do_shortcode (priority 10/11) so
+ * paragraph tags already exist, but before the Cotlas Ads engine (priority 20)
+ * so paragraph counting is not affected by other injected creatives.
+ *
+ * @param string $content Post content.
+ * @return string
+ */
+function cotlas_inject_inside_content_ads( $content ) {
+    if ( ! is_singular( 'post' ) || ! is_main_query() || ! in_the_loop() || ! is_string( $content ) ) {
+        return $content;
+    }
+
+    $targets = array();
+
+    for ( $slot = 1; $slot <= 4; $slot++ ) {
+        $shortcode = cotlas_sanitize_ads_shortcode( get_option( 'cotlas_ads_inside_content_' . $slot, '' ) );
+        $paragraph = absint( get_option( 'cotlas_ads_inside_paragraph_' . $slot, '' ) );
+
+        if ( '' === $shortcode || $paragraph < 1 ) {
+            continue;
+        }
+
+        $html = do_shortcode( $shortcode );
+
+        if ( '' === trim( $html ) ) {
+            continue;
+        }
+
+        $targets[ $paragraph ][] = '<div class="cotlas-ad-slot cotlas-ad-inside-content" data-cotlas-inside="' . $slot . '">' . $html . '</div>';
+    }
+
+    if ( empty( $targets ) ) {
+        return $content;
+    }
+
+    return cotlas_inject_ads_after_paragraphs( $content, $targets );
+}
+
+/**
+ * Insert ad markup after the requested non-empty paragraphs.
+ *
+ * Empty, whitespace-only and nbsp/zero-width-only paragraphs are skipped,
+ * matching the paragraph numbering used by the Cotlas Ads engine.
+ *
+ * @param string $content Post content.
+ * @param array  $targets Map of paragraph number => array of markup strings.
+ * @return string
+ */
+function cotlas_inject_ads_after_paragraphs( $content, array $targets ) {
+    $count  = 0;
+    $result = preg_replace_callback(
+        '/<p\b[^>]*>.*?<\/p>/is',
+        function ( array $match ) use ( &$count, $targets ) {
+            $text = html_entity_decode( wp_strip_all_tags( $match[0] ), ENT_QUOTES | ENT_HTML5, get_bloginfo( 'charset' ) ?: 'UTF-8' );
+            $text = preg_replace( '/[\s\x{00A0}\x{200B}\x{FEFF}]+/u', '', $text );
+
+            if ( '' === $text ) {
+                return $match[0];
+            }
+
+            $count++;
+
+            return isset( $targets[ $count ] ) ? $match[0] . implode( '', $targets[ $count ] ) : $match[0];
+        },
+        $content
+    );
+
+    return is_string( $result ) ? $result : $content;
 }

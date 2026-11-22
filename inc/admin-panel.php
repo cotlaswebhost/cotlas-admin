@@ -132,7 +132,27 @@ function cotlas_panel_process_saves() {
 				'cotlas_related_posts_inject' => 'checkbox',
 				'cotlas_related_posts_label'  => 'sanitize_text_field',
 				'cotlas_related_posts_count'  => 'cotlas_sanitize_related_posts_count',
-				'cotlas_ads_header'           => 'cotlas_sanitize_ads_shortcode',
+			),
+		),
+		'ctap_save_ad_injections' => array(
+			'page' => 'cotlas-gb-tags',
+			'map'  => array(
+				'cotlas_ads_header'        => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_above_archive' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_above_post'    => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_below_archive' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_below_post'    => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_above_content' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_below_content' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_above_related' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_inside_content_1' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_inside_paragraph_1' => 'cotlas_sanitize_ads_paragraph',
+				'cotlas_ads_inside_content_2' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_inside_paragraph_2' => 'cotlas_sanitize_ads_paragraph',
+				'cotlas_ads_inside_content_3' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_inside_paragraph_3' => 'cotlas_sanitize_ads_paragraph',
+				'cotlas_ads_inside_content_4' => 'cotlas_sanitize_ads_shortcode',
+				'cotlas_ads_inside_paragraph_4' => 'cotlas_sanitize_ads_paragraph',
 			),
 		),
 		'ctap_save_gbtags' => array(
@@ -1344,6 +1364,7 @@ function cotlas_panel_page_gb_tags() {
 		array( 'id' => 'query',      'label' => 'Query Params',  'icon' => 'dashicons-database-view' ),
 		array( 'id' => 'shortcodes', 'label' => 'Shortcodes',    'icon' => 'dashicons-shortcode' ),
 		array( 'id' => 'theme-injections', 'label' => 'Theme Injections', 'icon' => 'dashicons-layout' ),
+		array( 'id' => 'ad-injection', 'label' => 'Ad Injection', 'icon' => 'dashicons-megaphone' ),
 		array( 'id' => 'settings',   'label' => 'Settings',      'icon' => 'dashicons-admin-generic' ),
 	);
 	$active = ctap_nav( $tabs );
@@ -1572,13 +1593,77 @@ function cotlas_panel_page_gb_tags() {
 	ctap_card_open( 'Styling', 'dashicons-editor-custom' );
 	ctap_info( 'Output classes match the existing theme styles: <code>.cws-related-posts</code>, <code>.cws-posts</code>, <code>.cws-posts-list</code>, <code>.wp-block-latest-posts__featured-image</code>, <code>.wp-block-latest-posts__post-title</code>, <code>.wp-block-latest-posts__post-date</code>. Thumbnails use the <code>small-card</code> image size.' );
 	ctap_card_close();
-	ctap_card_open( 'Ads Injections', 'dashicons-megaphone' );
-	ctap_info( 'Paste any ads shortcode here and it is rendered in the matching page position. Leave a field empty to inject nothing. Example: <code>[cotlas_ad zone="inside-header"]</code>' );
+	ctap_form_close();
+	ctap_pane_close();
+
+	ctap_pane_open( 'ad-injection', $active );
+	ctap_form_open( 'ctap_save_ad_injections', 'ad-injection' );
+	ctap_card_open( 'Ad Injection Locations', 'dashicons-megaphone' );
+	ctap_info( '<strong>These ad injections work with the GeneratePress theme only.</strong> Each location is rendered by a GeneratePress hook, so nothing is output when another theme is active. Paste any ads shortcode into a field and it is rendered in the matching position. Leave a field empty to inject nothing. Example: <code>[cotlas_ad zone="inside-header"]</code>' );
 	ctap_field(
 		'Header Ads',
 		'<input type="text" name="cotlas_ads_header" value="' . esc_attr( get_option( 'cotlas_ads_header', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;inside-header&quot;]" style="width:100%">',
 		'Rendered just after the site logo in the header, inside <code>.header-right</code> (same position as the former GeneratePress Element).'
 	);
+	ctap_card_close();
+
+	ctap_card_open( 'Archive Pages', 'dashicons-admin-post' );
+	ctap_field(
+		'Above Archive',
+		'<input type="text" name="cotlas_ads_above_archive" value="' . esc_attr( get_option( 'cotlas_ads_above_archive', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;above-archive&quot;]" style="width:100%">',
+		'Rendered above the main content on archive pages (blog, category, tag, author and date archives). Same position as Element #840.'
+	);
+	ctap_field(
+		'Below Archive',
+		'<input type="text" name="cotlas_ads_below_archive" value="' . esc_attr( get_option( 'cotlas_ads_below_archive', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;below-archive&quot;]" style="width:100%">',
+		'Rendered below the main content on archive pages. Same position as Element #842.'
+	);
+	ctap_card_close();
+
+	ctap_card_open( 'Single Posts', 'dashicons-admin-post' );
+	ctap_field(
+		'Above Post',
+		'<input type="text" name="cotlas_ads_above_post" value="' . esc_attr( get_option( 'cotlas_ads_above_post', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;above-post&quot;]" style="width:100%">',
+		'Rendered above the main content on single posts. Same position as Element #831.'
+	);
+	ctap_field(
+		'Above Content',
+		'<input type="text" name="cotlas_ads_above_content" value="' . esc_attr( get_option( 'cotlas_ads_above_content', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;above-content&quot;]" style="width:100%">',
+		'Rendered inside the article, just before the <code>.entry-content</code> div — directly below the featured image (<code>.page-header-image-single</code>) when one is set.'
+	);
+	ctap_field(
+		'Below Content',
+		'<input type="text" name="cotlas_ads_below_content" value="' . esc_attr( get_option( 'cotlas_ads_below_content', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;below-content&quot;]" style="width:100%">',
+		'Rendered just after the <code>.entry-content</code> div and before the footer <code>.entry-meta</code>.'
+	);
+	ctap_field(
+		'Above Related News',
+		'<input type="text" name="cotlas_ads_above_related" value="' . esc_attr( get_option( 'cotlas_ads_above_related', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;above-related&quot;]" style="width:100%">',
+		'Rendered just before the <code>.cws-related-posts</code> block on single posts.'
+	);
+	ctap_field(
+		'Below Related Post',
+		'<input type="text" name="cotlas_ads_below_post" value="' . esc_attr( get_option( 'cotlas_ads_below_post', '' ) ) . '" placeholder="[cotlas_ad zone=&quot;below-related-post&quot;]" style="width:100%">',
+		'Rendered below the related-posts block on single posts. Same position as Element #833.'
+	);
+	ctap_card_close();
+
+	ctap_card_open( 'Inside Content', 'dashicons-editor-paragraph' );
+	ctap_info( 'Injects an ad inside the single-post content, after the selected non-empty paragraph. Each slot is independent: paste a shortcode and set the paragraph number. Leave the shortcode empty to disable that slot. Empty, whitespace-only and <code>&amp;nbsp;</code>-only paragraphs are not counted.' );
+	for ( $inside = 1; $inside <= 4; $inside++ ) {
+		$inside_shortcode = get_option( 'cotlas_ads_inside_content_' . $inside, '' );
+		$inside_paragraph = get_option( 'cotlas_ads_inside_paragraph_' . $inside, '' );
+		ctap_field(
+			'Inside Content ' . $inside,
+			'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+				. '<input type="text" name="cotlas_ads_inside_content_' . $inside . '" value="' . esc_attr( $inside_shortcode ) . '" placeholder="[cotlas_ad zone=&quot;inside-content-' . $inside . '&quot;]" style="flex:1;min-width:260px">'
+				. '<label style="white-space:nowrap;font-size:12px">After paragraph '
+				. '<input type="number" min="1" max="100" step="1" name="cotlas_ads_inside_paragraph_' . $inside . '" value="' . esc_attr( $inside_paragraph ) . '" placeholder="2" style="width:80px">'
+				. '</label>'
+				. '</div>',
+			''
+		);
+	}
 	ctap_card_close();
 	ctap_form_close();
 	ctap_pane_close();

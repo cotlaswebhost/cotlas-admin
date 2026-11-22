@@ -37,10 +37,25 @@ function cotlas_get_author_box_html( $author_id ) {
         return '';
     }
 
-    $display_name = get_the_author_meta( 'display_name', $author_id );
-    $description  = get_the_author_meta( 'description', $author_id );
-    $archive_url  = get_author_posts_url( $author_id );
-    $avatar_url   = get_avatar_url( $author_id, array( 'size' => 96 ) );
+    $display_name  = get_the_author_meta( 'display_name', $author_id );
+    $description   = get_the_author_meta( 'description', $author_id );
+    $archive_url   = get_author_posts_url( $author_id );
+    $site_icon_url = get_site_icon_url( 96 );
+
+    // Use the site icon as Gravatar's fallback image so authors without an
+    // uploaded avatar or a real Gravatar show the site icon instead of the
+    // default mystery-person image. Custom avatars and real Gravatars still win.
+    $avatar_args = array( 'size' => 96 );
+
+    if ( $site_icon_url ) {
+        $avatar_args['default'] = $site_icon_url;
+    }
+
+    $avatar_url = get_avatar_url( $author_id, $avatar_args );
+
+    if ( ! $avatar_url && $site_icon_url ) {
+        $avatar_url = $site_icon_url;
+    }
 
     ob_start();
     ?>

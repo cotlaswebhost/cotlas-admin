@@ -393,6 +393,11 @@ function async_defer_scripts($tag, $handle, $src) {
 
 // Remove Dashicons from frontend for all users
 function remove_dashicons_frontend_all() {
+    // Core's customize-preview style depends on dashicons; deregistering it
+    // there triggers a "dependencies not registered" notice (WP 6.9.1+).
+    if ( is_admin() || is_customize_preview() ) {
+        return;
+    }
     wp_deregister_style('dashicons');
 }
 add_action('wp_enqueue_scripts', 'remove_dashicons_frontend_all', 100);
