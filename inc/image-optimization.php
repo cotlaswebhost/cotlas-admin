@@ -279,10 +279,32 @@ function custom_generate_image_preloads($image_id, $size_name, $available_sizes)
 /**
  * Convert image URL to different format
  */
+function custom_converted_file_exists($image_url, $format) {
+    $upload  = wp_get_upload_dir();
+    $baseurl = trailingslashit($upload['baseurl']);
+    $basedir = trailingslashit($upload['basedir']);
+    $pattern = '/\.(jpg|jpeg|png|webp|avif)$/i';
+    $converted = preg_replace($pattern, '.' . $format, $image_url);
+    if ($converted === $image_url) {
+        return false;
+    }
+    $path = str_replace($baseurl, $basedir, $converted);
+    return ($path !== $converted && file_exists($path));
+}
+
 function custom_convert_image_format($image_url, $format) {
+    if (!get_option('cotlas_imgconv_enabled')) {
+        return false;
+    }
+
     $supported_formats = array('avif', 'webp');
     
     if (!in_array($format, $supported_formats)) {
+        return false;
+    }
+
+    // Only use a converted URL when the file actually exists on disk.
+    if (!custom_converted_file_exists($image_url, $format)) {
         return false;
     }
     
@@ -322,36 +344,46 @@ function custom_generate_srcset($image_id, $available_sizes, $format = 'avif') {
 
 // Preload for single post pages - full size (1200x628) with srcset
 add_action('wp_head', function() {
-    if (is_single()) {
-        $post_id = get_the_ID();
-        $featured_image_id = get_post_thumbnail_id($post_id);
-        
-        if ($featured_image_id) {
-            $image_sizes = wp_get_attachment_metadata($featured_image_id);
-            
-            if ($image_sizes && isset($image_sizes['sizes'])) {
-                $image_url = wp_get_attachment_image_src($featured_image_id, 'full');
-                if ($image_url) {
-                    $base_url = $image_url[0];
-                    $avif_url = preg_replace('/\.(jpg|jpeg|png|webp)$/i', '.avif', $base_url);
-                    
-                    // Get all image sizes for srcset
-                    $srcset = [];
-                    foreach ($image_sizes['sizes'] as $size_name => $size_data) {
-                        $size_url = wp_get_attachment_image_src($featured_image_id, $size_name);
-                        if ($size_url) {
-                            $size_avif_url = preg_replace('/\.(jpg|jpeg|png|webp)$/i', '.avif', $size_url[0]);
-                            $srcset[] = $size_avif_url . ' ' . $size_data['width'] . 'w';
-                        }
-                    }
-                    
-                    // Add full size
-                    $srcset[] = $avif_url . ' 1200w';
-                    $srcset_string = implode(', ', $srcset);
-                    
-                    echo '<link rel="preload" as="image" href="' . esc_url($avif_url) . '" fetchpriority="high" type="image/avif" imagesrcset="' . esc_attr($srcset_string) . '" imagesizes="(max-width: 1200px) 100vw, 1200px">' . "\n";
-                }
-            }
+    if (!is_single() || !get_option('cotlas_imgconv_enabled')) {
+        return;
+    }
+
+    $post_id = get_the_ID();
+    $featured_image_id = get_post_thumbnail_id($post_id);
+
+    if (!$featured_image_id) {
+        return;
+    }
+
+    $image_sizes = wp_get_attachment_metadata($featured_image_id);
+    if (!$image_sizes || !isset($image_sizes['sizes'])) {
+        return;
+    }
+
+    $image_url = wp_get_attachment_image_src($featured_image_id, 'full');
+    if (!$image_url) {
+        return;
+    }
+
+    $avif_url = custom_convert_image_format($image_url[0], 'avif');
+    if (!$avif_url) {
+        return;
+    }
+
+    $srcset = [];
+    foreach ($image_sizes['sizes'] as $size_name => $size_data) {
+        $size_url = wp_get_attachment_image_src($featured_image_id, $size_name);
+        if (!$size_url) {
+            continue;
+        }
+        $size_avif_url = custom_convert_image_format($size_url[0], 'avif');
+        if ($size_avif_url) {
+            $srcset[] = esc_url($size_avif_url) . ' ' . $size_data['width'] . 'w';
         }
     }
+
+    $srcset[] = esc_url($avif_url) . ' ' . (int) $image_url[1] . 'w';
+    $srcset_string = implode(', ', $srcset);
+
+    echo '<link rel="preload" as="image" href="' . esc_url($avif_url) . '" fetchpriority="high" type="image/avif" imagesrcset="' . esc_attr($srcset_string) . '" imagesizes="(max-width: 1200px) 100vw, 1200px">' . "\n";
 }, 1);

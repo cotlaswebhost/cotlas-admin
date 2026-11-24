@@ -55,12 +55,19 @@ function cotlas_verify_turnstile() {
          return $verification_result;
     }
 
+    $token = sanitize_text_field( wp_unslash( $_POST['cf-turnstile-response'] ) );
+    $ip    = function_exists( 'cotlas_auth_get_client_ip' ) ? cotlas_auth_get_client_ip() : '';
+
+    $body = [
+        'secret'   => $secret_key,
+        'response' => $token,
+    ];
+    if ( $ip ) {
+        $body['remoteip'] = $ip;
+    }
+
     $response = wp_remote_post('https://challenges.cloudflare.com/turnstile/v0/siteverify', [
-        'body' => [
-            'secret' => $secret_key,
-            'response' => $_POST['cf-turnstile-response'],
-            'remoteip' => $_SERVER['REMOTE_ADDR']
-        ]
+        'body' => $body
     ]);
 
     if (is_wp_error($response)) {

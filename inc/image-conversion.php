@@ -166,15 +166,31 @@ function cimg_choose_format( $mime, $file_path ) {
  * Checks what files actually exist on disk — no assumptions.
  */
 function cimg_pick_serve_format( $src_url, $baseurl, $basedir ) {
-	// Social crawlers must always get the original JPEG/PNG — a swapped
-	// WebP/AVIF og:image breaks link thumbnails (notably WhatsApp).
-	if ( cimg_is_social_crawler() ) {
+	// Already a modern format: metadata may already point at a converted file.
+	if ( preg_match( '/\.(avif|webp)$/i', $src_url ) ) {
 		return '';
 	}
 
-	// If the URL already points to a modern format (delete-original case),
-	// no further swapping is needed.
-	if ( preg_match( '/\.(avif|webp)$/i', $src_url ) ) {
+	$url_path = preg_replace( '/\?.*$/', '', $src_url );
+	$path     = str_replace( $baseurl, $basedir, $url_path );
+	$original_exists = ( $path !== $url_path && file_exists( $path ) );
+
+	// When conversion is disabled, serve the original whenever it exists.
+	// Only fall back to a converted file when the original is gone (legacy
+	// delete-original installs).
+	if ( ! get_option( 'cotlas_imgconv_enabled' ) && $original_exists ) {
+		return '';
+	}
+
+	// Social crawlers need the original JPEG/PNG when it exists — a swapped
+	// WebP/AVIF og:image breaks link thumbnails (notably WhatsApp).
+	if ( cimg_is_social_crawler() && $original_exists ) {
+		return '';
+	}
+
+	// Full-size originals stay JPEG/PNG for og:image when the original exists.
+	// If it is missing, allow the converted fallback below.
+	if ( $original_exists && ! preg_match( '/-\d+x\d+\.(jpe?g|png)$/i', $url_path ) ) {
 		return '';
 	}
 	// AVIF first (better compression).
