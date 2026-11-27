@@ -24,6 +24,17 @@ function cotlas_preview_theme_from_cookie() {
 		return '';
 	}
 
+	/*
+	 * The template/stylesheet option filters can fire while plugins are still
+	 * being included (some plugins resolve the theme directory at that point).
+	 * wp_hash() lives in pluggable.php, which loads after plugins, so verifying
+	 * the signature there would fatal. Skip the preview until it is available;
+	 * the real theme resolution happens later in wp-settings.php.
+	 */
+	if ( ! function_exists( 'wp_hash' ) ) {
+		return '';
+	}
+
 	$parts = explode( '|', sanitize_text_field( wp_unslash( $_COOKIE[ COTLAS_PREVIEW_THEME_COOKIE ] ) ) );
 	if ( 3 !== count( $parts ) ) {
 		return '';
@@ -83,16 +94,34 @@ function cotlas_preview_theme() {
 /**
  * Filter template/stylesheet options so the preview theme renders.
  *
- * @param mixed $pre Option short-circuit value.
+ * WordPress loads the parent theme's functions.php based on the `template`
+ * option and the child theme's based on `stylesheet`. Returning the preview
+ * slug for both would point `template` at a child theme, so the parent's
+ * functions (e.g. GeneratePress) would never load and its template tags would
+ * fatal. Resolve the preview theme's actual parent for the `template` option.
+ *
+ * @param mixed  $pre    Option short-circuit value.
+ * @param string $option Option name.
  * @return mixed
  */
-function cotlas_preview_theme_filter( $pre ) {
+function cotlas_preview_theme_filter( $pre, $option = '' ) {
 	$theme = cotlas_preview_theme();
 
-	return '' !== $theme ? $theme : $pre;
+	if ( '' === $theme ) {
+		return $pre;
+	}
+
+	if ( 'template' === $option ) {
+		$wp_theme = wp_get_theme( $theme );
+		$parent   = $wp_theme->parent();
+
+		return $parent ? $parent->get_stylesheet() : $wp_theme->get_template();
+	}
+
+	return $theme;
 }
-add_filter( 'pre_option_template', 'cotlas_preview_theme_filter' );
-add_filter( 'pre_option_stylesheet', 'cotlas_preview_theme_filter' );
+add_filter( 'pre_option_template', 'cotlas_preview_theme_filter', 10, 2 );
+add_filter( 'pre_option_stylesheet', 'cotlas_preview_theme_filter', 10, 2 );
 
 /**
  * Keep the cookie in sync with the administrator's saved preference.
